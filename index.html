@@ -1,0 +1,2269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Showdart Tournament Organizer</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+        }
+        .navbar {
+            background-color: #212529;
+        }
+        .hero {
+            background-color: #343a40;
+            color: white;
+            padding: 3rem 0;
+            margin-bottom: 2rem;
+        }
+        .card {
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border: none;
+        }
+        .card-header {
+            background-color: #343a40;
+            color: white;
+            font-weight: bold;
+        }
+        .btn-primary {
+            background-color: #0d6efd;
+            border: none;
+        }
+        .btn-success {
+            background-color: #198754;
+            border: none;
+        }
+        .btn-danger {
+            background-color: #dc3545;
+            border: none;
+        }
+        .player-tag {
+            display: inline-block;
+            width: 25px;
+            height: 25px;
+            line-height: 25px;
+            text-align: center;
+            border-radius: 50%;
+            color: white;
+            font-weight: bold;
+            margin-left: 5px;
+        }
+        .tag-s {
+            background-color: #0d6efd;
+        }
+        .tag-o {
+            background-color: #dc3545;
+        }
+        .pending-tag-change {
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        .tag-change-indicator {
+            font-size: 10px;
+            vertical-align: super;
+            color: #ffc107;
+            margin-left: 2px;
+        }
+        footer {
+            background-color: #212529;
+            color: white;
+            padding: 1.5rem 0;
+            margin-top: 2rem;
+        }
+        /* Language selector styles */
+        .language-selector {
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            z-index: 1000;
+        }
+        .language-btn {
+            width: 40px;
+            height: 30px;
+            margin-left: 5px;
+            cursor: pointer;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 0;
+            background-size: cover;
+            background-position: center;
+        }
+        .flag-dk {
+            background-image: url('https://flagcdn.com/w40/dk.png');
+        }
+        .flag-gb {
+            background-image: url('https://flagcdn.com/w40/gb.png');
+        }
+        .active-lang {
+            border: 2px solid #0d6efd;
+        }
+    </style>
+</head>
+<body>
+    <!-- Language Selector -->
+    <div class="language-selector">
+        <button class="language-btn flag-dk active-lang" data-lang="da" title="Dansk"></button>
+        <button class="language-btn flag-gb" data-lang="en" title="English"></button>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#" data-translate="title">Showdart Tournament Organizer</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#registration" data-translate="registration">Registration</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#tournament" data-translate="tournament">Tournament</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#rules" data-translate="rules">Rules</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <div class="hero">
+        <div class="container text-center">
+            <h1 data-translate="title">Showdart Tournament Organizer</h1>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Registration Section -->
+        <section id="registration" class="mb-5">
+            <div class="card">
+                <div class="card-header" data-translate="playerRegistration">
+                    Player Registration
+                </div>
+                <div class="card-body">
+                    <form id="registrationForm">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="playerName" class="form-label" data-translate="playerName">Player Name</label>
+                                <input type="text" class="form-control" id="playerName" required>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary" data-translate="register">Register Player</button>
+                    </form>
+                    
+                    <div class="mt-4">
+                        <h5 data-translate="registeredPlayers">Registered Players</h5>
+                        <div class="table-responsive">
+                            <table class="table table-striped" id="playersTable">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th data-translate="playerName">Name</th>
+                                        <th data-translate="status">Status</th>
+                                        <th data-translate="losses">Losses</th>
+                                        <th data-translate="tags">Tags</th>
+                                        <th data-translate="actions">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Players will be added here dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card mt-4">
+                <div class="card-header" data-translate="tournamentSettings">
+                    Tournament Settings
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="maxLosses" class="form-label" data-translate="maxLosses">Maximum Losses Before Elimination</label>
+                        <input type="number" class="form-control" id="maxLosses" min="1" value="2">
+                    </div>
+                    <button id="startTournament" class="btn btn-success" data-translate="startTournament">Start Tournament</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tournament Section -->
+        <section id="tournament" class="mb-5">
+            <div class="card">
+                <div class="card-header" data-translate="currentRoundHeader">
+                    Current Round: <span id="currentRound">0</span>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-3">
+                        <h5 data-translate="activePlayersHeader">Active Players: <span id="activePlayers">0</span></h5>
+                        <div>
+                            <button id="approveTagChanges" class="btn btn-outline-success me-2" disabled data-translate="approveTagChanges">Approve Tag Changes</button>
+                            <button id="generateMatches" class="btn btn-primary" disabled data-translate="generateMatches">Generate Matches</button>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info mb-3" id="tagReminder" style="display: none;">
+                        <strong data-translate="reminder">Reminder:</strong> <span data-translate="after">After each round, please assign:</span>
+                        <ul class="mb-0">
+                            <li data-translate="sTagDesc">"S" tag to players who played in 1v1 matches</li>
+                            <li data-translate="oTagDesc">"O" tag to players who skipped the round</li>
+                        </ul>
+                    </div>
+                    
+                    <div id="matchesContainer">
+                        <!-- Matches will be added here dynamically -->
+                    </div>
+                    
+                    <button id="completeRound" class="btn btn-success mt-3" disabled data-translate="completeRound">Complete Round</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Rules Section -->
+        <section id="rules" class="mb-5">
+            <div class="card">
+                <div class="card-header" data-translate="tournamentRules">
+                    Tournament Rules
+                </div>
+                <div class="card-body">
+                    <ol>
+                        <li data-translate="rule1">Players must register before the tournament begins.</li>
+                        <li data-translate="rule2">Tournament director decides how many losses a player can get before elimination based on the number of participants.</li>
+                        <li data-translate="rule3">Active players are randomly split into teams of 2 for 2v2 matches each round.</li>
+                        <li data-translate="rule4">Special rules apply when there are not enough players for even 2v2 matches:</li>
+                        <ul>
+                            <li data-translate="rule4a">If 3 players remain unmatched: 2 play a 1v1 match and 1 skips the round.</li>
+                            <li data-translate="rule4b">If 2 players remain unmatched: they play a 1v1 match.</li>
+                            <li data-translate="rule4c">If 1 player remains unmatched: they skip the round.</li>
+                        </ul>
+                        <li data-translate="rule5">Tags must be managed by the tournament director:</li>
+                        <ul>
+                            <li data-translate="rule5a">"S" tag - Players who have played in a 1v1 match should receive this tag.</li>
+                            <li data-translate="rule5b">"O" tag - Players who have skipped a round should receive this tag.</li>
+                            <li data-translate="rule5c">You can use the "Auto-Assign Tags" button after generating matches to automatically assign all required tags.</li>
+                            <li data-translate="rule5d">You can also manually add or remove tags using the buttons next to each player's name.</li>
+                        </ul>
+                        <li data-translate="rule6">The system enforces the following tag rules:</li>
+                        <ul>
+                            <li data-translate="rule6a">Players with "S" tag won't play in 1v1 matches until all other players have received "S" tags.</li>
+                            <li data-translate="rule6b">Players with "O" tag won't be forced to skip rounds until all other active players have received "O" tags.</li>
+                            <li data-translate="rule6c">The system will automatically shuffle teams to find valid matches that respect tag constraints.</li>
+                        </ul>
+                        <li data-translate="rule7">After each round, winners are marked and losers receive 1 loss.</li>
+                        <li data-translate="rule8">When a player is eliminated, their elimination round number is displayed in their status (e.g., "Eliminated R3" means eliminated in Round 3).</li>
+                        <li data-translate="rule9">When 5 or fewer active players remain, the tournament director can choose to start a final match. In the final match, all remaining players compete together, and the director ranks them from 1st to last place to determine the final standings.</li>
+                    </ol>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container text-center">
+            <p>© 2023 Darts Tournament Organizer | All Rights Reserved</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Player class to store player information
+        class Player {
+            constructor(id, name) {
+                this.id = id;
+                this.name = name;
+                this.losses = 0;
+                this.active = true;
+                this.tags = [];
+                this.modifiedTags = []; // To track which tags were modified
+                this.eliminationRound = null; // To track when player was eliminated
+            }
+        }
+
+        // Tournament class to manage the tournament
+        class Tournament {
+            constructor() {
+                this.players = [];
+                this.maxLosses = 2;
+                this.currentRound = 0;
+                this.matches = [];
+                this.started = false;
+                this.pendingTagChanges = false;
+                this.finalResults = null; // Store final match results
+            }
+
+            addPlayer(name) {
+                const id = this.players.length + 1;
+                const player = new Player(id, name);
+                this.players.push(player);
+                return player;
+            }
+
+            removePlayer(id) {
+                this.players = this.players.filter(player => player.id !== id);
+            }
+
+            getActivePlayers() {
+                return this.players.filter(player => player.active);
+            }
+
+            startTournament(maxLosses) {
+                this.maxLosses = maxLosses;
+                this.started = true;
+                this.currentRound = 1;
+            }
+
+            generateMatches() {
+                this.matches = [];
+                const activePlayers = this.getActivePlayers();
+                
+                // Maximum shuffle attempts to prevent infinite loops
+                const maxShuffleAttempts = 100;
+                let shuffleAttempts = 0;
+                let validMatchesFound = false;
+                
+                while (!validMatchesFound && shuffleAttempts < maxShuffleAttempts) {
+                    shuffleAttempts++;
+                    
+                    // Track how many players with S tag we're putting into 1v1 matches this round
+                    let sTaggedPlayersIn1v1 = 0;
+                    const totalSTaggedPlayers = activePlayers.filter(p => p.tags.includes('S')).length;
+                    
+                    // Shuffle players for random matching
+                    const shuffledPlayers = [...activePlayers].sort(() => Math.random() - 0.5);
+                    
+                    // Keep track of players and teams
+                    const matchedPlayers = [];
+                    const teams = [];
+                    let error = null;
+                    let skippedPlayers = [];
+                    
+                    // First, create as many 2v2 matches as possible
+                    while (shuffledPlayers.length >= 4) {
+                        const team1 = [shuffledPlayers.shift(), shuffledPlayers.shift()];
+                        const team2 = [shuffledPlayers.shift(), shuffledPlayers.shift()];
+                        teams.push([team1, team2]);
+                        matchedPlayers.push(...team1, ...team2);
+                    }
+                    
+                    // Check if we're about to form 1v1 matches with players that have S tags unnecessarily
+                    // If there are exactly 2 players remaining and both have S tags, and there are more than 2 active players total
+                    // and we could have formed a different combination, we should reshuffle
+                    if (shuffledPlayers.length === 2 && 
+                        shuffledPlayers.every(p => p.tags.includes('S')) && 
+                        activePlayers.length > 2 &&
+                        activePlayers.some(p => !p.tags.includes('S'))) {
+                            error = "Reshuffling: All remaining players have 'S' tags but other non-S players are available.";
+                            continue;
+                    }
+                    
+                    // Handle remaining players according to rules
+                    if (shuffledPlayers.length === 3) {
+                        // Check if we can form a 1v1 match (need at least 2 players without S tag)
+                        const nonSTagPlayers = shuffledPlayers.filter(p => !p.tags.includes('S'));
+                        
+                        if (nonSTagPlayers.length < 2) {
+                            // Not enough players without S tag, try reshuffling
+                            error = "Reshuffling: Need at least 2 players without 'S' tag for 1v1 match.";
+                            continue;
+                        }
+                        
+                        // Find player to skip - should be one without O tag if possible
+                        const player1 = nonSTagPlayers[0];
+                        const player2 = nonSTagPlayers[1];
+                        const remainingPlayer = shuffledPlayers.find(p => p !== player1 && p !== player2);
+                        
+                        // Check if the remaining player already has an O tag
+                        if (remainingPlayer.tags.includes('O')) {
+                            // Check if there are other players without O tag
+                            const nonOTagPlayers = shuffledPlayers.filter(p => !p.tags.includes('O'));
+                            if (nonOTagPlayers.length > 0 && nonOTagPlayers.length < 3) {
+                                // Try reshuffling to find a better arrangement
+                                error = "Reshuffling: A player with 'O' tag would need to skip again.";
+                                continue;
+                            }
+                            
+                            // Check if all players have O tag
+                            const allHaveOTag = shuffledPlayers.every(p => p.tags.includes('O'));
+                            if (!allHaveOTag) {
+                                error = "Reshuffling: A player with 'O' tag would need to skip while others don't have 'O' tag.";
+                                continue;
+                            }
+                        }
+                        
+                        teams.push([[player1], [player2]]);
+                        matchedPlayers.push(player1, player2);
+                        skippedPlayers.push(remainingPlayer);
+                        
+                    } else if (shuffledPlayers.length === 2) {
+                        // Two players play 1v1
+                        // Check if both have S tag
+                        const bothHaveSTag = shuffledPlayers.every(p => p.tags.includes('S'));
+                        const someHaveSTag = shuffledPlayers.some(p => p.tags.includes('S'));
+                        
+                        // Update counter for S-tagged players in 1v1 matches
+                        sTaggedPlayersIn1v1 += shuffledPlayers.filter(p => p.tags.includes('S')).length;
+                        
+                        // If some but not all have S tag, and we have more than 2 active players, try reshuffling
+                        if (someHaveSTag && !bothHaveSTag && activePlayers.length > 2) {
+                            error = "Reshuffling: Only one player has 'S' tag in 1v1 match.";
+                            continue;
+                        }
+                        
+                        // If both have S tag and there are more active players, this is not optimal - try reshuffling
+                        // This prevents forcing players with S tags into 1v1 matches when other options exist
+                        if (bothHaveSTag && activePlayers.length > 2) {
+                            error = "Reshuffling: Both players have 'S' tag in 1v1 match while other players are available.";
+                            continue;
+                        }
+                        
+                        teams.push([[shuffledPlayers[0]], [shuffledPlayers[1]]]);
+                        matchedPlayers.push(...shuffledPlayers);
+                        
+                    } else if (shuffledPlayers.length === 1) {
+                        // One player skips
+                        const player = shuffledPlayers[0];
+                        
+                        // Check if player already has O tag and if they're the only one
+                        if (player.tags.includes('O')) {
+                            const nonOTagPlayers = activePlayers.filter(p => !p.tags.includes('O'));
+                            if (nonOTagPlayers.length > 0) {
+                                // Try reshuffling to find a better arrangement
+                                error = "Reshuffling: A player with 'O' tag would need to skip again.";
+                                continue;
+                            }
+                        }
+                        
+                        skippedPlayers.push(player);
+                    }
+                    
+                    // If we reached here without continuing, we have valid matches
+                    if (!error) {
+                        // One final check: If we have an even number of players and we're forcing S-tagged players into 1v1 matches
+                        // when there are non-S-tagged players available, this is probably suboptimal
+                        if (activePlayers.length % 2 === 0 && 
+                            sTaggedPlayersIn1v1 > 0 && 
+                            sTaggedPlayersIn1v1 < totalSTaggedPlayers &&
+                            activePlayers.some(p => !p.tags.includes('S'))) {
+                                // Try another shuffle to see if we can avoid this
+                                if (shuffleAttempts < maxShuffleAttempts - 1) {
+                                    error = "Reshuffling: Suboptimal distribution of S-tagged players in 1v1 matches.";
+                                    continue;
+                                }
+                        }
+                        
+                        // Create match objects
+                        this.matches = teams.map((team, index) => {
+                            return {
+                                id: index + 1,
+                                team1: team[0],
+                                team2: team[1],
+                                winner: null
+                            };
+                        });
+                        
+                        // Store skipped players
+                        this.skippedPlayers = skippedPlayers;
+                        
+                        validMatchesFound = true;
+                    }
+                }
+                
+                if (!validMatchesFound) {
+                    return {
+                        error: "Could not generate valid matches after multiple attempts. Please check player tags and manually modify them."
+                    };
+                }
+                
+                return {
+                    matches: this.matches,
+                    skippedPlayers: this.skippedPlayers
+                };
+            }
+
+            assignTags() {
+                // Assign S tags to players in 1v1 matches
+                this.matches.forEach(match => {
+                    if (match.team1.length === 1 && match.team2.length === 1) {
+                        // Check if S tag needs to be added to team 1 player
+                        if (!match.team1[0].tags.includes('S')) {
+                            match.team1[0].tags.push('S');
+                        }
+                        // Remove S from modified tags if present (since it's auto-assigned, it's considered approved)
+                        const modIndexTeam1 = match.team1[0].modifiedTags.indexOf('S');
+                        if (modIndexTeam1 !== -1) {
+                            match.team1[0].modifiedTags.splice(modIndexTeam1, 1);
+                        }
+                        
+                        // Check if S tag needs to be added to team 2 player
+                        if (!match.team2[0].tags.includes('S')) {
+                            match.team2[0].tags.push('S');
+                        }
+                        // Remove S from modified tags if present
+                        const modIndexTeam2 = match.team2[0].modifiedTags.indexOf('S');
+                        if (modIndexTeam2 !== -1) {
+                            match.team2[0].modifiedTags.splice(modIndexTeam2, 1);
+                        }
+                    }
+                });
+                
+                // Assign O tags to skipped players
+                if (this.skippedPlayers && this.skippedPlayers.length > 0) {
+                    this.skippedPlayers.forEach(player => {
+                        // Check if O tag needs to be added
+                        if (!player.tags.includes('O')) {
+                            player.tags.push('O');
+                        }
+                        // Remove O from modified tags if present
+                        const modIndex = player.modifiedTags.indexOf('O');
+                        if (modIndex !== -1) {
+                            player.modifiedTags.splice(modIndex, 1);
+                        }
+                    });
+                }
+                
+                // Reset pending tag changes since auto-assigned tags are automatically approved
+                this.pendingTagChanges = false;
+            }
+
+            completeRound() {
+                // Process match results
+                this.matches.forEach(match => {
+                    if (match.winner === 1) {
+                        match.team2.forEach(player => {
+                            player.losses++;
+                            if (player.losses >= this.maxLosses) {
+                                player.active = false;
+                                player.eliminationRound = this.currentRound; // Track when eliminated
+                            }
+                        });
+                    } else if (match.winner === 2) {
+                        match.team1.forEach(player => {
+                            player.losses++;
+                            if (player.losses >= this.maxLosses) {
+                                player.active = false;
+                                player.eliminationRound = this.currentRound; // Track when eliminated
+                            }
+                        });
+                    }
+                });
+                
+                // Clear matches
+                this.matches = [];
+                
+                // Check if tournament is over
+                const activePlayers = this.getActivePlayers();
+                const isOver = activePlayers.length <= 1;
+                
+                // Only increment round if tournament is not over
+                if (!isOver) {
+                    this.currentRound++;
+                }
+                
+                // Update UI to reflect changes
+                updatePlayersTable();
+                updateTournamentUI();
+                
+                return isOver;
+            }
+            
+            startFinalMatch() {
+                // Set up a final match with all remaining active players
+                return this.getActivePlayers();
+            }
+            
+            completeFinal(rankedPlayers) {
+                // Store final results and mark tournament as complete
+                this.finalResults = rankedPlayers;
+                
+                // Set all but the winner as inactive
+                rankedPlayers.forEach((player, index) => {
+                    if (index > 0) { // Everyone except first place
+                        player.active = false;
+                        player.eliminationRound = 'final'; // Mark players as eliminated in final
+                    }
+                });
+                
+                // Return the winner
+                return rankedPlayers[0];
+            }
+        }
+
+        // Initialize tournament
+        const tournament = new Tournament();
+
+        // DOM elements
+        const registrationForm = document.getElementById('registrationForm');
+        const playersTable = document.getElementById('playersTable');
+        const startTournamentBtn = document.getElementById('startTournament');
+        const generateMatchesBtn = document.getElementById('generateMatches');
+        const completeRoundBtn = document.getElementById('completeRound');
+        const currentRoundSpan = document.getElementById('currentRound');
+        const activePlayersSpan = document.getElementById('activePlayers');
+        const matchesContainer = document.getElementById('matchesContainer');
+        const tagReminder = document.getElementById('tagReminder');
+        const approveTagChangesBtn = document.getElementById('approveTagChanges');
+
+        // Event listeners
+        registrationForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const name = document.getElementById('playerName').value;
+            
+            if (name) {
+                const player = tournament.addPlayer(name);
+                updatePlayersTable();
+                document.getElementById('playerName').value = '';
+            }
+        });
+
+        startTournamentBtn.addEventListener('click', function() {
+            const maxLosses = parseInt(document.getElementById('maxLosses').value);
+            if (tournament.players.length < 4) {
+                alert(translate('needPlayers'));
+                return;
+            }
+            
+            tournament.startTournament(maxLosses);
+            
+            // Explicitly update round number and active players count
+            if (currentRoundSpan) {
+                currentRoundSpan.textContent = tournament.currentRound;
+            }
+            if (activePlayersSpan) {
+                activePlayersSpan.textContent = tournament.getActivePlayers().length;
+            }
+            
+            updateTournamentUI();
+            
+            // Disable registration
+            registrationForm.querySelectorAll('input, button').forEach(el => el.disabled = true);
+            startTournamentBtn.disabled = true;
+            generateMatchesBtn.disabled = false;
+            
+            // Hide tournament settings section
+            document.querySelector('.card.mt-4').style.display = 'none';
+            
+            // Scroll to tournament section
+            document.getElementById('tournament').scrollIntoView({ behavior: 'smooth' });
+        });
+
+        generateMatchesBtn.addEventListener('click', function() {
+            // Check if all active players have "O" tag, if so, remove all "O" tags
+            const activePlayers = tournament.getActivePlayers();
+            const allHaveOTag = activePlayers.length > 0 && activePlayers.every(p => p.tags.includes('O'));
+            
+            if (allHaveOTag) {
+                // Remove "O" tags from all active players
+                activePlayers.forEach(player => {
+                    const tagIndex = player.tags.indexOf('O');
+                    if (tagIndex !== -1) {
+                        player.tags.splice(tagIndex, 1);
+                    }
+                });
+                
+                // Show notification
+                const resetAlert = document.createElement('div');
+                resetAlert.className = 'alert alert-info';
+                resetAlert.innerHTML = `<strong>${translate('info')}:</strong> ${translate('allHaveOTagReset')}`;
+                resetAlert.id = 'resetTagsAlert';
+                
+                // Insert before matches container
+                matchesContainer.parentNode.insertBefore(resetAlert, matchesContainer);
+                
+                // Remove notification after 3 seconds
+                setTimeout(() => {
+                    const alert = document.getElementById('resetTagsAlert');
+                    if (alert) {
+                        alert.remove();
+                    }
+                }, 3000);
+                
+                // Update players table
+                updatePlayersTable();
+            }
+            
+            const result = tournament.generateMatches();
+            
+            // Check if there was an error
+            if (result.error) {
+                alert(result.error);
+                return;
+            }
+            
+            // Hide tag reminder when new matches are generated
+            tagReminder.style.display = 'none';
+            
+            // Clear matches container
+            matchesContainer.innerHTML = '';
+            
+            // Count how many players will need tags
+            const has1v1Matches = result.matches.some(match => match.team1.length === 1 && match.team2.length === 1);
+            const skipCount = result.skippedPlayers ? result.skippedPlayers.length : 0;
+            const needsTagsMessage = [];
+            
+            if (has1v1Matches) {
+                const playersIn1v1 = result.matches.filter(m => m.team1.length === 1).length * 2;
+                needsTagsMessage.push(`${playersIn1v1} ${translate('players')} in 1v1 ${translate('match')}es ${translate('need')} "S" tags`);
+            }
+            
+            if (skipCount > 0) {
+                needsTagsMessage.push(`${skipCount} ${translate('player')}${skipCount > 1 ? 's' : ''} ${translate('skipping')} ${translate('need')}${skipCount === 1 ? 's' : ''} "O" tag`);
+            }
+            
+            // Create matches card with auto-tag option
+            const matchesHeader = document.createElement('div');
+            matchesHeader.className = 'alert alert-primary mb-3';
+            
+            matchesHeader.innerHTML = `
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h5 class="mb-0">${translate('round')} ${tournament.currentRound} ${translate('matchesRound')}</h5>
+                    <button class="btn btn-primary" id="autoAssignTags">${translate('autoAssign')}</button>
+                </div>
+                <div>
+                    ${needsTagsMessage.length > 0 ? 
+                        `<p class="mb-0"><strong>${translate('tagsNeeded')}:</strong> ${needsTagsMessage.join(', ')}</p>` : 
+                        `<p class="mb-0">${translate('noTags')}</p>`
+                    }
+                </div>
+            `;
+            
+            matchesContainer.appendChild(matchesHeader);
+            
+            // Add event listener to auto-assign tags button
+            document.getElementById('autoAssignTags').addEventListener('click', function() {
+                tournament.assignTags();
+                updatePlayersTable();
+                
+                // Reset pending tag changes since we just assigned them automatically
+                tournament.pendingTagChanges = false;
+                approveTagChangesBtn.disabled = true;
+                
+                // Update button state
+                this.disabled = true;
+                this.textContent = translate('tagsAssigned');
+                this.classList.remove('btn-primary');
+                this.classList.add('btn-success');
+                
+                // Update the card headers for 1v1 matches to reflect tag status
+                document.querySelectorAll('.card-header').forEach(header => {
+                    if (header.textContent.includes('Will receive')) {
+                        header.textContent = header.textContent.replace(
+                            translate('willReceiveSTag'), 
+                            translate('receivedSTag') || 'Received "S" tags'
+                        );
+                    }
+                });
+                
+                // Update skipped player cards
+                document.querySelectorAll('.skipped-player').forEach(card => {
+                    const warningText = card.querySelector('.text-warning');
+                    if (warningText) {
+                        warningText.textContent = translate('receivedOTag');
+                        warningText.classList.remove('text-warning');
+                        warningText.classList.add('text-success');
+                    }
+                });
+            });
+            
+            renderMatches(result.matches, result.skippedPlayers);
+            generateMatchesBtn.disabled = true;
+            completeRoundBtn.disabled = false;
+        });
+
+        completeRoundBtn.addEventListener('click', function() {
+            // Check if all matches have winners
+            const allMatchesComplete = tournament.matches.every(match => match.winner !== null);
+            
+            if (!allMatchesComplete) {
+                alert(translate('selectWinnersFirst'));
+                return;
+            }
+            
+            const tournamentComplete = tournament.completeRound();
+            
+            // Update UI
+            updatePlayersTable();
+            updateTournamentUI();
+            
+            if (tournamentComplete) {
+                const winner = tournament.getActivePlayers()[0];
+                if (winner) {
+                    alert(`${translate('tournamentComplete')}! ${translate('winner')} ${winner.name}!`);
+                } else {
+                    alert(`${translate('tournamentComplete')}! ${translate('allPlayersEliminated')}`);
+                }
+                generateMatchesBtn.disabled = true;
+                completeRoundBtn.disabled = true;
+                approveTagChangesBtn.disabled = true;
+                tagReminder.style.display = 'none';
+            } else {
+                // Show approve tag changes button if needed for next round
+                if (tournament.pendingTagChanges) {
+                    approveTagChangesBtn.disabled = false;
+                    generateMatchesBtn.disabled = true;
+                    showPendingTagChangesAlert();
+                } else {
+                    generateMatchesBtn.disabled = false;
+                    approveTagChangesBtn.disabled = true;
+                }
+                completeRoundBtn.disabled = true;
+                // Clear matches container to prepare for next round
+                matchesContainer.innerHTML = '';
+            }
+        });
+
+        // Add event listener for approve tag changes button
+        approveTagChangesBtn.addEventListener('click', function() {
+            // Clear any pending tag changes notification
+            tournament.pendingTagChanges = false;
+            
+            // Clear modified tags tracking on all players
+            tournament.players.forEach(player => {
+                player.modifiedTags = [];
+            });
+            
+            // Update UI
+            this.disabled = true;
+            generateMatchesBtn.disabled = false;
+            
+            // Remove any pending tag changes alert
+            const pendingAlert = document.getElementById('pendingTagChangesAlert');
+            if (pendingAlert) {
+                pendingAlert.remove();
+            }
+            
+            // Show success message
+            const successAlert = document.createElement('div');
+            successAlert.className = 'alert alert-success';
+            successAlert.innerHTML = `<strong>${translate('success')}!</strong> ${translate('successTag')}`;
+            successAlert.id = 'tagApprovalSuccessAlert';
+            
+            // Insert before matches container
+            matchesContainer.parentNode.insertBefore(successAlert, matchesContainer);
+            
+            // Update players table to show approved tags
+            updatePlayersTable();
+            
+            // Remove success message after 3 seconds
+            setTimeout(() => {
+                const alert = document.getElementById('tagApprovalSuccessAlert');
+                if (alert) {
+                    alert.remove();
+                }
+            }, 3000);
+        });
+        
+        // Function to show pending tag changes alert
+        function showPendingTagChangesAlert() {
+            // Create alert if it doesn't exist
+            if (!document.getElementById('pendingTagChangesAlert')) {
+                const pendingAlert = document.createElement('div');
+                pendingAlert.className = 'alert alert-warning';
+                pendingAlert.innerHTML = `<strong>${translate('warning')}!</strong> ${translate('warningTag')}`;
+                pendingAlert.id = 'pendingTagChangesAlert';
+                
+                // Insert before matches container
+                matchesContainer.parentNode.insertBefore(pendingAlert, matchesContainer);
+            }
+        }
+
+        // Helper functions
+        function updatePlayersTable() {
+            const tbody = playersTable.querySelector('tbody');
+            tbody.innerHTML = '';
+            
+            // Make a copy of players array to sort
+            let playersToDisplay = [...tournament.players];
+            
+            // Sort by losses (lowest on top) if tournament has started
+            if (tournament.started) {
+                playersToDisplay.sort((a, b) => {
+                    // First by active status (active players first)
+                    if (a.active !== b.active) return b.active - a.active;
+                    
+                    // Then for active players, sort by losses (lowest first)
+                    if (a.active && b.active) {
+                        return a.losses - b.losses;
+                    }
+                    
+                    // For eliminated players, sort by elimination round (most recent first)
+                    return b.eliminationRound - a.eliminationRound;
+                });
+            }
+            
+            playersToDisplay.forEach(player => {
+                const row = document.createElement('tr');
+                if (!player.active) {
+                    row.classList.add('table-danger');
+                }
+                
+                // Check if player was eliminated in the most recent round
+                const recentlyEliminated = player.eliminationRound === tournament.currentRound - 1;
+                
+                // Create tag HTML with indicators for modified tags
+                const tagsHTML = player.tags.map(tag => {
+                    const isModified = player.modifiedTags.includes(tag);
+                    return `<span class="player-tag tag-${tag.toLowerCase()} ${isModified ? 'pending-tag-change' : ''}">${tag}${isModified ? '<span class="tag-change-indicator">*</span>' : ''}</span>`;
+                }).join('');
+                
+                // Determine player status text
+                let statusText = player.active ? translate('active') : 
+                                 player.eliminationRound === 'final' ? translate('eliminatedFinal') : 
+                                 translateWithParams('eliminatedR', { round: player.eliminationRound });
+                
+                row.innerHTML = `
+                    <td>${player.id}</td>
+                    <td>${recentlyEliminated ? '<strong>' : ''}${player.name}${recentlyEliminated ? '</strong>' : ''}</td>
+                    <td>${statusText}</td>
+                    <td>${player.losses}/${tournament.maxLosses}</td>
+                    <td>
+                        ${tagsHTML}
+                        ${tournament.started ? `
+                        <div class="btn-group btn-group-sm ms-2">
+                            <button class="btn btn-sm ${player.tags.includes('S') ? (player.modifiedTags.includes('S') ? 'btn-primary pending-tag-change' : 'btn-primary') : 'btn-outline-primary'} toggle-tag" data-id="${player.id}" data-tag="S">S</button>
+                            <button class="btn btn-sm ${player.tags.includes('O') ? (player.modifiedTags.includes('O') ? 'btn-danger pending-tag-change' : 'btn-danger') : 'btn-outline-danger'} toggle-tag" data-id="${player.id}" data-tag="O">O</button>
+                        </div>` : ''}
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-danger remove-player" data-id="${player.id}" ${tournament.started && !player.active ? 'disabled' : ''}>
+                            ${tournament.started && player.active ? translate('eliminate') : translate('remove')}
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+            
+            // Add event listeners to remove buttons
+            document.querySelectorAll('.remove-player').forEach(button => {
+                button.addEventListener('click', function() {
+                    const id = parseInt(this.getAttribute('data-id'));
+                    const player = tournament.players.find(p => p.id === id);
+                    
+                    if (tournament.started && player && player.active) {
+                        // For active players during tournament, mark as eliminated instead of removing
+                        if (confirm(translateWithParams('confirmEliminate', { name: player.name }))) {
+                            player.active = false;
+                            player.losses = tournament.maxLosses; // Set losses to max to indicate elimination
+                            player.eliminationRound = tournament.currentRound; // Track manual elimination
+                            updatePlayersTable();
+                            updateTournamentUI();
+                        }
+                    } else {
+                        // Before tournament starts, completely remove player
+                        tournament.removePlayer(id);
+                        updatePlayersTable();
+                    }
+                });
+            });
+            
+            // Add event listeners to tag toggle buttons
+            document.querySelectorAll('.toggle-tag').forEach(button => {
+                button.addEventListener('click', function() {
+                    const id = parseInt(this.getAttribute('data-id'));
+                    const tag = this.getAttribute('data-tag');
+                    const player = tournament.players.find(p => p.id === id);
+                    
+                    if (player) {
+                        // Check if player already has the tag
+                        const tagIndex = player.tags.indexOf(tag);
+                        if (tagIndex !== -1) {
+                            // Remove tag
+                            player.tags.splice(tagIndex, 1);
+                            
+                            // Remove from modified tags if it was there
+                            const modIndex = player.modifiedTags.indexOf(tag);
+                            if (modIndex !== -1) {
+                                player.modifiedTags.splice(modIndex, 1);
+                            } else {
+                                // If we're removing a tag that wasn't modified, mark it as modified
+                                player.modifiedTags.push(tag);
+                            }
+                            
+                            this.classList.remove('btn-primary', 'btn-danger');
+                            this.classList.add('btn-outline-primary');
+                            if (tag === 'O') {
+                                this.classList.add('btn-outline-danger');
+                                this.classList.remove('btn-outline-primary');
+                            }
+                        } else {
+                            // Add tag
+                            player.tags.push(tag);
+                            
+                            // Mark as modified
+                            if (!player.modifiedTags.includes(tag)) {
+                                player.modifiedTags.push(tag);
+                            }
+                            
+                            this.classList.remove('btn-outline-primary', 'btn-outline-danger');
+                            this.classList.add(tag === 'S' ? 'btn-primary' : 'btn-danger');
+                            
+                            // Add pulse animation class
+                            this.classList.add('pending-tag-change');
+                        }
+                        
+                        // Mark that we have pending tag changes that need approval
+                        tournament.pendingTagChanges = true;
+                        
+                        // Update pending tag changes UI if we're between rounds
+                        if (tournament.currentRound > 0 && tournament.matches.length === 0) {
+                            approveTagChangesBtn.disabled = false;
+                            generateMatchesBtn.disabled = true;
+                            showPendingTagChangesAlert();
+                        }
+                        
+                        updatePlayersTable();
+                    }
+                });
+            });
+        }
+
+        // Restore the original translatePage function with some improvements
+        function translatePage() {
+            // Store current values before translation
+            const currentRoundValue = document.getElementById('currentRound')?.textContent || '0';
+            const activePlayersValue = document.getElementById('activePlayers')?.textContent || '0';
+
+            // Translate all elements with data-translate attribute
+            document.querySelectorAll('[data-translate]').forEach(element => {
+                const key = element.getAttribute('data-translate');
+                
+                // Preserve IDs/spans for elements with dynamic content
+                if (key === 'currentRoundHeader') {
+                    element.innerHTML = `${translate('currentRoundHeader')}<span id="currentRound">${currentRoundValue}</span>`;
+                } else if (key === 'activePlayersHeader') {
+                    element.innerHTML = `${translate('activePlayersHeader')}<span id="activePlayers">${activePlayersValue}</span>`;
+                } else {
+                    // For regular elements, just update the text content
+                    element.textContent = translate(key);
+                }
+            });
+            
+            // Update navbar
+            document.querySelector('.navbar-brand').textContent = translate('title');
+            document.querySelectorAll('.nav-link')[0].textContent = translate('registration');
+            document.querySelectorAll('.nav-link')[1].textContent = translate('tournament');
+            document.querySelectorAll('.nav-link')[2].textContent = translate('rules');
+            
+            // Update hero
+            document.querySelector('.hero h1').textContent = translate('title');
+            
+            // Update table headers
+            const tableHeaders = document.querySelectorAll('#playersTable thead th');
+            tableHeaders[1].textContent = translate('playerName');
+            tableHeaders[2].textContent = translate('status');
+            tableHeaders[3].textContent = translate('losses');
+            tableHeaders[4].textContent = translate('tags');
+            tableHeaders[5].textContent = translate('actions');
+            
+            // Update player status cells
+            updatePlayerStatusDisplay();
+            
+            // Update Play Final button if it exists
+            const playFinalBtn = document.getElementById('playFinal');
+            if (playFinalBtn) {
+                playFinalBtn.textContent = translate('playFinal');
+            }
+            
+            // Update any match displays
+            updateMatchesDisplay();
+            
+            // Update any current alerts
+            updateAlerts();
+            
+            // Update final match UI if active
+            updateFinalMatchUI();
+            
+            // Update final results if showing
+            updateFinalResults();
+            
+            // Update buttons
+            updateButtons();
+            
+            // Update footer
+            document.querySelector('footer p').textContent = `© ${new Date().getFullYear()} ${translate('title')} | ${translate('allRightsReserved')}`;
+            
+            // Update tag reminder if visible
+            if (document.getElementById('tagReminder') && document.getElementById('tagReminder').style.display !== 'none') {
+                const tagReminder = document.getElementById('tagReminder');
+                tagReminder.innerHTML = `
+                    <strong>${translate('reminder')}:</strong> ${translate('after')}
+                    <ul class="mb-0">
+                        <li>${translate('sTagDesc')}</li>
+                        <li>${translate('oTagDesc')}</li>
+                    </ul>
+                `;
+            }
+        }
+
+        // Remove the modified updateTournamentUI function that was causing issues
+        function updateTournamentUI() {
+            // Get fresh references to the DOM elements in case they were recreated
+            const refreshedCurrentRoundSpan = document.getElementById('currentRound');
+            const refreshedActivePlayersSpan = document.getElementById('activePlayers');
+            
+            if (refreshedCurrentRoundSpan) {
+                refreshedCurrentRoundSpan.textContent = tournament.currentRound;
+            }
+            
+            if (refreshedActivePlayersSpan) {
+                refreshedActivePlayersSpan.textContent = tournament.getActivePlayers().length;
+            }
+
+            // Hide tag reminder when generating new matches
+            if (tournament.currentRound > 0) {
+                if (generateMatchesBtn.disabled === false) {
+                    tagReminder.style.display = 'none';
+                }
+            } else {
+                tagReminder.style.display = 'none';
+            }
+            
+            // Show approve tag changes button if there are pending changes and we're between rounds
+            if (tournament.pendingTagChanges && tournament.currentRound > 0 && tournament.matches.length === 0) {
+                approveTagChangesBtn.disabled = false;
+                generateMatchesBtn.disabled = true;
+                showPendingTagChangesAlert();
+            } else {
+                approveTagChangesBtn.disabled = true;
+            }
+            
+            // Show Play Final button if 5 or fewer active players remain and we're between rounds
+            const activePlayers = tournament.getActivePlayers();
+            const playFinalBtn = document.getElementById('playFinal');
+            
+            if (activePlayers.length <= 5 && activePlayers.length > 1 && 
+                tournament.currentRound > 0 && tournament.matches.length === 0 && !tournament.finalResults) {
+                
+                // Create the button if it doesn't exist
+                if (!playFinalBtn) {
+                    const finalBtn = document.createElement('button');
+                    finalBtn.id = 'playFinal';
+                    finalBtn.className = 'btn btn-warning me-2';
+                    finalBtn.textContent = translate('playFinal');
+                    finalBtn.setAttribute('data-translate', 'playFinal');
+                    
+                    // Add event listener
+                    finalBtn.addEventListener('click', function() {
+                        if (confirm(translate('confirmFinal'))) {
+                            startFinalMatch();
+                        }
+                    });
+                    
+                    // Insert before generate matches button
+                    const buttonContainer = document.querySelector('#tournament .d-flex.justify-content-between div');
+                    buttonContainer.prepend(finalBtn);
+                }
+            } else if (playFinalBtn && (activePlayers.length > 5 || tournament.finalResults)) {
+                // Remove the button if it exists and shouldn't be shown
+                playFinalBtn.remove();
+            }
+        }
+
+        function renderMatches(matches, skippingPlayers = []) {
+            // Don't clear the matches container here, as we've already added the header with auto-tag button
+            
+            if (matches.length === 0 && skippingPlayers.length === 0) {
+                const noMatches = document.createElement('div');
+                noMatches.className = 'alert alert-info';
+                noMatches.textContent = translate('noMatches');
+                noMatches.setAttribute('data-translate', 'noMatches');
+                matchesContainer.appendChild(noMatches);
+                return;
+            }
+            
+            // Display skipping players if any
+            if (skippingPlayers && skippingPlayers.length > 0) {
+                const skippingCard = document.createElement('div');
+                skippingCard.className = 'card mb-3';
+                
+                let playersHTML = '';
+                skippingPlayers.forEach(player => {
+                    const hasOTag = player.tags.includes('O');
+                    
+                    playersHTML += `
+                        <div class="col-md-4 mb-2">
+                            <div class="card ${hasOTag ? 'border-danger' : ''} skipped-player">
+                                <div class="card-body text-center">
+                                    <h5>${player.name}</h5>
+                                    <p class="text-danger fw-bold">${translate('skippingRound')}</p>
+                                    <p class="small text-warning">${translate('willReceiveOTag')}</p>
+                                    ${hasOTag ? `<p class="small text-danger">${translate('alreadyHasOTag')}</p>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                skippingCard.innerHTML = `
+                    <div class="card-header bg-danger text-white">${translate('skippingPlayers')}</div>
+                    <div class="card-body">
+                        <div class="row">
+                            ${playersHTML}
+                        </div>
+                    </div>
+                `;
+                
+                matchesContainer.appendChild(skippingCard);
+            }
+            
+            // Display matches
+            matches.forEach(match => {
+                const matchCard = document.createElement('div');
+                matchCard.className = 'card mb-3';
+                
+                const team1Names = match.team1.map(p => p.name).join(', ');
+                const team2Names = match.team2.map(p => p.name).join(', ');
+                
+                const is1v1 = match.team1.length === 1 && match.team2.length === 1;
+                let tagInfo = '';
+                
+                if (is1v1) {
+                    const team1HasSTag = match.team1[0].tags.includes('S');
+                    const team2HasSTag = match.team2[0].tags.includes('S');
+                    
+                    if (team1HasSTag && team2HasSTag) {
+                        tagInfo = ` (1v1 - ${translate('bothHaveSTag')})`;
+                    } else if (team1HasSTag || team2HasSTag) {
+                        tagInfo = ` (1v1 - ${translate('oneHasSTag')})`;
+                    } else {
+                        tagInfo = ` (1v1 - ${translate('willReceiveSTag')})`;
+                    }
+                }
+                
+                matchCard.innerHTML = `
+                    <div class="card-header ${is1v1 ? 'bg-primary text-white' : ''}">${is1v1 ? translate('oneVOneMatch') + ' ' : ''}${translate('match')} #${match.id}${tagInfo}</div>
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-5 text-center">
+                                <h5>${team1Names}</h5>
+                                <p class="text-muted">${match.team1.length === 1 ? translate('oneVOneMatch') : translate('team') + ' 1'}</p>
+                                ${match.team1.length === 1 ? 
+                                    `<p class="small ${match.team1[0].tags.includes('S') ? 'text-primary' : 'text-secondary'}">
+                                        ${match.team1[0].tags.includes('S') ? translate('hasSTag') : ''}
+                                    </p>` : ''}
+                            </div>
+                            <div class="col-2 text-center">
+                                <h5>${translate('vs')}</h5>
+                            </div>
+                            <div class="col-5 text-center">
+                                <h5>${team2Names}</h5>
+                                <p class="text-muted">${match.team2.length === 1 ? translate('oneVOneMatch') : translate('team') + ' 2'}</p>
+                                ${match.team2.length === 1 ? 
+                                    `<p class="small ${match.team2[0].tags.includes('S') ? 'text-primary' : 'text-secondary'}">
+                                        ${match.team2[0].tags.includes('S') ? translate('hasSTag') : ''}
+                                    </p>` : ''}
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-12 text-center">
+                                <p>${translate('selectWinner')}:</p>
+                                <div class="btn-group" role="group">
+                                    <button type="button" class="btn btn-outline-primary select-winner" data-match="${match.id}" data-winner="1">
+                                        ${match.team1.length === 1 ? match.team1[0].name : translate('team') + ' 1'}
+                                    </button>
+                                    <button type="button" class="btn btn-outline-primary select-winner" data-match="${match.id}" data-winner="2">
+                                        ${match.team2.length === 1 ? match.team2[0].name : translate('team') + ' 2'}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                matchesContainer.appendChild(matchCard);
+            });
+            
+            // Add event listeners to winner buttons
+            document.querySelectorAll('.select-winner').forEach(button => {
+                button.addEventListener('click', function() {
+                    const matchId = parseInt(this.getAttribute('data-match'));
+                    const winner = parseInt(this.getAttribute('data-winner'));
+                    
+                    // Update match winner
+                    const match = tournament.matches.find(m => m.id === matchId);
+                    if (match) {
+                        match.winner = winner;
+                    }
+                    
+                    // Update UI
+                    const matchCard = this.closest('.card');
+                    matchCard.querySelectorAll('.select-winner').forEach(btn => {
+                        btn.classList.remove('btn-primary');
+                        btn.classList.add('btn-outline-primary');
+                    });
+                    
+                    this.classList.remove('btn-outline-primary');
+                    this.classList.add('btn-primary');
+                });
+            });
+        }
+
+        // Add function to handle final match
+        function startFinalMatch() {
+            // Get all active players
+            const finalists = tournament.startFinalMatch();
+            
+            // Disable regular tournament buttons
+            generateMatchesBtn.disabled = true;
+            completeRoundBtn.disabled = true;
+            approveTagChangesBtn.disabled = true;
+            
+            // Remove any Play Final button
+            const playFinalBtn = document.getElementById('playFinal');
+            if (playFinalBtn) {
+                playFinalBtn.remove();
+            }
+            
+            // Clear the matches container
+            matchesContainer.innerHTML = '';
+            
+            // Create the final match UI
+            const finalMatchCard = document.createElement('div');
+            finalMatchCard.className = 'card mb-3';
+            
+            // Create header
+            const finalHeader = document.createElement('div');
+            finalHeader.className = 'card-header bg-warning text-dark';
+            finalHeader.innerHTML = `<h4>${translate('finalMatch')} ${finalists.length} ${translate('players')}</h4>`;
+            finalMatchCard.appendChild(finalHeader);
+            
+            // Create body
+            const finalBody = document.createElement('div');
+            finalBody.className = 'card-body';
+            
+            // Create description
+            const description = document.createElement('p');
+            description.className = 'alert alert-info';
+            description.innerHTML = translate('finalDesc');
+            finalBody.appendChild(description);
+            
+            // Create ranking interface
+            const rankingForm = document.createElement('div');
+            rankingForm.className = 'mt-4';
+            rankingForm.innerHTML = `<h5>${translate('finalRankings')}</h5>`;
+            
+            // Create a sortable list of players
+            const playerList = document.createElement('div');
+            playerList.className = 'list-group mb-4';
+            playerList.id = 'sortableFinalists';
+            
+            // Store player order in a separate array that we can manipulate
+            let playerRankings = [...finalists];
+            
+            // Function to render the player list based on current rankings
+            function renderPlayerList() {
+                // Clear existing list
+                playerList.innerHTML = '';
+                
+                // Render each player
+                playerRankings.forEach((player, index) => {
+                    const playerItem = document.createElement('div');
+                    playerItem.className = 'list-group-item d-flex justify-content-between align-items-center';
+                    playerItem.setAttribute('data-player-id', player.id);
+                    
+                    // Add position indicator
+                    const position = document.createElement('span');
+                    position.className = 'position-indicator badge bg-primary me-2';
+                    position.textContent = `${index + 1}`;
+                    
+                    // Add player name
+                    const playerName = document.createElement('span');
+                    playerName.className = 'flex-grow-1';
+                    playerName.textContent = player.name;
+                    
+                    // Add buttons to move up/down
+                    const buttonGroup = document.createElement('div');
+                    buttonGroup.className = 'btn-group btn-group-sm';
+                    
+                    const moveUpBtn = document.createElement('button');
+                    moveUpBtn.type = 'button';
+                    moveUpBtn.className = 'btn btn-outline-primary';
+                    moveUpBtn.innerHTML = '&#8593;';
+                    moveUpBtn.disabled = index === 0;
+                    moveUpBtn.onclick = function() {
+                        if (index > 0) {
+                            // Swap this player with the one above
+                            [playerRankings[index], playerRankings[index-1]] = [playerRankings[index-1], playerRankings[index]];
+                            renderPlayerList();
+                        }
+                    };
+                    
+                    const moveDownBtn = document.createElement('button');
+                    moveDownBtn.type = 'button';
+                    moveDownBtn.className = 'btn btn-outline-primary';
+                    moveDownBtn.innerHTML = '&#8595;';
+                    moveDownBtn.disabled = index === playerRankings.length - 1;
+                    moveDownBtn.onclick = function() {
+                        if (index < playerRankings.length - 1) {
+                            // Swap this player with the one below
+                            [playerRankings[index], playerRankings[index+1]] = [playerRankings[index+1], playerRankings[index]];
+                            renderPlayerList();
+                        }
+                    };
+                    
+                    buttonGroup.appendChild(moveUpBtn);
+                    buttonGroup.appendChild(moveDownBtn);
+                    
+                    playerItem.appendChild(position);
+                    playerItem.appendChild(playerName);
+                    playerItem.appendChild(buttonGroup);
+                    
+                    playerList.appendChild(playerItem);
+                });
+            }
+            
+            // Render the initial list
+            renderPlayerList();
+            
+            rankingForm.appendChild(playerList);
+            
+            // Add submit button
+            const submitButton = document.createElement('button');
+            submitButton.className = 'btn btn-success mt-3';
+            submitButton.textContent = translate('confirmResults');
+            submitButton.addEventListener('click', function() {
+                // Call completeFinal with the current player rankings
+                const winner = tournament.completeFinal(playerRankings);
+                
+                // Show final tournament results
+                showFinalResults(playerRankings);
+                
+                // Update UI
+                updatePlayersTable();
+                updateTournamentUI();
+            });
+            
+            rankingForm.appendChild(submitButton);
+            finalBody.appendChild(rankingForm);
+            finalMatchCard.appendChild(finalBody);
+            
+            // Add to the matches container
+            matchesContainer.appendChild(finalMatchCard);
+        }
+        
+        // Function to display final tournament results
+        function showFinalResults(rankings) {
+            // Clear matches container
+            matchesContainer.innerHTML = '';
+            
+            // Create results card
+            const resultsCard = document.createElement('div');
+            resultsCard.className = 'card';
+            
+            // Create header
+            const header = document.createElement('div');
+            header.className = 'card-header bg-success text-white';
+            header.innerHTML = `<h4 data-translate="tournamentResults">${translate('tournamentResults')}</h4>`;
+            resultsCard.appendChild(header);
+            
+            // Create body
+            const body = document.createElement('div');
+            body.className = 'card-body';
+            
+            // Create table
+            const table = document.createElement('table');
+            table.className = 'table table-striped table-bordered';
+            
+            // Create table header
+            const thead = document.createElement('thead');
+            thead.innerHTML = `
+                <tr>
+                    <th data-translate="place">${translate('place')}</th>
+                    <th data-translate="player">${translate('player')}</th>
+                </tr>
+            `;
+            table.appendChild(thead);
+            
+            // Create table body
+            const tbody = document.createElement('tbody');
+            
+            // Add rows for each player
+            rankings.forEach((player, index) => {
+                const row = document.createElement('tr');
+                
+                // Add special styling for top 3
+                if (index === 0) row.className = 'table-warning'; // Gold
+                else if (index === 1) row.className = 'table-light'; // Silver
+                else if (index === 2) row.className = 'table-secondary'; // Bronze
+                
+                row.innerHTML = `
+                    <td>
+                        <strong>${index + 1}${index === 0 ? 'st' : index === 1 ? 'nd' : index === 2 ? 'rd' : 'th'}</strong>
+                        ${index < 3 ? ['🥇', '🥈', '🥉'][index] : ''}
+                    </td>
+                    <td>${player.name}</td>
+                `;
+                
+                tbody.appendChild(row);
+            });
+            
+            table.appendChild(tbody);
+            body.appendChild(table);
+            
+            // Add congratulations message
+            const message = document.createElement('div');
+            message.className = 'alert alert-success mt-3';
+            message.innerHTML = `<strong data-translate="congratulations">${translate('congratulations')}</strong> ${rankings[0].name}! <span data-translate="tournamentComplete">${translate('tournamentComplete')}</span>`;
+            body.appendChild(message);
+            
+            resultsCard.appendChild(body);
+            matchesContainer.appendChild(resultsCard);
+        }
+
+        // Initialize UI
+        updatePlayersTable();
+        updateTournamentUI();
+        
+        // Language translations
+        const translations = {
+            da: {
+                "title": "Showdart Turnerings Organisator",
+                "registration": "Registrering", 
+                "tournament": "Turnering",
+                "rules": "Regler",
+                "playerRegistration": "Spiller Registrering",
+                "playerName": "Spillernavn",
+                "register": "Registrer Spiller",
+                "registeredPlayers": "Registrerede Spillere",
+                "status": "Status",
+                "losses": "Nederlag",
+                "tags": "Tags",
+                "actions": "Handlinger",
+                "tournamentSettings": "Turneringsindstillinger",
+                "maxLosses": "Maksimalt Antal Nederlag Før Eliminering",
+                "startTournament": "Start Turnering",
+                "currentRound": "Nuværende Runde",
+                "activePlayers": "Aktive Spillere",
+                "approveTagChanges": "Godkend Tag Ændringer",
+                "generateMatches": "Generer Kampe",
+                "completeRound": "Afslut Runde",
+                "tournamentRules": "Turneringsregler",
+                "reminder": "Påmindelse",
+                "after": "Efter hver runde, tildel venligst:",
+                "sTagDesc": "\"S\" tag til spillere, der spillede i 1v1 kampe",
+                "oTagDesc": "\"O\" tag til spillere, der sprang runden over",
+                "selectWinner": "Vælg Vinder",
+                "team": "Hold",
+                "playFinal": "Spil Finale",
+                "confirmResults": "Bekræft Finale Resultater",
+                "tournamentComplete": "Turneringen er afsluttet",
+                "congratulations": "Tillykke til",
+                "active": "Aktiv",
+                "eliminatedR": "Elimineret R{round}",
+                "eliminatedFinal": "Elimineret Finale",
+                "eliminate": "Eliminer",
+                "remove": "Fjern",
+                "place": "Plads",
+                "player": "Spiller",
+                "confirmEliminate": "Er du sikker på, at du vil eliminere",
+                "needPlayers": "Du har brug for mindst 4 spillere for at starte en turnering.",
+                "selectWinnersFirst": "Vælg vindere for alle kampe, før du afslutter runden.",
+                "winner": "Vinderen er",
+                "success": "Succes",
+                "warning": "Advarsel",
+                "info": "Info",
+                "warningTag": "Du har ventende tag-ændringer. Godkend dem, før du genererer næste runde.",
+                "successTag": "Tag-ændringer godkendt. Du kan nu generere næste runde.",
+                "tagsNeeded": "Tags nødvendige",
+                "noTags": "Ingen specielle tags nødvendige for denne runde",
+                "matchesRound": "Runde Kampe",
+                "autoAssign": "Auto-Tildel Alle Tags",
+                "tagsAssigned": "Tags Tildelt ✓",
+                "receivedTag": "Modtaget tag",
+                "finalMatch": "FINALE KAMP - ",
+                "finalDesc": "Alle resterende spillere vil konkurrere i en finale kamp. Rangér spillerne fra 1. plads (vinder) til sidste plads.",
+                "finalRankings": "Finale Rangering",
+                "tournamentResults": "Turnerings Resultater",
+                "confirmFinal": "Er du sikker på, at du vil starte finalekampen med alle resterende spillere? Dette vil afslutte det regulære turneringsformat.",
+                "skippingRound": "Springer denne runde over",
+                "willReceiveOTag": "Vil modtage \"O\" tag med auto-tildeling",
+                "alreadyHasOTag": "Har allerede \"O\" tag",
+                "skippingPlayers": "Spillere Der Springer Denne Runde Over",
+                "bothHaveSTag": "Begge har allerede \"S\" tags",
+                "oneHasSTag": "En spiller har allerede \"S\" tag",
+                "willReceiveSTag": "Vil modtage \"S\" tags med auto-tildeling",
+                "hasSTag": "Har \"S\" tag",
+                "oneVOneMatch": "1v1 Kamp",
+                "noMatches": "Ingen kampe at vise for denne runde",
+                "allHaveOTagReset": "Alle aktive spillere havde \"O\" tags, så de er blevet nulstillet.",
+                "round": "Runde",
+                "players": "Spillere",
+                "match": "Kamp",
+                "vs": "VS",
+                "confirm": "Bekræft",
+                "cancel": "Annuller",
+                "yes": "Ja",
+                "no": "Nej",
+                "error": "Fejl",
+                "loading": "Indlæser...",
+                "save": "Gem",
+                "edit": "Rediger",
+                "delete": "Slet",
+                "search": "Søg",
+                "filter": "Filtrer",
+                "sort": "Sorter",
+                "refresh": "Opdater",
+                "settings": "Indstillinger",
+                "help": "Hjælp",
+                "about": "Om",
+                "contact": "Kontakt",
+                "logout": "Log ud",
+                "login": "Log ind",
+                "register": "Registrer",
+                "forgotPassword": "Glemt adgangskode?",
+                "rememberMe": "Husk mig",
+                "submit": "Indsend",
+                "reset": "Nulstil",
+                "back": "Tilbage",
+                "next": "Næste",
+                "previous": "Forrige",
+                "first": "Første",
+                "last": "Sidste",
+                "page": "Side",
+                "of": "af",
+                "items": "elementer",
+                "showing": "Viser",
+                "to": "til",
+                "entries": "indlæg",
+                "noResults": "Ingen resultater fundet",
+                "noData": "Ingen data tilgængelig",
+                "loadingError": "Fejl ved indlæsning",
+                "tryAgain": "Prøv igen",
+                "close": "Luk",
+                "minimize": "Minimer",
+                "maximize": "Maksimer",
+                "restore": "Gendan",
+                "expand": "Udvid",
+                "collapse": "Sammenfold",
+                "show": "Vis",
+                "hide": "Skjul",
+                "more": "Mere",
+                "less": "Mindre",
+                "all": "Alle",
+                "none": "Ingen",
+                "selectAll": "Vælg alle",
+                "deselectAll": "Fravælg alle",
+                "clear": "Ryd",
+                "apply": "Anvend",
+                "ok": "OK",
+                "cancel": "Annuller",
+                "done": "Færdig",
+                "update": "Opdater",
+                "create": "Opret",
+                "add": "Tilføj",
+                "remove": "Fjern",
+                "delete": "Slet",
+                "edit": "Rediger",
+                "view": "Vis",
+                "details": "Detaljer",
+                "preview": "Forhåndsvisning",
+                "print": "Print",
+                "export": "Eksporter",
+                "import": "Importer",
+                "download": "Download",
+                "upload": "Upload",
+                "share": "Del",
+                "copy": "Kopier",
+                "paste": "Indsæt",
+                "cut": "Klip",
+                "undo": "Fortryd",
+                "redo": "Gendan",
+                "saveAs": "Gem som",
+                "new": "Ny",
+                "open": "Åbn",
+                "close": "Luk",
+                "exit": "Afslut",
+                "help": "Hjælp",
+                "about": "Om",
+                "contact": "Kontakt",
+                "feedback": "Feedback",
+                "report": "Rapportér",
+                "bug": "Fejl",
+                "feature": "Funktion",
+                "support": "Support",
+                "documentation": "Dokumentation",
+                "terms": "Vilkår",
+                "privacy": "Privatliv",
+                "cookies": "Cookies",
+                "accessibility": "Tilgængelighed",
+                "language": "Sprog",
+                "theme": "Tema",
+                "fontSize": "Skriftstørrelse",
+                "contrast": "Kontrast",
+                "notifications": "Notifikationer",
+                "profile": "Profil",
+                "account": "Konto",
+                "settings": "Indstillinger",
+                "preferences": "Præferencer",
+                "security": "Sikkerhed",
+                "password": "Adgangskode",
+                "username": "Brugernavn",
+                "email": "E-mail",
+                "phone": "Telefon",
+                "address": "Adresse",
+                "city": "By",
+                "country": "Land",
+                "zip": "Postnummer",
+                "state": "Stat",
+                "province": "Provins",
+                "region": "Region",
+                "timezone": "Tidszone",
+                "date": "Dato",
+                "time": "Tid",
+                "calendar": "Kalender",
+                "schedule": "Tidsplan",
+                "appointments": "Aftaler",
+                "meetings": "Møder",
+                "events": "Begivenheder",
+                "tasks": "Opgaver",
+                "notes": "Noter",
+                "messages": "Beskeder",
+                "inbox": "Indbakke",
+                "sent": "Sendt",
+                "drafts": "Kladder",
+                "trash": "Papirkurv",
+                "spam": "Spam",
+                "archive": "Arkiv",
+                "starred": "Stjernemarkeret",
+                "important": "Vigtig",
+                "unread": "Ulæst",
+                "read": "Læst",
+                "replied": "Besvaret",
+                "forwarded": "Videresendt",
+                "attachments": "Vedhæftninger",
+                "links": "Links",
+                "images": "Billeder",
+                "files": "Filer",
+                "folders": "Mapper",
+                "search": "Søg",
+                "allHaveOTagReset": "Alle aktive spillere havde \"O\" tags, så de er blevet nulstillet.",
+                "need": "behøver",
+                "skipping": "springer over",
+                "allPlayersEliminated": "Alle spillere er elimineret",
+                "allRightsReserved": "Alle rettigheder forbeholdes",
+                "tournamentRules": "Turneringsregler",
+                "tournamentResults": "Turnerings Resultater",
+                "willReceiveOTag": "Vil modtage \"O\" tag med auto-tildeling",
+                "receivedOTag": "Modtaget \"O\" tag",
+                "receivedSTag": "Modtaget \"S\" tags",
+                "rule1": "Spillere skal registreres, før turneringen begynder.",
+                "rule2": "Turneringslederen bestemmer, hvor mange nederlag en spiller kan få før eliminering, baseret på antallet af deltagere.",
+                "rule3": "Aktive spillere fordeles tilfældigt i hold på 2 for 2v2-kampe i hver runde.",
+                "rule4": "Særlige regler gælder, når der ikke er nok spillere til lige 2v2-kampe:",
+                "rule4a": "Hvis 3 spillere forbliver uparrede: 2 spiller en 1v1-kamp, og 1 springer runden over.",
+                "rule4b": "Hvis 2 spillere forbliver uparrede: de spiller en 1v1-kamp.",
+                "rule4c": "Hvis 1 spiller forbliver uparret: de springer runden over.",
+                "rule5": "Tags skal administreres af turneringslederen:",
+                "rule5a": "\"S\" tag - Spillere, der har spillet i en 1v1-kamp, bør modtage dette tag.",
+                "rule5b": "\"O\" tag - Spillere, der har sprunget en runde over, bør modtage dette tag.",
+                "rule5c": "Du kan bruge knappen \"Auto-Tildel Alle Tags\" efter at have genereret kampene for automatisk at tildele alle nødvendige tags.",
+                "rule5d": "Du kan også manuelt tilføje eller fjerne tags ved hjælp af knapperne ved siden af hver spillers navn.",
+                "rule6": "Systemet håndhæver følgende tag-regler:",
+                "rule6a": "Spillere med \"S\" tag vil ikke spille i 1v1-kampe, før alle andre spillere har modtaget \"S\" tags.",
+                "rule6b": "Spillere med \"O\" tag vil ikke blive tvunget til at springe runder over, før alle andre aktive spillere har modtaget \"O\" tags.",
+                "rule6c": "Systemet vil automatisk blande holdene for at finde gyldige kampe, der respekterer tag-begrænsningerne.",
+                "rule7": "Efter hver runde markeres vinderne, og taberne modtager 1 nederlag.",
+                "rule8": "Når en spiller bliver elimineret, vises deres elimineringsrunde i deres status (f.eks. \"Elimineret R3\" betyder elimineret i Runde 3).",
+                "rule9": "Når 5 eller færre aktive spillere er tilbage, kan turneringslederen vælge at starte en finalekamp. I finalekampen konkurrerer alle resterende spillere sammen, og lederen rangerer dem fra 1. plads til sidste plads for at bestemme den endelige stilling.",
+                "currentRoundHeader": "Nuværende Runde: ",
+                "activePlayersHeader": "Aktive Spillere: "
+            },
+            en: {
+                "title": "Showdart Tournament Organizer",
+                "registration": "Registration",
+                "tournament": "Tournament",
+                "rules": "Rules",
+                "playerRegistration": "Player Registration",
+                "playerName": "Player Name",
+                "register": "Register Player",
+                "registeredPlayers": "Registered Players",
+                "status": "Status",
+                "losses": "Losses",
+                "tags": "Tags",
+                "actions": "Actions",
+                "tournamentSettings": "Tournament Settings",
+                "maxLosses": "Maximum Losses Before Elimination",
+                "startTournament": "Start Tournament",
+                "currentRound": "Current Round",
+                "activePlayers": "Active Players",
+                "approveTagChanges": "Approve Tag Changes",
+                "generateMatches": "Generate Matches",
+                "completeRound": "Complete Round",
+                "tournamentRules": "Tournament Rules",
+                "reminder": "Reminder",
+                "after": "After each round, please assign:",
+                "sTagDesc": "\"S\" tag to players who played in 1v1 matches",
+                "oTagDesc": "\"O\" tag to players who skipped the round",
+                "selectWinner": "Select Winner",
+                "team": "Team",
+                "playFinal": "Play Final Match",
+                "confirmResults": "Confirm Final Results",
+                "tournamentComplete": "The tournament is now complete",
+                "congratulations": "Congratulations to",
+                "active": "Active",
+                "eliminatedR": "Eliminated R{round}",
+                "eliminatedFinal": "Eliminated Final",
+                "eliminate": "Eliminate",
+                "remove": "Remove",
+                "place": "Place",
+                "player": "Player",
+                "confirmEliminate": "Are you sure you want to eliminate",
+                "needPlayers": "You need at least 4 players to start a tournament.",
+                "selectWinnersFirst": "Please select winners for all matches before completing the round.",
+                "winner": "The winner is",
+                "success": "Success",
+                "warning": "Warning",
+                "info": "Info",
+                "warningTag": "You have pending tag changes. Please approve them before generating the next round.",
+                "successTag": "Tag changes approved. You can now generate the next round.",
+                "tagsNeeded": "Tags needed",
+                "noTags": "No special tags needed for this round",
+                "matchesRound": "Round Matches",
+                "autoAssign": "Auto-Assign All Tags",
+                "tagsAssigned": "Tags Assigned ✓",
+                "receivedTag": "Received tag",
+                "finalMatch": "FINAL MATCH - ",
+                "finalDesc": "All remaining players will compete in a final match. Rank the players from 1st place (winner) to last place.",
+                "finalRankings": "Final Rankings",
+                "tournamentResults": "Tournament Final Results",
+                "confirmFinal": "Are you sure you want to start the final match with all remaining players? This will end the regular tournament format.",
+                "skippingRound": "Skipping this round",
+                "willReceiveOTag": "Will receive \"O\" tag with auto-assign",
+                "alreadyHasOTag": "Already has \"O\" tag",
+                "skippingPlayers": "Players Skipping This Round",
+                "bothHaveSTag": "Both already have \"S\" tags",
+                "oneHasSTag": "One player already has \"S\" tag",
+                "willReceiveSTag": "Will receive \"S\" tags with auto-assign",
+                "hasSTag": "Has \"S\" tag",
+                "oneVOneMatch": "1v1 Match",
+                "noMatches": "No matches to display for this round",
+                "allHaveOTagReset": "All active players had \"O\" tags, so they have been reset.",
+                "need": "need",
+                "skipping": "skipping",
+                "allPlayersEliminated": "All players have been eliminated",
+                "allRightsReserved": "All Rights Reserved",
+                "tournamentRules": "Tournament Rules",
+                "tournamentResults": "Tournament Final Results",
+                "willReceiveOTag": "Will receive \"O\" tag with auto-assign",
+                "receivedOTag": "Received \"O\" tag",
+                "receivedSTag": "Received \"S\" tags",
+                "rule1": "Players must register before the tournament begins.",
+                "rule2": "Tournament director decides how many losses a player can get before elimination based on the number of participants.",
+                "rule3": "Active players are randomly split into teams of 2 for 2v2 matches each round.",
+                "rule4": "Special rules apply when there are not enough players for even 2v2 matches:",
+                "rule4a": "If 3 players remain unmatched: 2 play a 1v1 match and 1 skips the round.",
+                "rule4b": "If 2 players remain unmatched: they play a 1v1 match.",
+                "rule4c": "If 1 player remains unmatched: they skip the round.",
+                "rule5": "Tags must be managed by the tournament director:",
+                "rule5a": "\"S\" tag - Players who have played in a 1v1 match should receive this tag.",
+                "rule5b": "\"O\" tag - Players who have skipped a round should receive this tag.",
+                "rule5c": "You can use the \"Auto-Assign Tags\" button after generating matches to automatically assign all required tags.",
+                "rule5d": "You can also manually add or remove tags using the buttons next to each player's name.",
+                "rule6": "The system enforces the following tag rules:",
+                "rule6a": "Players with \"S\" tag won't play in 1v1 matches until all other players have received \"S\" tags.",
+                "rule6b": "Players with \"O\" tag won't be forced to skip rounds until all other active players have received \"O\" tags.",
+                "rule6c": "The system will automatically shuffle teams to find valid matches that respect tag constraints.",
+                "rule7": "After each round, winners are marked and losers receive 1 loss.",
+                "rule8": "When a player is eliminated, their elimination round number is displayed in their status (e.g., \"Eliminated R3\" means eliminated in Round 3).",
+                "rule9": "When 5 or fewer active players remain, the tournament director can choose to start a final match. In the final match, all remaining players compete together, and the director ranks them from 1st to last place to determine the final standings.",
+                "currentRoundHeader": "Current Round: ",
+                "activePlayersHeader": "Active Players: "
+            }
+        };
+        
+        // Set default language to Danish
+        let currentLang = 'da';
+
+        // Function to translate text
+        function translate(key) {
+            return translations[currentLang][key] || key;
+        }
+
+        // Function to translate text with parameters
+        function translateWithParams(key, params) {
+            let text = translations[currentLang][key] || key;
+            if (params) {
+                for (const [param, value] of Object.entries(params)) {
+                    text = text.replace(`{${param}}`, value);
+                }
+            }
+            return text;
+        }
+        
+        // Language switching functionality
+        document.querySelectorAll('.language-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const lang = this.getAttribute('data-lang');
+                if (lang !== currentLang) {
+                    currentLang = lang;
+                    
+                    // Update active button
+                    document.querySelectorAll('.language-btn').forEach(b => b.classList.remove('active-lang'));
+                    this.classList.add('active-lang');
+                    
+                    // Update page text
+                    translatePage();
+                    
+                    // Update document title
+                    document.title = translate('title');
+                }
+            });
+        });
+        
+        // Function to translate the page based on current language
+        function translatePage() {
+            // Store current values before translation
+            const currentRoundValue = document.getElementById('currentRound')?.textContent || '0';
+            const activePlayersValue = document.getElementById('activePlayers')?.textContent || '0';
+
+            // Translate all elements with data-translate attribute
+            document.querySelectorAll('[data-translate]').forEach(element => {
+                const key = element.getAttribute('data-translate');
+                
+                // Preserve IDs/spans for elements with dynamic content
+                if (key === 'currentRoundHeader') {
+                    element.innerHTML = `${translate('currentRoundHeader')}<span id="currentRound">${currentRoundValue}</span>`;
+                } else if (key === 'activePlayersHeader') {
+                    element.innerHTML = `${translate('activePlayersHeader')}<span id="activePlayers">${activePlayersValue}</span>`;
+                } else {
+                    // For regular elements, just update the text content
+                    element.textContent = translate(key);
+                }
+            });
+            
+            // Update navbar
+            document.querySelector('.navbar-brand').textContent = translate('title');
+            document.querySelectorAll('.nav-link')[0].textContent = translate('registration');
+            document.querySelectorAll('.nav-link')[1].textContent = translate('tournament');
+            document.querySelectorAll('.nav-link')[2].textContent = translate('rules');
+            
+            // Update hero
+            document.querySelector('.hero h1').textContent = translate('title');
+            
+            // Update table headers
+            const tableHeaders = document.querySelectorAll('#playersTable thead th');
+            tableHeaders[1].textContent = translate('playerName');
+            tableHeaders[2].textContent = translate('status');
+            tableHeaders[3].textContent = translate('losses');
+            tableHeaders[4].textContent = translate('tags');
+            tableHeaders[5].textContent = translate('actions');
+            
+            // Update player status cells
+            updatePlayerStatusDisplay();
+            
+            // Update Play Final button if it exists
+            const playFinalBtn = document.getElementById('playFinal');
+            if (playFinalBtn) {
+                playFinalBtn.textContent = translate('playFinal');
+            }
+            
+            // Update any match displays
+            updateMatchesDisplay();
+            
+            // Update any current alerts
+            updateAlerts();
+            
+            // Update final match UI if active
+            updateFinalMatchUI();
+            
+            // Update final results if showing
+            updateFinalResults();
+            
+            // Update buttons
+            updateButtons();
+            
+            // Update footer
+            document.querySelector('footer p').textContent = `© ${new Date().getFullYear()} ${translate('title')} | ${translate('allRightsReserved')}`;
+            
+            // Update tag reminder if visible
+            if (document.getElementById('tagReminder') && document.getElementById('tagReminder').style.display !== 'none') {
+                const tagReminder = document.getElementById('tagReminder');
+                tagReminder.innerHTML = `
+                    <strong>${translate('reminder')}:</strong> ${translate('after')}
+                    <ul class="mb-0">
+                        <li>${translate('sTagDesc')}</li>
+                        <li>${translate('oTagDesc')}</li>
+                    </ul>
+                `;
+            }
+        }
+        
+        // Function to update match displays with translated text
+        function updateMatchesDisplay() {
+            // Update skipping players card if it exists
+            const skippingHeader = document.querySelector('.card-header.bg-danger');
+            if (skippingHeader) {
+                skippingHeader.textContent = translate('skippingPlayers');
+                
+                // Update skipping player cards
+                document.querySelectorAll('.skipped-player').forEach(card => {
+                    const skipText = card.querySelector('.text-danger.fw-bold');
+                    if (skipText) {
+                        skipText.textContent = translate('skippingRound');
+                    }
+                    
+                    const willReceiveText = card.querySelector('.text-warning');
+                    if (willReceiveText) {
+                        willReceiveText.textContent = translate('willReceiveOTag');
+                    }
+                    
+                    const alreadyHasText = card.querySelector('.text-danger:not(.fw-bold)');
+                    if (alreadyHasText) {
+                        alreadyHasText.textContent = translate('alreadyHasOTag');
+                    }
+                });
+            }
+            
+            // Update match cards
+            document.querySelectorAll('.card.mb-3').forEach(card => {
+                // Update tag info in match headers
+                const header = card.querySelector('.card-header');
+                if (header && header.textContent.includes('1v1')) {
+                    if (header.textContent.includes('Both already have')) {
+                        header.textContent = header.textContent.replace(
+                            'Both already have "S" tags', 
+                            translate('bothHaveSTag')
+                        );
+                    } else if (header.textContent.includes('One player already has')) {
+                        header.textContent = header.textContent.replace(
+                            'One player already has "S" tag', 
+                            translate('oneHasSTag')
+                        );
+                    } else if (header.textContent.includes('Will receive')) {
+                        header.textContent = header.textContent.replace(
+                            'Will receive "S" tags with auto-assign', 
+                            translate('willReceiveSTag')
+                        );
+                    }
+                }
+                
+                // Update "Has S tag" text
+                const sTagText = card.querySelectorAll('.text-primary:not(.select-winner)');
+                sTagText.forEach(text => {
+                    if (text.textContent.includes('Has "S" tag')) {
+                        text.textContent = translate('hasSTag');
+                    }
+                });
+                
+                // Update "1v1 Match" or "Team" text
+                const teamTexts = card.querySelectorAll('.text-muted');
+                teamTexts.forEach(text => {
+                    if (text.textContent === '1v1 Match') {
+                        text.textContent = translate('oneVOneMatch');
+                    } else if (text.textContent === 'Team 1' || text.textContent === 'Hold 1') {
+                        text.textContent = `${translate('team')} 1`;
+                    } else if (text.textContent === 'Team 2' || text.textContent === 'Hold 2') {
+                        text.textContent = `${translate('team')} 2`;
+                    }
+                });
+                
+                // Update "Select Winner" text
+                const selectWinnerText = card.querySelector('.col-12.text-center p');
+                if (selectWinnerText) {
+                    selectWinnerText.textContent = translate('selectWinner') + ':';
+                }
+                
+                // Update any winner buttons
+                const winnerButtons = card.querySelectorAll('.select-winner');
+                winnerButtons.forEach(btn => {
+                    if (btn.textContent.includes('Team') || btn.textContent.includes('Hold')) {
+                        btn.textContent = translate('team') + ' ' + btn.textContent.split(' ').pop();
+                    }
+                });
+            });
+            
+            // Update matches header and other info
+            const matchesHeader = document.querySelector('.alert-primary h5');
+            if (matchesHeader && (matchesHeader.textContent.includes('Round') || matchesHeader.textContent.includes('Runde'))) {
+                const roundNumber = matchesHeader.textContent.split(' ').pop();
+                matchesHeader.textContent = translate('matchesRound') + ' ' + roundNumber;
+            }
+            
+            // Update auto-assign tags button
+            const autoAssignBtn = document.getElementById('autoAssignTags');
+            if (autoAssignBtn) {
+                if (autoAssignBtn.classList.contains('btn-success')) {
+                    autoAssignBtn.textContent = translate('tagsAssigned');
+                } else {
+                    autoAssignBtn.textContent = translate('autoAssign');
+                }
+            }
+            
+            // Update tags needed message
+            const tagsNeededMsg = document.querySelector('.alert-primary .mb-0');
+            if (tagsNeededMsg) {
+                if (tagsNeededMsg.textContent.includes('Tags needed') || tagsNeededMsg.textContent.includes('Tags nødvendige')) {
+                    // This is a more complex replacement as it contains dynamic content
+                    const strong = tagsNeededMsg.querySelector('strong');
+                    if (strong) {
+                        strong.textContent = translate('tagsNeeded') + ':';
+                    } else if (tagsNeededMsg.textContent.includes('No special tags') || tagsNeededMsg.textContent.includes('Ingen specielle tags')) {
+                        tagsNeededMsg.textContent = translate('noTags');
+                    }
+                }
+            }
+            
+            // Update "Received" message in skipped player cards after tag assignment
+            document.querySelectorAll('.text-success').forEach(element => {
+                if (element.textContent.includes('Received "O" tag') || element.textContent.includes('Modtaget "O" tag')) {
+                    element.textContent = translate('receivedOTag');
+                }
+            });
+        }
+        
+        // Function to update alerts on the page
+        function updateAlerts() {
+            // Update info alert for tag reset
+            const resetAlert = document.getElementById('resetTagsAlert');
+            if (resetAlert) {
+                resetAlert.innerHTML = `<strong>${translate('info')}:</strong> ${translate('allHaveOTagReset')}`;
+            }
+            
+            // Update pending tag changes alert
+            const pendingAlert = document.getElementById('pendingTagChangesAlert');
+            if (pendingAlert) {
+                pendingAlert.innerHTML = `<strong>${translate('warning')}!</strong> ${translate('warningTag')}`;
+            }
+            
+            // Update tag approval success alert
+            const successAlert = document.getElementById('tagApprovalSuccessAlert');
+            if (successAlert) {
+                successAlert.innerHTML = `<strong>${translate('success')}!</strong> ${translate('successTag')}`;
+            }
+            
+            // Update No matches alert if it exists
+            const noMatchesAlert = document.querySelector('.alert-info');
+            if (noMatchesAlert && (noMatchesAlert.textContent === translate('noMatches'))) {
+                noMatchesAlert.textContent = translate('noMatches');
+            }
+        }
+        
+        // Function to update player status with translated text
+        function updatePlayerStatusDisplay() {
+            document.querySelectorAll('tbody tr').forEach(row => {
+                const statusCell = row.querySelector('td:nth-child(3)');
+                if (statusCell) {
+                    const statusText = statusCell.textContent.trim();
+                    if (statusText === 'Active' || statusText === 'Aktiv') {
+                        statusCell.textContent = translate('active');
+                    } else if (statusText === 'Eliminated Final' || statusText === 'Elimineret Finale') {
+                        statusCell.textContent = translate('eliminatedFinal');
+                    } else if (statusText.startsWith('Eliminated R') || statusText.startsWith('Elimineret R')) {
+                        // Extract the round number more reliably
+                        const roundMatch = statusText.match(/R(\d+)/);
+                        if (roundMatch) {
+                            const roundNum = roundMatch[1];
+                            statusCell.textContent = translateWithParams('eliminatedR', { round: roundNum });
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Function to update the final match UI if it exists
+        function updateFinalMatchUI() {
+            const finalHeader = document.querySelector('.card-header.bg-warning');
+            if (finalHeader && finalHeader.querySelector('h4')) {
+                const h4 = finalHeader.querySelector('h4');
+                if (h4.textContent.includes('FINAL MATCH') || h4.textContent.includes('FINALE KAMP')) {
+                    const playerCount = h4.textContent.split('-')[1].trim().split(' ')[0];
+                    h4.textContent = `${translate('finalMatch')} ${playerCount} ${translate('players')}`;
+                }
+            }
+            
+            const finalDescription = document.querySelector('.alert.alert-info');
+            if (finalDescription && (finalDescription.textContent.includes('All remaining players') || finalDescription.textContent.includes('Alle resterende spillere'))) {
+                finalDescription.innerHTML = translate('finalDesc');
+            }
+            
+            const finalRankings = document.querySelector('.mt-4 h5');
+            if (finalRankings && (finalRankings.textContent === 'Final Rankings' || finalRankings.textContent === 'Finale Rangering')) {
+                finalRankings.textContent = translate('finalRankings');
+            }
+            
+            const confirmButton = document.querySelector('.btn.btn-success.mt-3');
+            if (confirmButton && (confirmButton.textContent === 'Confirm Final Results' || confirmButton.textContent === 'Bekræft Finale Resultater')) {
+                confirmButton.textContent = translate('confirmResults');
+            }
+            
+            // Update position indicators text (1st, 2nd, etc.)
+            document.querySelectorAll('.position-indicator').forEach((badge, index) => {
+                badge.textContent = (index + 1).toString();
+            });
+        }
+        
+        // Function to update final results if showing
+        function updateFinalResults() {
+            const resultsHeader = document.querySelector('.card-header.bg-success h4');
+            if (resultsHeader) {
+                resultsHeader.textContent = translate('tournamentResults');
+            }
+            
+            const tableHeaders = document.querySelectorAll('thead th');
+            tableHeaders.forEach(th => {
+                if (th.getAttribute('data-translate')) {
+                    th.textContent = translate(th.getAttribute('data-translate'));
+                }
+            });
+            
+            const congratsMessage = document.querySelector('.alert-success.mt-3');
+            if (congratsMessage) {
+                const strong = congratsMessage.querySelector('strong');
+                const span = congratsMessage.querySelector('span');
+                if (strong) {
+                    strong.textContent = translate('congratulations') + ' ';
+                }
+                if (span) {
+                    span.textContent = translate('tournamentComplete');
+                }
+            }
+        }
+
+        // Function to update buttons with translations
+        function updateButtons() {
+            // Update all buttons with data-translate attribute
+            document.querySelectorAll('button[data-translate]').forEach(button => {
+                const key = button.getAttribute('data-translate');
+                button.textContent = translate(key);
+            });
+
+            // Update tag toggle buttons
+            document.querySelectorAll('.toggle-tag').forEach(button => {
+                const tag = button.getAttribute('data-tag');
+                button.textContent = tag;
+            });
+
+            // Update winner selection buttons
+            document.querySelectorAll('.select-winner').forEach(button => {
+                const teamNum = button.textContent.split(' ').pop();
+                button.textContent = `${translate('team')} ${teamNum}`;
+            });
+
+            // Update remove/eliminate buttons
+            document.querySelectorAll('.remove-player').forEach(button => {
+                if (tournament.started && button.textContent.trim() === translate('eliminate')) {
+                    button.textContent = translate('eliminate');
+                } else {
+                    button.textContent = translate('remove');
+                }
+            });
+        }
+
+        // Call translate page on load to set initial Danish text
+        translatePage();
+    </script>
+</body>
+</html>
