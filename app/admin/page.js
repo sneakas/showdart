@@ -9,7 +9,7 @@ const texts = {
   da: {
     loading: 'Indlæser...',
     title: 'Admin',
-    subtitle: 'Opret nye login-konti',
+    subtitle: 'Administrer konti',
     notLoggedIn: 'Du skal være logget ind for at bruge adminsiden.',
     notAdmin: 'Du har ikke admin-adgang.',
     back: 'Tilbage til turnering',
@@ -22,12 +22,13 @@ const texts = {
     missingToken: 'Session mangler. Log ind igen.',
     user: 'Bruger',
     admin: 'Admin',
-    logout: 'Log ud'
+    logout: 'Log ud',
+    loggedInAs: 'Logget ind som'
   },
   en: {
     loading: 'Loading...',
     title: 'Admin',
-    subtitle: 'Create new login accounts',
+    subtitle: 'Manage accounts',
     notLoggedIn: 'You must be logged in to use the admin page.',
     notAdmin: 'You do not have admin access.',
     back: 'Back to tournament',
@@ -40,7 +41,8 @@ const texts = {
     missingToken: 'Session missing. Please log in again.',
     user: 'User',
     admin: 'Admin',
-    logout: 'Logout'
+    logout: 'Logout',
+    loggedInAs: 'Logged in as'
   }
 };
 
@@ -57,6 +59,7 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState(null);
   const [role, setRole] = useState('user');
+  const [profileEmail, setProfileEmail] = useState('');
   const [message, setMessage] = useState('');
   const [creating, setCreating] = useState(false);
 
@@ -81,8 +84,8 @@ export default function AdminPage() {
 
   const flagLanguageButtons = (
     <div style={{ display: 'flex', gap: 8 }}>
-      <button type="button" onClick={() => changeLanguage('da')} title="Dansk" style={{ width: 36, height: 36, borderRadius: 999, border: lang === 'da' ? '2px solid #f2d14c' : '1px solid #355748', background: '#10271e', color: '#fff', fontSize: 12, lineHeight: 1, fontWeight: 700 }}>DA</button>
-      <button type="button" onClick={() => changeLanguage('en')} title="English" style={{ width: 36, height: 36, borderRadius: 999, border: lang === 'en' ? '2px solid #f2d14c' : '1px solid #355748', background: '#10271e', color: '#fff', fontSize: 12, lineHeight: 1, fontWeight: 700 }}>EN</button>
+      <button type="button" onClick={() => changeLanguage('da')} title="Dansk" style={{ width: 36, height: 36, borderRadius: 999, border: lang === 'da' ? '2px solid #f2d14c' : '1px solid #355748', background: '#10271e', color: '#fff', fontSize: 18, lineHeight: 1 }}>{'\uD83C\uDDE9\uD83C\uDDF0'}</button>
+      <button type="button" onClick={() => changeLanguage('en')} title="English" style={{ width: 36, height: 36, borderRadius: 999, border: lang === 'en' ? '2px solid #f2d14c' : '1px solid #355748', background: '#10271e', color: '#fff', fontSize: 18, lineHeight: 1 }}>{'\uD83C\uDDEC\uD83C\uDDE7'}</button>
     </div>
   );
 
@@ -98,6 +101,7 @@ export default function AdminPage() {
       const { data } = await supabase.auth.getSession();
       if (!active) return;
       setSession(data.session || null);
+      setProfileEmail(data.session?.user?.email || '');
       setLoading(false);
     }
 
@@ -105,6 +109,7 @@ export default function AdminPage() {
 
     const { data: subscription } = supabase.auth.onAuthStateChange((_evt, nextSession) => {
       setSession(nextSession || null);
+      setProfileEmail(nextSession?.user?.email || '');
     });
 
     return () => {
@@ -133,6 +138,7 @@ export default function AdminPage() {
       }
 
       setRole(payload.role || 'user');
+      setProfileEmail(payload.email || session.user?.email || '');
     }
 
     loadRole();
@@ -229,26 +235,32 @@ export default function AdminPage() {
   }
 
   return (
-    <main style={{ minHeight: '100vh', fontFamily: 'system-ui', background: '#0b1e16', color: '#ecf8f2', padding: 20 }}>
-      <div style={{ maxWidth: 900, margin: '0 auto' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <div>
-            <h1 style={{ margin: 0 }}>{t.title}</h1>
-            <p style={{ margin: '6px 0 0 0' }}>{t.subtitle}</p>
-          </div>
-          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-            {flagLanguageButtons}
-            <a href="/" style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #3e6353', background: '#1a3b30', color: '#f2d14c', textDecoration: 'none' }}>{t.back}</a>
-            <button onClick={handleLogout} style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #a64a4a', background: '#a64a4a', color: '#fff' }}>{t.logout}</button>
-          </div>
+    <main style={{ width: '100%', minHeight: '100vh', margin: 0, fontFamily: 'system-ui', background: '#0b1e16', color: '#ecf8f2' }}>
+      <div style={{ display: 'flex', gap: 12, alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderBottom: '1px solid #355748', background: '#10271e' }}>
+        <div>
+          {t.loggedInAs} <strong>{profileEmail || session.user?.email}</strong> ({role})
         </div>
+        <button onClick={handleLogout} style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #a64a4a', background: '#a64a4a', color: '#fff' }}>
+          {t.logout}
+        </button>
+      </div>
 
+      <div style={{ display: 'flex', gap: 12, alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderBottom: '1px solid #355748', background: '#10271e' }}>
+        <div style={{ fontWeight: 700, fontSize: 18 }}>{t.title}</div>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          {flagLanguageButtons}
+          <a href="/" style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #3e6353', background: '#1a3b30', color: '#f2d14c', textDecoration: 'none' }}>{t.back}</a>
+        </div>
+      </div>
+
+      <div style={{ maxWidth: 900, margin: '20px auto', padding: '0 12px' }}>
         <div style={{ background: '#10271e', border: '1px solid #355748', borderRadius: 12, padding: 16 }}>
+          <h2 style={{ marginTop: 0 }}>{t.subtitle}</h2>
           <form onSubmit={handleCreateUser} style={{ display: 'grid', gap: 10, gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
-            <input placeholder={t.email} type="email" value={email} onChange={e => setEmail(e.target.value)} style={{ padding: 10, borderRadius: 8, border: '1px solid #355748' }} />
-            <input placeholder={t.password} type="password" value={password} onChange={e => setPassword(e.target.value)} style={{ padding: 10, borderRadius: 8, border: '1px solid #355748' }} />
-            <input placeholder={t.displayName} value={displayName} onChange={e => setDisplayName(e.target.value)} style={{ padding: 10, borderRadius: 8, border: '1px solid #355748' }} />
-            <select value={newRole} onChange={e => setNewRole(e.target.value)} style={{ padding: 10, borderRadius: 8, border: '1px solid #355748' }}>
+            <input placeholder={t.email} type="email" value={email} onChange={e => setEmail(e.target.value)} style={{ padding: 10, borderRadius: 8, border: '1px solid #355748', background: '#0b1e16', color: '#ecf8f2' }} />
+            <input placeholder={t.password} type="password" value={password} onChange={e => setPassword(e.target.value)} style={{ padding: 10, borderRadius: 8, border: '1px solid #355748', background: '#0b1e16', color: '#ecf8f2' }} />
+            <input placeholder={t.displayName} value={displayName} onChange={e => setDisplayName(e.target.value)} style={{ padding: 10, borderRadius: 8, border: '1px solid #355748', background: '#0b1e16', color: '#ecf8f2' }} />
+            <select value={newRole} onChange={e => setNewRole(e.target.value)} style={{ padding: 10, borderRadius: 8, border: '1px solid #355748', background: '#0b1e16', color: '#ecf8f2' }}>
               <option value="user">{t.user}</option>
               <option value="admin">{t.admin}</option>
             </select>
