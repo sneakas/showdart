@@ -88,12 +88,14 @@ export function SharedTopNavigation({
               type="button"
               onClick={() => onLanguageChange?.('da')}
               title="Dansk"
+              aria-label="Skift sprog til dansk"
               style={{ width: 40, height: 30, borderRadius: 6, border: lang === 'da' ? '2px solid #f2d14c' : '1px solid #3e6353', backgroundImage: "url('https://flagcdn.com/w40/dk.png')", backgroundSize: 'cover', backgroundPosition: 'center', backgroundColor: '#10271e', padding: 0 }}
             />
             <button
               type="button"
               onClick={() => onLanguageChange?.('en')}
               title="English"
+              aria-label="Switch language to English"
               style={{ width: 40, height: 30, borderRadius: 6, border: lang === 'en' ? '2px solid #f2d14c' : '1px solid #3e6353', backgroundImage: "url('https://flagcdn.com/w40/gb.png')", backgroundSize: 'cover', backgroundPosition: 'center', backgroundColor: '#10271e', padding: 0 }}
             />
           </div>
@@ -129,4 +131,5 @@ export function SharedTopNavigation({
 export function getHeaderTexts(lang) {
   return headerTexts[lang] || headerTexts.da;
 }
+
 

@@ -6,7 +6,6 @@ import { SharedTopNavigation } from '../components/SharedTopNavigation';
 
 const TOKEN_STORAGE_KEY = 'supabase_access_token';
 const LANGUAGE_STORAGE_KEY = 'showdart-language';
-const ROLE_STORAGE_KEY = 'showdart-user-role';
 
 const texts = {
   da: {
@@ -81,21 +80,28 @@ export default function Page() {
     setLang(initialLang);
     if (typeof window !== 'undefined') {
       localStorage.setItem(LANGUAGE_STORAGE_KEY, initialLang);
+      document.documentElement.lang = initialLang;
     }
   }, []);
 
-  function changeLanguage(nextLang) {
-    setLang(nextLang);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(LANGUAGE_STORAGE_KEY, nextLang);
-    }
-    postToIframe({ type: 'showdart-set-language', language: nextLang });
+  function getTargetOrigin() {
+    if (typeof window === 'undefined') return '*';
+    return window.location.origin;
   }
 
   function postToIframe(message) {
     const win = iframeRef.current?.contentWindow;
     if (!win) return;
-    win.postMessage(message, '*');
+    win.postMessage(message, getTargetOrigin());
+  }
+
+  function changeLanguage(nextLang) {
+    setLang(nextLang);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(LANGUAGE_STORAGE_KEY, nextLang);
+      document.documentElement.lang = nextLang;
+    }
+    postToIframe({ type: 'showdart-set-language', language: nextLang });
   }
 
   function handleNavigate(target) {
@@ -133,9 +139,6 @@ export default function Page() {
     const { data: subscription } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession ?? null);
       setStoredAccessToken(nextSession ?? null);
-      if (!nextSession && typeof window !== 'undefined') {
-        localStorage.removeItem(ROLE_STORAGE_KEY);
-      }
       setAuthError('');
     });
 
@@ -166,45 +169,37 @@ export default function Page() {
       if (!response.ok) {
         setProfileRole('user');
         setProfileEmail(session.user.email || '');
-        if (typeof window !== 'undefined') {
-          localStorage.setItem(ROLE_STORAGE_KEY, 'user');
-        }
         return;
       }
 
       const role = payload.role || 'user';
       setProfileRole(role);
       setProfileEmail(payload.email || session.user.email || '');
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(ROLE_STORAGE_KEY, role);
-      }
     }
 
     loadProfileRole();
   }, [session, supabase]);
 
   useEffect(() => {
-    if (!session || !iframeLoaded) return;
+    if (typeof window === 'undefined') return undefined;
 
-    const syncIframeHeight = () => {
-      try {
-        const doc = iframeRef.current?.contentWindow?.document;
-        if (!doc) return;
-        const contentHeight = Math.max(doc.body?.scrollHeight || 0, doc.documentElement?.scrollHeight || 0, 900);
-        setIframeHeight(prev => (Math.abs(prev - contentHeight) > 2 ? contentHeight : prev));
-      } catch {
-        // Ignore transient iframe read errors.
-      }
-    };
+    const allowedOrigin = window.location.origin;
 
-    syncIframeHeight();
-    const id = window.setInterval(syncIframeHeight, 500);
-    window.addEventListener('resize', syncIframeHeight);
+    function handleIframeMessage(event) {
+      if (event.origin !== allowedOrigin) return;
+      const data = event.data || {};
+      if (data.type !== 'showdart-height') return;
+      const nextHeight = Number(data.height);
+      if (!Number.isFinite(nextHeight)) return;
+      const safeHeight = Math.max(900, Math.ceil(nextHeight));
+      setIframeHeight(prev => (Math.abs(prev - safeHeight) > 2 ? safeHeight : prev));
+    }
+
+    window.addEventListener('message', handleIframeMessage);
     return () => {
-      window.clearInterval(id);
-      window.removeEventListener('resize', syncIframeHeight);
+      window.removeEventListener('message', handleIframeMessage);
     };
-  }, [session, iframeLoaded]);
+  }, []);
 
   useEffect(() => {
     if (!session || !iframeLoaded) return;
@@ -222,6 +217,11 @@ export default function Page() {
       window.history.replaceState({}, '', next ? `/?${next}` : '/');
     }
   }, [session, iframeLoaded]);
+
+  useEffect(() => {
+    if (!session || !iframeLoaded) return;
+    postToIframe({ type: 'showdart-set-role', role: profileRole === 'admin' ? 'admin' : 'user' });
+  }, [session, iframeLoaded, profileRole]);
 
   async function handleAuthSubmit(e) {
     e.preventDefault();
@@ -250,9 +250,6 @@ export default function Page() {
   async function handleLogout() {
     await supabase.auth.signOut();
     setStoredAccessToken(null);
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem(ROLE_STORAGE_KEY);
-    }
     setSession(null);
   }
 
@@ -262,12 +259,14 @@ export default function Page() {
         type="button"
         onClick={() => changeLanguage('da')}
         title="Dansk"
+        aria-label="Skift sprog til dansk"
         style={{ width: 40, height: 30, borderRadius: 6, border: lang === 'da' ? '2px solid #f2d14c' : '1px solid #3e6353', backgroundImage: "url('https://flagcdn.com/w40/dk.png')", backgroundSize: 'cover', backgroundPosition: 'center', backgroundColor: '#10271e', padding: 0 }}
       />
       <button
         type="button"
         onClick={() => changeLanguage('en')}
         title="English"
+        aria-label="Switch language to English"
         style={{ width: 40, height: 30, borderRadius: 6, border: lang === 'en' ? '2px solid #f2d14c' : '1px solid #3e6353', backgroundImage: "url('https://flagcdn.com/w40/gb.png')", backgroundSize: 'cover', backgroundPosition: 'center', backgroundColor: '#10271e', padding: 0 }}
       />
     </div>
@@ -342,6 +341,7 @@ export default function Page() {
           onLoad={() => {
             setIframeLoaded(true);
             postToIframe({ type: 'showdart-set-language', language: lang });
+            postToIframe({ type: 'showdart-set-role', role: profileRole === 'admin' ? 'admin' : 'user' });
           }}
           style={{ width: '100%', height: `${iframeHeight}px`, border: 0 }}
           scrolling="no"
@@ -350,4 +350,3 @@ export default function Page() {
     </main>
   );
 }
-

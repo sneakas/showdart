@@ -1,6 +1,6 @@
-﻿export default function RootLayout({ children }) {
+export default function RootLayout({ children }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="da" suppressHydrationWarning>
       <body style={{ margin: 0 }} suppressHydrationWarning>
         {children}
       </body>

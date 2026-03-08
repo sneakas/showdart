@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useMemo, useState } from 'react';
 import { getSupabaseBrowserClient } from '../../lib/supabaseBrowser';
@@ -89,13 +89,18 @@ export default function AdminPage() {
   const t = texts[lang] || texts.da;
 
   useEffect(() => {
-    setLang(getInitialLanguage());
+    const initialLang = getInitialLanguage();
+    setLang(initialLang);
+    if (typeof window !== 'undefined') {
+      document.documentElement.lang = initialLang;
+    }
   }, []);
 
   function changeLanguage(nextLang) {
     setLang(nextLang);
     if (typeof window !== 'undefined') {
       localStorage.setItem(LANGUAGE_STORAGE_KEY, nextLang);
+      document.documentElement.lang = nextLang;
     }
   }
 
@@ -412,3 +417,4 @@ export default function AdminPage() {
     </main>
   );
 }
+

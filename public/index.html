@@ -590,6 +590,7 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/scripts/tournament-shell.js"></script>
     <script>
         // Core player tag semantics used throughout scheduling logic:
         // - "S": player has already played a 1v1 match
@@ -944,23 +945,11 @@
             autosaveDelayMs: 800
         };
         const LOCAL_STATE_KEY = 'showdart-local-state';
-        function getAccessToken() {
-            try {
-                return localStorage.getItem('supabase_access_token');
-            } catch (_error) {
-                return null;
-            }
-        }
-
-        function getAuthHeaders() {
-            const token = getAccessToken();
-            if (!token) {
-                return null;
-            }
-            return {
-                Authorization: `Bearer ${token}`
-            };
-        }
+        const ALLOWED_APP_ORIGIN = window.location.origin;
+        let currentUserRole = 'user';
+        const shell = window.createShowdartShell({ allowedOrigin: ALLOWED_APP_ORIGIN });
+        const getAuthHeaders = shell.getAuthHeaders;
+        const notifyParentHeight = shell.notifyParentHeight;
         const SELECTORS = {
             REGISTRATION_SECTION: '#registration',
             TOURNAMENT_SETTINGS_CARD: '.card.mt-4',
@@ -991,6 +980,7 @@
         const approveTagChangesBtn = document.getElementById('approveTagChanges');
         const toggleRegistrationPanelBtn = document.getElementById('toggleRegistrationPanel');
         const resetTournamentBtn = document.getElementById('resetTournament');
+        const cloudStatusIndicator = document.getElementById('cloudStatusIndicator');
 
         // Core runtime state lives in:
         // - tournament.players: roster and per-player lifecycle state
@@ -1036,6 +1026,42 @@
         }
 
 
+
+        let cloudStatusMode = 'ready';
+
+        function cloudStatusText(mode) {
+            const table = {
+                da: {
+                    ready: 'Cloud synkronisering aktiv',
+                    auth: 'Cloud synkronisering venter pa log ind',
+                    off: 'Cloud synkronisering deaktiveret'
+                },
+                en: {
+                    ready: 'Cloud sync active',
+                    auth: 'Cloud sync waiting for login',
+                    off: 'Cloud sync disabled'
+                }
+            };
+            const langTable = table[currentLang] || table.da;
+            return langTable[mode] || langTable.ready;
+        }
+
+        function setCloudStatus(mode) {
+            cloudStatusMode = mode;
+            if (!cloudStatusIndicator) {
+                return;
+            }
+
+            if (mode === 'ready') {
+                cloudStatusIndicator.className = 'small text-muted mb-3';
+            } else if (mode === 'auth') {
+                cloudStatusIndicator.className = 'small text-warning mb-3';
+            } else {
+                cloudStatusIndicator.className = 'small text-danger mb-3';
+            }
+
+            cloudStatusIndicator.textContent = cloudStatusText(mode);
+        }
         function saveLocalBackupState(state) {
             try {
                 localStorage.setItem(LOCAL_STATE_KEY, JSON.stringify({
@@ -1178,10 +1204,16 @@
                 return;
             }
 
+            const authHeaders = getAuthHeaders();
+            if (!authHeaders) {
+                setCloudStatus('auth');
+                return;
+            }
+
             try {
                 const response = await fetch(CLOUD_PERSISTENCE.endpoint, {
                     method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', ...authHeaders },
                     body: JSON.stringify({
                         id: CLOUD_PERSISTENCE.tournamentId,
                         state
@@ -1190,12 +1222,20 @@
                 });
 
                 if (!response.ok) {
+                    if (response.status === 401 || response.status === 403) {
+                        setCloudStatus('auth');
+                        return;
+                    }
                     cloudPersistenceAvailable = false;
+                    setCloudStatus('off');
                     console.warn('Cloud save disabled: API returned', response.status);
+                    return;
                 }
+
+                setCloudStatus('ready');
             } catch (error) {
-                cloudPersistenceAvailable = false;
-                console.warn('Cloud save disabled: request failed', error);
+                setCloudStatus('off');
+                console.warn('Cloud save request failed', error);
             }
         }
 
@@ -1221,14 +1261,27 @@
                 isHydratingCloudState = false;
             }
 
+            const authHeaders = getAuthHeaders();
+            if (!authHeaders) {
+                setCloudStatus('auth');
+                return;
+            }
+
             try {
-                const response = await fetch(`${CLOUD_PERSISTENCE.endpoint}?id=${encodeURIComponent(CLOUD_PERSISTENCE.tournamentId)}`);
+                const response = await fetch(`${CLOUD_PERSISTENCE.endpoint}?id=${encodeURIComponent(CLOUD_PERSISTENCE.tournamentId)}`, {
+                    headers: authHeaders
+                });
 
                 if (response.status === 404) {
+                    setCloudStatus('ready');
                     return;
                 }
 
                 if (!response.ok) {
+                    if (response.status === 401 || response.status === 403) {
+                        setCloudStatus('auth');
+                        return;
+                    }
                     throw new Error(`Load failed with status ${response.status}`);
                 }
 
@@ -1238,15 +1291,18 @@
                     applyTournamentState(payload.state);
                     isHydratingCloudState = false;
                 }
+
+                setCloudStatus('ready');
             } catch (error) {
-                cloudPersistenceAvailable = false;
-                console.warn('Cloud load disabled: request failed', error);
+                setCloudStatus('off');
+                console.warn('Cloud load request failed', error);
             } finally {
                 isHydratingCloudState = false;
             }
         }
 
         async function initializeCloudPersistence() {
+            setCloudStatus('auth');
             await loadTournamentState();
             cloudPersistenceInitialized = true;
         }
@@ -2522,11 +2578,7 @@
         }
 
         function isAdminUser() {
-            try {
-                return localStorage.getItem('showdart-user-role') === 'admin';
-            } catch (_error) {
-                return false;
-            }
+            return currentUserRole === 'admin';
         }
 
         function updateAdminNavVisibility() {
@@ -2536,11 +2588,20 @@
         }
 
         window.addEventListener('focus', updateAdminNavVisibility);
-        setInterval(updateAdminNavVisibility, 1000);
 
         // Listen to parent app header controls.
         window.addEventListener('message', event => {
+            if (event.origin !== ALLOWED_APP_ORIGIN) {
+                return;
+            }
+
             const data = event?.data || {};
+
+            if (data.type === 'showdart-set-role') {
+                currentUserRole = data.role === 'admin' ? 'admin' : 'user';
+                updateAdminNavVisibility();
+                return;
+            }
 
             if (data.type === 'showdart-set-language') {
                 const next = data.language === 'en' ? 'en' : 'da';
@@ -2551,8 +2612,10 @@
                         btn.classList.toggle('active-lang', btn.getAttribute('data-lang') === next);
                     });
                     translatePage();
+                    setCloudStatus(cloudStatusMode);
                     document.title = translate('title');
                 }
+                return;
             }
 
             if (data.type === 'showdart-nav') {
@@ -2561,6 +2624,7 @@
                     const section = document.getElementById(target);
                     if (section) section.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }
+                return;
             }
 
             if (data.type === 'showdart-open-rules') {
@@ -2570,7 +2634,6 @@
                 }
             }
         });
-        // Language switching functionality
         document.querySelectorAll('.language-btn').forEach(btn => {
             btn.addEventListener('click', function() {
                 const lang = this.getAttribute('data-lang');
@@ -2584,6 +2647,7 @@
                     
                     // Update page text
                     translatePage();
+                    setCloudStatus(cloudStatusMode);
                     
                     // Update document title
                     document.title = translate('title');
@@ -2931,6 +2995,31 @@
             });
         }
 
+
+        function setupParentResizeObserver() {
+            notifyParentHeight();
+
+            if (!window.ResizeObserver) {
+                window.addEventListener('resize', notifyParentHeight);
+                return;
+            }
+
+            const resizeObserver = new ResizeObserver(() => {
+                notifyParentHeight();
+            });
+
+            if (document.body) {
+                resizeObserver.observe(document.body);
+            }
+
+            if (document.documentElement) {
+                resizeObserver.observe(document.documentElement);
+            }
+
+            window.addEventListener('beforeunload', () => {
+                resizeObserver.disconnect();
+            });
+        }
         // Smoke-test checklist (non-functional):
         // 1) Register 4 players and start tournament.
         // 2) Generate matches, select winners, complete round.
@@ -2946,10 +3035,22 @@
         // Call translate page on load to set initial text
         updateAdminNavVisibility();
         translatePage();
+        setupParentResizeObserver();
         initializeCloudPersistence();
     </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
 
 
 

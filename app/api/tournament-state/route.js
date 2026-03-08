@@ -1,59 +1,9 @@
-﻿import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-function validateConfig() {
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return 'Missing NEXT_PUBLIC_SUPABASE_URL';
-  if (!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) return 'Missing NEXT_PUBLIC_SUPABASE_ANON_KEY';
-  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) return 'Missing SUPABASE_SERVICE_ROLE_KEY';
-  return null;
-}
-
-function getAnonClient() {
-  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY, {
-    auth: { persistSession: false, autoRefreshToken: false }
-  });
-}
-
-function getServiceClient() {
-  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, {
-    auth: { persistSession: false, autoRefreshToken: false }
-  });
-}
-
-function getBearerToken(request) {
-  const authHeader = request.headers.get('authorization') || '';
-  if (!authHeader.toLowerCase().startsWith('bearer ')) {
-    return null;
-  }
-  return authHeader.slice(7).trim();
-}
-
-async function requireUser(request) {
-  const configError = validateConfig();
-  if (configError) {
-    return { error: NextResponse.json({ error: configError }, { status: 500 }) };
-  }
-
-  const token = getBearerToken(request);
-  if (!token) {
-    return { error: NextResponse.json({ error: 'Missing bearer token' }, { status: 401 }) };
-  }
-
-  const anonClient = getAnonClient();
-  const { data, error } = await anonClient.auth.getUser(token);
-
-  if (error || !data?.user) {
-    return { error: NextResponse.json({ error: 'Invalid or expired token' }, { status: 401 }) };
-  }
-
-  return { user: data.user, serviceClient: getServiceClient() };
-}
+import { NextResponse } from 'next/server';
+import { requireUser } from '../../../lib/server/supabaseServer';
 
 export async function GET(request) {
   const auth = await requireUser(request);
-  if (auth.error) {
-    return auth.error;
-  }
+  if (auth.error) return auth.error;
 
   const tournamentKey = request.nextUrl.searchParams.get('id') || 'showdart-default';
 
@@ -91,9 +41,7 @@ export async function GET(request) {
 
 export async function PUT(request) {
   const auth = await requireUser(request);
-  if (auth.error) {
-    return auth.error;
-  }
+  if (auth.error) return auth.error;
 
   try {
     const payload = await request.json();
@@ -117,9 +65,7 @@ export async function PUT(request) {
         state_json: state,
         updated_at: now
       },
-      {
-        onConflict: 'user_id,tournament_key'
-      }
+      { onConflict: 'user_id,tournament_key' }
     );
 
     if (error) {
