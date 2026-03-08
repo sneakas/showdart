@@ -301,9 +301,10 @@
             display: flex;
             align-items: center;
             gap: 0.65rem;
-            margin-left: 1rem;
-            flex-wrap: wrap;
+            margin-left: auto;
+            flex-wrap: nowrap;
             justify-content: flex-end;
+            min-width: 0;
         }
 
         .user-chip {
@@ -317,6 +318,9 @@
             color: var(--club-text-soft);
             font-size: 0.86rem;
             line-height: 1.2;
+            white-space: nowrap;
+            min-width: 0;
+            max-width: 360px;
         }
 
         #userRoleLabel {
@@ -324,6 +328,38 @@
             font-weight: 800;
             text-transform: uppercase;
             letter-spacing: 0.04em;
+        }
+
+        #userEmailLabel {
+            display: inline-block;
+            max-width: 210px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            vertical-align: bottom;
+        }
+
+        @media (min-width: 992px) {
+            .navbar .navbar-collapse {
+                flex-wrap: nowrap;
+            }
+
+            .navbar .navbar-nav {
+                flex-wrap: nowrap;
+            }
+        }
+
+        @media (max-width: 1199px) and (min-width: 992px) {
+            .login-label {
+                display: none;
+            }
+
+            .user-chip {
+                max-width: 250px;
+            }
+
+            #userEmailLabel {
+                max-width: 150px;
+            }
         }
 
         .language-selector {
@@ -415,11 +451,17 @@
                 margin-left: 0;
                 margin-top: 0.6rem;
                 justify-content: flex-start;
+                flex-wrap: wrap;
             }
 
             .user-chip {
                 width: 100%;
                 justify-content: flex-start;
+                max-width: none;
+            }
+
+            #userEmailLabel {
+                max-width: 100%;
             }
 
             .hero {
@@ -468,7 +510,7 @@
                         <button class="language-btn flag-gb" data-lang="en" title="English"></button>
                     </div>
                     <div class="user-chip">
-                        <span data-translate="loggedInAs">Logget ind som</span>
+                        <span class="login-label" data-translate="loggedInAs">Logget ind som</span>
                         <strong id="userEmailLabel">-</strong>
                         <span id="userRoleLabel">(user)</span>
                     </div>
