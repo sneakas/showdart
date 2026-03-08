@@ -16,7 +16,6 @@ const texts = {
     email: 'E-mail',
     password: 'Adgangskode (min 8 tegn)',
     displayName: 'Vist navn (valgfri)',
-    role: 'Rolle',
     create: 'Opret konto',
     creating: 'Opretter...',
     needFields: 'E-mail og adgangskode er påkrævet.',
@@ -35,7 +34,6 @@ const texts = {
     email: 'Email',
     password: 'Password (min 8 chars)',
     displayName: 'Display name (optional)',
-    role: 'Role',
     create: 'Create account',
     creating: 'Creating...',
     needFields: 'Email and password are required.',
@@ -80,6 +78,13 @@ export default function AdminPage() {
       localStorage.setItem(LANGUAGE_STORAGE_KEY, nextLang);
     }
   }
+
+  const flagLanguageButtons = (
+    <div style={{ display: 'flex', gap: 8 }}>
+      <button type="button" onClick={() => changeLanguage('da')} title="Dansk" style={{ width: 36, height: 36, borderRadius: 999, border: lang === 'da' ? '2px solid #f2d14c' : '1px solid #355748', background: '#10271e', color: '#fff', fontSize: 18, lineHeight: 1 }}>🇩🇰</button>
+      <button type="button" onClick={() => changeLanguage('en')} title="English" style={{ width: 36, height: 36, borderRadius: 999, border: lang === 'en' ? '2px solid #f2d14c' : '1px solid #355748', background: '#10271e', color: '#fff', fontSize: 18, lineHeight: 1 }}>🇬🇧</button>
+    </div>
+  );
 
   useEffect(() => {
     if (!supabase) {
@@ -189,13 +194,6 @@ export default function AdminPage() {
     }
   }
 
-  const languageButtons = (
-    <div style={{ display: 'flex', gap: 8 }}>
-      <button type="button" onClick={() => changeLanguage('da')} style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid #355748', background: lang === 'da' ? '#1a3b30' : 'transparent', color: '#ecf8f2' }}>DA</button>
-      <button type="button" onClick={() => changeLanguage('en')} style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid #355748', background: lang === 'en' ? '#1a3b30' : 'transparent', color: '#ecf8f2' }}>EN</button>
-    </div>
-  );
-
   if (loading) {
     return <main style={{ padding: 24, fontFamily: 'system-ui' }}>{t.loading}</main>;
   }
@@ -206,7 +204,7 @@ export default function AdminPage() {
         <div style={{ width: 500, background: '#10271e', border: '1px solid #355748', borderRadius: 12, padding: 20 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <h2 style={{ marginTop: 0 }}>{t.title}</h2>
-            {languageButtons}
+            {flagLanguageButtons}
           </div>
           <p>{t.notLoggedIn}</p>
           <a href="/" style={{ color: '#f2d14c' }}>{t.back}</a>
@@ -221,7 +219,7 @@ export default function AdminPage() {
         <div style={{ width: 500, background: '#10271e', border: '1px solid #355748', borderRadius: 12, padding: 20 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <h2 style={{ marginTop: 0 }}>{t.title}</h2>
-            {languageButtons}
+            {flagLanguageButtons}
           </div>
           <p>{t.notAdmin}</p>
           <a href="/" style={{ color: '#f2d14c' }}>{t.back}</a>
@@ -239,7 +237,7 @@ export default function AdminPage() {
             <p style={{ margin: '6px 0 0 0' }}>{t.subtitle}</p>
           </div>
           <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-            {languageButtons}
+            {flagLanguageButtons}
             <a href="/" style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #3e6353', background: '#1a3b30', color: '#f2d14c', textDecoration: 'none' }}>{t.back}</a>
             <button onClick={handleLogout} style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #a64a4a', background: '#a64a4a', color: '#fff' }}>{t.logout}</button>
           </div>

@@ -5,6 +5,7 @@ import { getSupabaseBrowserClient } from '../lib/supabaseBrowser';
 
 const TOKEN_STORAGE_KEY = 'supabase_access_token';
 const LANGUAGE_STORAGE_KEY = 'showdart-language';
+const ROLE_STORAGE_KEY = 'showdart-user-role';
 
 const texts = {
   da: {
@@ -22,7 +23,6 @@ const texts = {
     signupSuccess: 'Konto oprettet. Hvis e-mail bekræftelse er slået til, bekræft e-mail først.',
     loggedInAs: 'Logget ind som',
     logout: 'Log ud',
-    openAdmin: 'Admin side',
     tournamentTitle: 'Showdart Turnerings Organisator'
   },
   en: {
@@ -40,7 +40,6 @@ const texts = {
     signupSuccess: 'Signup successful. If email confirmation is enabled, confirm email first.',
     loggedInAs: 'Logged in as',
     logout: 'Logout',
-    openAdmin: 'Admin page',
     tournamentTitle: 'Showdart Tournament Organizer'
   }
 };
@@ -114,6 +113,9 @@ export default function Page() {
     const { data: subscription } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession ?? null);
       setStoredAccessToken(nextSession ?? null);
+      if (!nextSession && typeof window !== 'undefined') {
+        localStorage.removeItem(ROLE_STORAGE_KEY);
+      }
       setAuthError('');
     });
 
@@ -144,11 +146,18 @@ export default function Page() {
       if (!response.ok) {
         setProfileRole('user');
         setProfileEmail(session.user.email || '');
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(ROLE_STORAGE_KEY, 'user');
+        }
         return;
       }
 
-      setProfileRole(payload.role || 'user');
+      const role = payload.role || 'user';
+      setProfileRole(role);
       setProfileEmail(payload.email || session.user.email || '');
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(ROLE_STORAGE_KEY, role);
+      }
     }
 
     loadProfileRole();
@@ -181,13 +190,16 @@ export default function Page() {
   async function handleLogout() {
     await supabase.auth.signOut();
     setStoredAccessToken(null);
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(ROLE_STORAGE_KEY);
+    }
     setSession(null);
   }
 
-  const languageButtons = (
+  const flagLanguageButtons = (
     <div style={{ display: 'flex', gap: 8 }}>
-      <button type="button" onClick={() => changeLanguage('da')} style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid #355748', background: lang === 'da' ? '#1a3b30' : 'transparent', color: '#ecf8f2' }}>DA</button>
-      <button type="button" onClick={() => changeLanguage('en')} style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid #355748', background: lang === 'en' ? '#1a3b30' : 'transparent', color: '#ecf8f2' }}>EN</button>
+      <button type="button" onClick={() => changeLanguage('da')} title="Dansk" style={{ width: 36, height: 36, borderRadius: 999, border: lang === 'da' ? '2px solid #f2d14c' : '1px solid #355748', background: '#10271e', color: '#fff', fontSize: 18, lineHeight: 1 }}>🇩🇰</button>
+      <button type="button" onClick={() => changeLanguage('en')} title="English" style={{ width: 36, height: 36, borderRadius: 999, border: lang === 'en' ? '2px solid #f2d14c' : '1px solid #355748', background: '#10271e', color: '#fff', fontSize: 18, lineHeight: 1 }}>🇬🇧</button>
     </div>
   );
 
@@ -199,7 +211,7 @@ export default function Page() {
     return (
       <main style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', fontFamily: 'system-ui', background: '#0b1e16', color: '#ecf8f2', padding: 20 }}>
         <div style={{ maxWidth: 680, background: '#10271e', border: '1px solid #355748', borderRadius: 12, padding: 20 }}>
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>{languageButtons}</div>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>{flagLanguageButtons}</div>
           <h2 style={{ marginTop: 0 }}>{t.missingEnvTitle}</h2>
           <p>{t.missingEnvBody}</p>
           <ul>
@@ -216,7 +228,7 @@ export default function Page() {
     return (
       <main style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', fontFamily: 'system-ui', background: '#0b1e16', color: '#ecf8f2' }}>
         <form onSubmit={handleAuthSubmit} style={{ width: 380, background: '#10271e', border: '1px solid #355748', borderRadius: 12, padding: 20 }}>
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>{languageButtons}</div>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>{flagLanguageButtons}</div>
           <h2 style={{ marginTop: 0, marginBottom: 16 }}>{mode === 'login' ? t.login : t.signup}</h2>
 
           <label style={{ display: 'block', marginBottom: 6 }}>{t.email}</label>
@@ -254,25 +266,17 @@ export default function Page() {
   }
 
   return (
-    <main style={{ width: '100vw', height: '100vh', margin: 0, fontFamily: 'system-ui' }}>
-      <div style={{ display: 'flex', gap: 12, alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderBottom: '1px solid #355748', background: '#10271e', color: '#ecf8f2' }}>
+    <main style={{ width: '100vw', height: '100vh', margin: 0, fontFamily: 'system-ui', background: '#0b1e16' }}>
+      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1100, display: 'flex', gap: 12, alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderBottom: '1px solid #355748', background: '#10271e', color: '#ecf8f2' }}>
         <div>
           {t.loggedInAs} <strong>{profileEmail || session.user.email}</strong> ({profileRole})
         </div>
-        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-          {languageButtons}
-          {profileRole === 'admin' ? (
-            <a href="/admin" style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #3e6353', background: '#1a3b30', color: '#f2d14c', textDecoration: 'none' }}>
-              {t.openAdmin}
-            </a>
-          ) : null}
-          <button onClick={handleLogout} style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #a64a4a', background: '#a64a4a', color: '#fff' }}>
-            {t.logout}
-          </button>
-        </div>
+        <button onClick={handleLogout} style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #a64a4a', background: '#a64a4a', color: '#fff' }}>
+          {t.logout}
+        </button>
       </div>
 
-      <div style={{ width: '100%', height: 'calc(100% - 56px)' }}>
+      <div style={{ width: '100%', height: 'calc(100% - 56px)', marginTop: 56 }}>
         <iframe
           src="/index.html"
           title={t.tournamentTitle}

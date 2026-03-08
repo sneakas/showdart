@@ -431,6 +431,9 @@
                     <li class="nav-item">
                         <button type="button" class="nav-link btn btn-link border-0 w-100 text-start" data-bs-toggle="modal" data-bs-target="#rulesModal" data-translate="rules">Rules</button>
                     </li>
+                    <li class="nav-item" id="adminNavItem" style="display: none;">
+                        <a class="nav-link" href="/admin" target="_top" data-translate="admin">Admin</a>
+                    </li>
                 </ul>
             </div>
         </div>
@@ -2130,6 +2133,7 @@
                 "registration": "Registrering", 
                 "tournament": "Turnering",
                 "rules": "Regler",
+                "admin": "Admin",
                 "playerRegistration": "Spiller Registrering",
                 "playerName": "Spillernavn",
                 "register": "Registrer Spiller",
@@ -2383,6 +2387,7 @@
                 "registration": "Registration",
                 "tournament": "Tournament",
                 "rules": "Rules",
+                "admin": "Admin",
                 "playerRegistration": "Player Registration",
                 "playerName": "Player Name",
                 "register": "Register Player",
@@ -2508,7 +2513,24 @@
             }
             return text;
         }
-        
+
+        function isAdminUser() {
+            try {
+                return localStorage.getItem('showdart-user-role') === 'admin';
+            } catch (_error) {
+                return false;
+            }
+        }
+
+        function updateAdminNavVisibility() {
+            const adminNavItem = document.getElementById('adminNavItem');
+            if (!adminNavItem) return;
+            adminNavItem.style.display = isAdminUser() ? '' : 'none';
+        }
+
+        window.addEventListener('focus', updateAdminNavVisibility);
+        setInterval(updateAdminNavVisibility, 1000);
+
         // Language switching functionality
         document.querySelectorAll('.language-btn').forEach(btn => {
             btn.addEventListener('click', function() {
@@ -2560,6 +2582,8 @@
             if (navLinks[0]) navLinks[0].textContent = translate('registration');
             if (navLinks[1]) navLinks[1].textContent = translate('tournament');
             if (navLinks[2]) navLinks[2].textContent = translate('rules');
+            if (navLinks[3]) navLinks[3].textContent = translate('admin');
+            updateAdminNavVisibility();
             
             // Update hero
             const heroTitle = document.querySelector(SELECTORS.HERO_TITLE);
@@ -2880,12 +2904,20 @@
         // 9) Reload page and confirm cloud restore keeps tournament progress.
         // 10) Confirm footer and alerts remain readable after language switch.
 
-        // Call translate page on load to set initial Danish text
+        // Call translate page on load to set initial text
+        updateAdminNavVisibility();
         translatePage();
         initializeCloudPersistence();
     </script>
 </body>
 </html>
+
+
+
+
+
+
+
 
 
 
