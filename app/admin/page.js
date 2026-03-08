@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useMemo, useState } from 'react';
 import { getSupabaseBrowserClient } from '../../lib/supabaseBrowser';
@@ -7,10 +7,10 @@ const LANGUAGE_STORAGE_KEY = 'showdart-language';
 
 const texts = {
   da: {
-    loading: 'Indlæser...',
+    loading: 'Indlaeser...',
     title: 'Admin',
     subtitle: 'Administrer konti',
-    notLoggedIn: 'Du skal være logget ind for at bruge adminsiden.',
+    notLoggedIn: 'Du skal vaere logget ind for at bruge adminsiden.',
     notAdmin: 'Du har ikke admin-adgang.',
     back: 'Tilbage til turnering',
     email: 'E-mail',
@@ -18,7 +18,7 @@ const texts = {
     displayName: 'Vist navn (valgfri)',
     create: 'Opret konto',
     creating: 'Opretter...',
-    needFields: 'E-mail og adgangskode er påkrævet.',
+    needFields: 'E-mail og adgangskode er paakraevet.',
     missingToken: 'Session mangler. Log ind igen.',
     user: 'Bruger',
     admin: 'Admin',
@@ -32,10 +32,11 @@ const texts = {
     save: 'Gem',
     delete: 'Slet',
     refresh: 'Opdater',
-    confirmDelete: 'Er du sikker på at du vil slette denne bruger?',
+    confirmDelete: 'Er du sikker paa at du vil slette denne bruger?',
     cannotDeleteSelf: 'Du kan ikke slette din egen admin-konto',
     role: 'Rolle',
-    createdUsers: 'Oprettede brugere'
+    createdUsers: 'Oprettede brugere',
+    siteTitle: 'Showdart Turnerings Organisator'
   },
   en: {
     loading: 'Loading...',
@@ -66,7 +67,8 @@ const texts = {
     confirmDelete: 'Are you sure you want to delete this user?',
     cannotDeleteSelf: 'You cannot delete your own admin account',
     role: 'Role',
-    createdUsers: 'Created users'
+    createdUsers: 'Created users',
+    siteTitle: 'Showdart Tournament Organizer'
   }
 };
 
@@ -234,12 +236,7 @@ export default function AdminPage() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${session.access_token}`
         },
-        body: JSON.stringify({
-          email,
-          password,
-          displayName,
-          role: newRole
-        })
+        body: JSON.stringify({ email, password, displayName, role: newRole })
       });
 
       const payload = await response.json();
@@ -274,11 +271,7 @@ export default function AdminPage() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${session.access_token}`
         },
-        body: JSON.stringify({
-          id: user.id,
-          displayName: user.display_name,
-          role: user.role
-        })
+        body: JSON.stringify({ id: user.id, displayName: user.display_name, role: user.role })
       });
       const payload = await response.json();
       if (!response.ok) {
@@ -357,6 +350,18 @@ export default function AdminPage() {
     );
   }
 
+  const navLinkStyle = {
+    color: '#ecf8f2',
+    fontWeight: 700,
+    textTransform: 'uppercase',
+    letterSpacing: '0.05em',
+    borderRadius: 8,
+    padding: '0.55rem 0.8rem',
+    border: '1px solid #3e6353',
+    background: '#1a3b30',
+    textDecoration: 'none'
+  };
+
   return (
     <main style={{ width: '100%', minHeight: '100vh', margin: 0, fontFamily: 'system-ui', background: '#0b1e16', color: '#ecf8f2' }}>
       <div style={{ display: 'flex', gap: 12, alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderBottom: '1px solid #355748', background: '#10271e' }}>
@@ -369,15 +374,16 @@ export default function AdminPage() {
       </div>
 
       <div style={{ display: 'flex', gap: 10, alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderBottom: '1px solid #355748', background: '#10271e' }}>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-          <a href="/#registration" style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #3e6353', background: '#1a3b30', color: '#ecf8f2', textDecoration: 'none', fontWeight: 700 }}>{t.registration}</a>
-          <a href="/#tournament" style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #3e6353', background: '#1a3b30', color: '#ecf8f2', textDecoration: 'none', fontWeight: 700 }}>{t.tournament}</a>
-          <span style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #3e6353', background: '#1a3b30', color: '#f2d14c', fontWeight: 700 }}>{t.adminNav}</span>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+          <div style={{ color: '#ecf8f2', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{t.siteTitle}</div>
+          <a href="/#registration" style={navLinkStyle}>{t.registration}</a>
+          <a href="/#tournament" style={navLinkStyle}>{t.tournament}</a>
+          <span style={{ ...navLinkStyle, color: '#f2d14c' }}>{t.adminNav}</span>
         </div>
         {flagLanguageButtons}
       </div>
 
-      <div style={{ maxWidth: 1100, margin: '20px auto', padding: '0 12px' }}>
+      <div style={{ maxWidth: 1180, margin: '20px auto', padding: '0 12px' }}>
         <div style={{ background: '#10271e', border: '1px solid #355748', borderRadius: 12, padding: 16, marginBottom: 14 }}>
           <h2 style={{ marginTop: 0 }}>{t.subtitle}</h2>
           <form onSubmit={handleCreateUser} style={{ display: 'grid', gap: 10, gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
@@ -401,31 +407,41 @@ export default function AdminPage() {
           </div>
 
           <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
               <thead>
                 <tr>
-                  <th style={{ textAlign: 'left', borderBottom: '1px solid #355748', padding: '8px 6px' }}>{t.email}</th>
-                  <th style={{ textAlign: 'left', borderBottom: '1px solid #355748', padding: '8px 6px' }}>{t.displayName}</th>
-                  <th style={{ textAlign: 'left', borderBottom: '1px solid #355748', padding: '8px 6px' }}>{t.role}</th>
-                  <th style={{ textAlign: 'left', borderBottom: '1px solid #355748', padding: '8px 6px' }}>{t.actions}</th>
+                  <th style={{ width: '30%', textAlign: 'left', borderBottom: '1px solid #355748', padding: '8px 6px' }}>{t.email}</th>
+                  <th style={{ width: '28%', textAlign: 'left', borderBottom: '1px solid #355748', padding: '8px 6px' }}>{t.displayName}</th>
+                  <th style={{ width: '17%', textAlign: 'left', borderBottom: '1px solid #355748', padding: '8px 6px' }}>{t.role}</th>
+                  <th style={{ width: '25%', textAlign: 'left', borderBottom: '1px solid #355748', padding: '8px 6px' }}>{t.actions}</th>
                 </tr>
               </thead>
               <tbody>
                 {users.map(userItem => (
                   <tr key={userItem.id}>
-                    <td style={{ borderBottom: '1px solid #244336', padding: '8px 6px' }}>{userItem.email}</td>
-                    <td style={{ borderBottom: '1px solid #244336', padding: '8px 6px' }}>
-                      <input value={userItem.display_name} onChange={e => setUsers(prev => prev.map(u => (u.id === userItem.id ? { ...u, display_name: e.target.value } : u)))} style={{ width: '100%', minWidth: 160, padding: 8, borderRadius: 6, border: '1px solid #355748', background: '#0b1e16', color: '#ecf8f2' }} />
+                    <td style={{ borderBottom: '1px solid #244336', padding: '8px 6px', verticalAlign: 'top', wordBreak: 'break-word' }}>{userItem.email}</td>
+                    <td style={{ borderBottom: '1px solid #244336', padding: '8px 6px', verticalAlign: 'top' }}>
+                      <input
+                        value={userItem.display_name}
+                        onChange={e => setUsers(prev => prev.map(u => (u.id === userItem.id ? { ...u, display_name: e.target.value } : u)))}
+                        style={{ width: '100%', boxSizing: 'border-box', padding: 8, borderRadius: 6, border: '1px solid #355748', background: '#0b1e16', color: '#ecf8f2' }}
+                      />
                     </td>
-                    <td style={{ borderBottom: '1px solid #244336', padding: '8px 6px' }}>
-                      <select value={userItem.role} onChange={e => setUsers(prev => prev.map(u => (u.id === userItem.id ? { ...u, role: e.target.value === 'admin' ? 'admin' : 'user' } : u)))} style={{ padding: 8, borderRadius: 6, border: '1px solid #355748', background: '#0b1e16', color: '#ecf8f2' }}>
+                    <td style={{ borderBottom: '1px solid #244336', padding: '8px 6px', verticalAlign: 'top' }}>
+                      <select
+                        value={userItem.role}
+                        onChange={e => setUsers(prev => prev.map(u => (u.id === userItem.id ? { ...u, role: e.target.value === 'admin' ? 'admin' : 'user' } : u)))}
+                        style={{ width: '100%', boxSizing: 'border-box', padding: 8, borderRadius: 6, border: '1px solid #355748', background: '#0b1e16', color: '#ecf8f2' }}
+                      >
                         <option value="user">{t.user}</option>
                         <option value="admin">{t.admin}</option>
                       </select>
                     </td>
-                    <td style={{ borderBottom: '1px solid #244336', padding: '8px 6px', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                      <button type="button" onClick={() => handleSaveUser(userItem.id)} disabled={savingId === userItem.id} style={{ padding: '7px 10px', borderRadius: 8, border: '1px solid #3e6353', background: '#1a3b30', color: '#f2d14c', fontWeight: 700 }}>{t.save}</button>
-                      <button type="button" onClick={() => handleDeleteUser(userItem.id)} disabled={deletingId === userItem.id || userItem.id === session.user?.id} style={{ padding: '7px 10px', borderRadius: 8, border: '1px solid #a64a4a', background: '#a64a4a', color: '#fff', fontWeight: 700 }}>{t.delete}</button>
+                    <td style={{ borderBottom: '1px solid #244336', padding: '8px 6px', verticalAlign: 'top' }}>
+                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                        <button type="button" onClick={() => handleSaveUser(userItem.id)} disabled={savingId === userItem.id} style={{ padding: '7px 10px', borderRadius: 8, border: '1px solid #3e6353', background: '#1a3b30', color: '#f2d14c', fontWeight: 700 }}>{t.save}</button>
+                        <button type="button" onClick={() => handleDeleteUser(userItem.id)} disabled={deletingId === userItem.id || userItem.id === session.user?.id} style={{ padding: '7px 10px', borderRadius: 8, border: '1px solid #a64a4a', background: '#a64a4a', color: '#fff', fontWeight: 700 }}>{t.delete}</button>
+                      </div>
                     </td>
                   </tr>
                 ))}
