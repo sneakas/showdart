@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 const headerTexts = {
   da: {
@@ -32,31 +32,29 @@ export function SharedTopNavigation({
   onNavigate
 }) {
   const t = headerTexts[lang] || headerTexts.da;
+  const isAdmin = role === 'admin';
 
-  const navButtonStyle = {
-    color: '#ecf8f2',
+  const navButtonStyle = isActive => ({
+    color: isActive ? '#f2d14c' : '#b6cec1',
     fontWeight: 700,
     textTransform: 'uppercase',
     letterSpacing: '0.05em',
     borderRadius: 8,
     padding: '0.55rem 0.8rem',
-    border: '1px solid #3e6353',
-    background: '#1a3b30',
+    border: '1px solid transparent',
+    background: isActive ? '#1a3b30' : 'transparent',
     textDecoration: 'none',
-    cursor: 'pointer'
-  };
-
-  const activeNavStyle = {
-    ...navButtonStyle,
-    color: '#f2d14c'
-  };
+    cursor: 'pointer',
+    lineHeight: 1.15,
+    whiteSpace: 'nowrap'
+  });
 
   const navItem = (key, label) => (
     <button
       key={key}
       type="button"
       onClick={() => onNavigate?.(key)}
-      style={activePage === key ? activeNavStyle : navButtonStyle}
+      style={navButtonStyle(activePage === key)}
     >
       {label}
     </button>
@@ -64,27 +62,31 @@ export function SharedTopNavigation({
 
   return (
     <>
-      <div style={{ display: 'flex', gap: 12, alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderBottom: '1px solid #355748', background: '#10271e', color: '#ecf8f2' }}>
-        <div>
-          {t.loggedInAs} <strong>{email || '-'}</strong> ({role || 'user'})
+      <div style={{ background: 'rgba(11, 30, 22, 0.92)', borderBottom: '1px solid #355748', color: '#ecf8f2' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '10px 16px', display: 'flex', gap: 12, alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+          <div style={{ color: '#d9ece2' }}>
+            {t.loggedInAs} <strong>{email || '-'}</strong> ({role || 'user'})
+          </div>
+          <button onClick={onLogout} style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #a64a4a', background: '#a64a4a', color: '#fff', fontWeight: 700, lineHeight: 1 }}>
+            {t.logout}
+          </button>
         </div>
-        <button onClick={onLogout} style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #a64a4a', background: '#a64a4a', color: '#fff' }}>
-          {t.logout}
-        </button>
       </div>
 
-      <div style={{ display: 'flex', gap: 10, alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderBottom: '1px solid #355748', background: '#10271e' }}>
-        <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-          <div style={{ color: '#ecf8f2', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{t.siteTitle}</div>
-          {navItem('registration', t.registration)}
-          {navItem('tournament', t.tournament)}
-          {showRules ? navItem('rules', t.rules) : null}
-          {navItem('admin', t.admin)}
-        </div>
+      <div style={{ background: 'rgba(11, 30, 22, 0.92)', borderBottom: '1px solid #355748' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '10px 16px', display: 'flex', gap: 12, alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+            <div style={{ color: '#ecf8f2', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', whiteSpace: 'nowrap' }}>{t.siteTitle}</div>
+            {navItem('registration', t.registration)}
+            {navItem('tournament', t.tournament)}
+            {showRules ? navItem('rules', t.rules) : null}
+            {isAdmin ? navItem('admin', t.admin) : null}
+          </div>
 
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button type="button" onClick={() => onLanguageChange?.('da')} title="Dansk" style={{ width: 36, height: 36, borderRadius: 999, border: lang === 'da' ? '2px solid #f2d14c' : '1px solid #355748', background: '#10271e', color: '#fff', fontSize: 18, lineHeight: 1 }}>{'\uD83C\uDDE9\uD83C\uDDF0'}</button>
-          <button type="button" onClick={() => onLanguageChange?.('en')} title="English" style={{ width: 36, height: 36, borderRadius: 999, border: lang === 'en' ? '2px solid #f2d14c' : '1px solid #355748', background: '#10271e', color: '#fff', fontSize: 18, lineHeight: 1 }}>{'\uD83C\uDDEC\uD83C\uDDE7'}</button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button type="button" onClick={() => onLanguageChange?.('da')} title="Dansk" style={{ width: 40, height: 30, borderRadius: 6, border: lang === 'da' ? '2px solid #f2d14c' : '1px solid #3e6353', background: '#10271e', color: '#fff', fontSize: 18, lineHeight: 1, padding: 0 }}>{'\uD83C\uDDE9\uD83C\uDDF0'}</button>
+            <button type="button" onClick={() => onLanguageChange?.('en')} title="English" style={{ width: 40, height: 30, borderRadius: 6, border: lang === 'en' ? '2px solid #f2d14c' : '1px solid #3e6353', background: '#10271e', color: '#fff', fontSize: 18, lineHeight: 1, padding: 0 }}>{'\uD83C\uDDEC\uD83C\uDDE7'}</button>
+          </div>
         </div>
       </div>
     </>
