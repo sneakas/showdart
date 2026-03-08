@@ -1825,6 +1825,33 @@
                 refreshedActivePlayersSpan.textContent = tournament.getActivePlayers().length;
             }
 
+            const hasRoundAssignments = tournament.matches.length > 0 || ((tournament.skippedPlayers || []).length > 0);
+            const isBetweenRounds = tournament.started && !hasRoundAssignments && !tournament.finalResults;
+
+            // Recompute button state from tournament state on every UI refresh.
+            if (!tournament.started) {
+                generateMatchesBtn.disabled = true;
+                completeRoundBtn.disabled = true;
+                approveTagChangesBtn.disabled = true;
+            } else if (tournament.finalResults) {
+                generateMatchesBtn.disabled = true;
+                completeRoundBtn.disabled = true;
+                approveTagChangesBtn.disabled = true;
+            } else if (hasRoundAssignments) {
+                generateMatchesBtn.disabled = true;
+                completeRoundBtn.disabled = false;
+                approveTagChangesBtn.disabled = true;
+            } else {
+                completeRoundBtn.disabled = true;
+                if (tournament.pendingTagChanges && tournament.currentRound > 0) {
+                    generateMatchesBtn.disabled = true;
+                    approveTagChangesBtn.disabled = false;
+                } else {
+                    generateMatchesBtn.disabled = false;
+                    approveTagChangesBtn.disabled = true;
+                }
+            }
+
             // Hide tag reminder when generating new matches
             if (tournament.currentRound > 0) {
                 if (generateMatchesBtn.disabled === false) {
@@ -1839,7 +1866,7 @@
                 approveTagChangesBtn.disabled = false;
                 generateMatchesBtn.disabled = true;
                 showPendingTagChangesAlert();
-            } else {
+            } else if (isBetweenRounds) {
                 approveTagChangesBtn.disabled = true;
             }
             
@@ -3097,6 +3124,7 @@
     </script>
 </body>
 </html>
+
 
 
 
