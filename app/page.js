@@ -78,20 +78,22 @@ export default function Page() {
         return;
       }
 
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('role, email')
-        .eq('id', session.user.id)
-        .maybeSingle();
+            const response = await fetch('/api/profile/me', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
+      });
 
-      if (error || !data) {
+      const payload = await response.json();
+
+      if (!response.ok) {
         setProfileRole('user');
         setProfileEmail(session.user.email || '');
         return;
       }
 
-      setProfileRole(data.role || 'user');
-      setProfileEmail(data.email || session.user.email || '');
+      setProfileRole(payload.role || 'user');
+      setProfileEmail(payload.email || session.user.email || '');
     }
 
     loadProfileRole();
@@ -297,6 +299,7 @@ export default function Page() {
     </main>
   );
 }
+
 
 
 
