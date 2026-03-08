@@ -220,6 +220,7 @@ export default function Page() {
 
   useEffect(() => {
     if (!session || !iframeLoaded) return;
+    postToIframe({ type: 'showdart-set-user', userId: session.user.id });
     postToIframe({ type: 'showdart-set-role', role: profileRole === 'admin' ? 'admin' : 'user' });
   }, [session, iframeLoaded, profileRole]);
 
@@ -341,6 +342,7 @@ export default function Page() {
           onLoad={() => {
             setIframeLoaded(true);
             postToIframe({ type: 'showdart-set-language', language: lang });
+            postToIframe({ type: 'showdart-set-user', userId: session.user.id });
             postToIframe({ type: 'showdart-set-role', role: profileRole === 'admin' ? 'admin' : 'user' });
           }}
           style={{ width: '100%', height: `${iframeHeight}px`, border: 0 }}

@@ -944,9 +944,10 @@
             tournamentId: 'showdart-default',
             autosaveDelayMs: 800
         };
-        const LOCAL_STATE_KEY = 'showdart-local-state';
+        const LOCAL_STATE_KEY_PREFIX = 'showdart-local-state';
         const ALLOWED_APP_ORIGIN = window.location.origin;
         let currentUserRole = 'user';
+        let currentUserId = null;
         const shell = window.createShowdartShell({ allowedOrigin: ALLOWED_APP_ORIGIN });
         const getAuthHeaders = shell.getAuthHeaders;
         const notifyParentHeight = shell.notifyParentHeight;
@@ -1062,9 +1063,37 @@
 
             cloudStatusIndicator.textContent = cloudStatusText(mode);
         }
+
+        function getUserIdFromAccessToken() {
+            try {
+                const token = localStorage.getItem('supabase_access_token');
+                if (!token || token.indexOf('.') === -1) {
+                    return null;
+                }
+
+                const parts = token.split('.');
+                if (!parts[1]) {
+                    return null;
+                }
+
+                const payloadJson = atob(parts[1].replace(/-/g, '+').replace(/_/g, '/'));
+                const payload = JSON.parse(payloadJson);
+                const sub = typeof payload?.sub === 'string' ? payload.sub.trim() : '';
+                return sub || null;
+            } catch (_error) {
+                return null;
+            }
+        }
+
+        function getLocalStateKey() {
+            const fallbackUserId = currentUserId || getUserIdFromAccessToken() || 'anonymous';
+            return `${LOCAL_STATE_KEY_PREFIX}:${fallbackUserId}`;
+        }
+
+        currentUserId = getUserIdFromAccessToken() || 'anonymous';
         function saveLocalBackupState(state) {
             try {
-                localStorage.setItem(LOCAL_STATE_KEY, JSON.stringify({
+                localStorage.setItem(getLocalStateKey(), JSON.stringify({
                     updatedAt: new Date().toISOString(),
                     state
                 }));
@@ -1075,7 +1104,7 @@
 
         function loadLocalBackupState() {
             try {
-                const raw = localStorage.getItem(LOCAL_STATE_KEY);
+                const raw = localStorage.getItem(getLocalStateKey());
                 if (!raw) {
                     return null;
                 }
@@ -1192,6 +1221,20 @@
             return true;
         }
 
+        function applyEmptyTournamentState() {
+            applyTournamentState({
+                players: [],
+                maxLosses: 2,
+                currentRound: 0,
+                started: false,
+                pendingTagChanges: false,
+                matches: [],
+                skippedPlayerIds: [],
+                finalResultPlayerIds: null
+            });
+        }
+
+
         async function persistTournamentState(force = false) {
             if (isHydratingCloudState) {
                 return;
@@ -1255,11 +1298,13 @@
 
         async function loadTournamentState() {
             const localState = loadLocalBackupState();
+            isHydratingCloudState = true;
             if (localState) {
-                isHydratingCloudState = true;
                 applyTournamentState(localState);
-                isHydratingCloudState = false;
+            } else {
+                applyEmptyTournamentState();
             }
+            isHydratingCloudState = false;
 
             const authHeaders = getAuthHeaders();
             if (!authHeaders) {
@@ -2597,6 +2642,18 @@
 
             const data = event?.data || {};
 
+            if (data.type === 'showdart-set-user') {
+                const incomingUserId = typeof data.userId === 'string' ? data.userId.trim() : '';
+                const nextUserId = incomingUserId || getUserIdFromAccessToken() || 'anonymous';
+                if (nextUserId !== currentUserId) {
+                    currentUserId = nextUserId;
+                    if (cloudPersistenceInitialized) {
+                        loadTournamentState();
+                    }
+                }
+                return;
+            }
+
             if (data.type === 'showdart-set-role') {
                 currentUserRole = data.role === 'admin' ? 'admin' : 'user';
                 updateAdminNavVisibility();
@@ -3040,6 +3097,10 @@
     </script>
 </body>
 </html>
+
+
+
+
 
 
 
