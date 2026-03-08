@@ -77,7 +77,6 @@ export function SharedTopNavigation({
       <div style={{ background: 'rgba(11, 30, 22, 0.92)', borderBottom: '1px solid #355748' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '10px 16px', display: 'flex', gap: 12, alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-            <div style={{ color: '#ecf8f2', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', whiteSpace: 'nowrap' }}>{t.siteTitle}</div>
             {navItem('registration', t.registration)}
             {navItem('tournament', t.tournament)}
             {showRules ? navItem('rules', t.rules) : null}
