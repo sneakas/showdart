@@ -1,7 +1,8 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useMemo, useState } from 'react';
 import { getSupabaseBrowserClient } from '../../lib/supabaseBrowser';
+import { SharedTopNavigation } from '../../components/SharedTopNavigation';
 
 const LANGUAGE_STORAGE_KEY = 'showdart-language';
 
@@ -22,21 +23,14 @@ const texts = {
     missingToken: 'Session mangler. Log ind igen.',
     user: 'Bruger',
     admin: 'Admin',
-    logout: 'Log ud',
-    loggedInAs: 'Logget ind som',
-    registration: 'Registrering',
-    tournament: 'Turnering',
-    adminNav: 'Admin',
-    usersHeader: 'Brugere',
+    createdUsers: 'Oprettede brugere',
     actions: 'Handlinger',
+    role: 'Rolle',
     save: 'Gem',
     delete: 'Slet',
     refresh: 'Opdater',
     confirmDelete: 'Er du sikker paa at du vil slette denne bruger?',
-    cannotDeleteSelf: 'Du kan ikke slette din egen admin-konto',
-    role: 'Rolle',
-    createdUsers: 'Oprettede brugere',
-    siteTitle: 'Showdart Turnerings Organisator'
+    cannotDeleteSelf: 'Du kan ikke slette din egen admin-konto'
   },
   en: {
     loading: 'Loading...',
@@ -54,21 +48,14 @@ const texts = {
     missingToken: 'Session missing. Please log in again.',
     user: 'User',
     admin: 'Admin',
-    logout: 'Logout',
-    loggedInAs: 'Logged in as',
-    registration: 'Registration',
-    tournament: 'Tournament',
-    adminNav: 'Admin',
-    usersHeader: 'Users',
+    createdUsers: 'Created users',
     actions: 'Actions',
+    role: 'Role',
     save: 'Save',
     delete: 'Delete',
     refresh: 'Refresh',
     confirmDelete: 'Are you sure you want to delete this user?',
-    cannotDeleteSelf: 'You cannot delete your own admin account',
-    role: 'Role',
-    createdUsers: 'Created users',
-    siteTitle: 'Showdart Tournament Organizer'
+    cannotDeleteSelf: 'You cannot delete your own admin account'
   }
 };
 
@@ -99,7 +86,7 @@ export default function AdminPage() {
   const [savingId, setSavingId] = useState('');
   const [deletingId, setDeletingId] = useState('');
 
-  const t = texts[lang];
+  const t = texts[lang] || texts.da;
 
   useEffect(() => {
     setLang(getInitialLanguage());
@@ -111,13 +98,6 @@ export default function AdminPage() {
       localStorage.setItem(LANGUAGE_STORAGE_KEY, nextLang);
     }
   }
-
-  const flagLanguageButtons = (
-    <div style={{ display: 'flex', gap: 8 }}>
-      <button type="button" onClick={() => changeLanguage('da')} title="Dansk" style={{ width: 36, height: 36, borderRadius: 999, border: lang === 'da' ? '2px solid #f2d14c' : '1px solid #355748', background: '#10271e', color: '#fff', fontSize: 18, lineHeight: 1 }}>{'\uD83C\uDDE9\uD83C\uDDF0'}</button>
-      <button type="button" onClick={() => changeLanguage('en')} title="English" style={{ width: 36, height: 36, borderRadius: 999, border: lang === 'en' ? '2px solid #f2d14c' : '1px solid #355748', background: '#10271e', color: '#fff', fontSize: 18, lineHeight: 1 }}>{'\uD83C\uDDEC\uD83C\uDDE7'}</button>
-    </div>
-  );
 
   useEffect(() => {
     if (!supabase) {
@@ -211,6 +191,11 @@ export default function AdminPage() {
     if (!supabase) return;
     await supabase.auth.signOut();
     window.location.href = '/';
+  }
+
+  function handleNavigate(target) {
+    if (target === 'admin') return;
+    window.location.href = `/?nav=${target}`;
   }
 
   async function handleCreateUser(e) {
@@ -324,10 +309,6 @@ export default function AdminPage() {
     return (
       <main style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', fontFamily: 'system-ui', background: '#0b1e16', color: '#ecf8f2' }}>
         <div style={{ width: 500, background: '#10271e', border: '1px solid #355748', borderRadius: 12, padding: 20 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h2 style={{ marginTop: 0 }}>{t.title}</h2>
-            {flagLanguageButtons}
-          </div>
           <p>{t.notLoggedIn}</p>
           <a href="/" style={{ color: '#f2d14c' }}>{t.back}</a>
         </div>
@@ -339,10 +320,6 @@ export default function AdminPage() {
     return (
       <main style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', fontFamily: 'system-ui', background: '#0b1e16', color: '#ecf8f2' }}>
         <div style={{ width: 500, background: '#10271e', border: '1px solid #355748', borderRadius: 12, padding: 20 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h2 style={{ marginTop: 0 }}>{t.title}</h2>
-            {flagLanguageButtons}
-          </div>
           <p>{t.notAdmin}</p>
           <a href="/" style={{ color: '#f2d14c' }}>{t.back}</a>
         </div>
@@ -350,38 +327,18 @@ export default function AdminPage() {
     );
   }
 
-  const navLinkStyle = {
-    color: '#ecf8f2',
-    fontWeight: 700,
-    textTransform: 'uppercase',
-    letterSpacing: '0.05em',
-    borderRadius: 8,
-    padding: '0.55rem 0.8rem',
-    border: '1px solid #3e6353',
-    background: '#1a3b30',
-    textDecoration: 'none'
-  };
-
   return (
     <main style={{ width: '100%', minHeight: '100vh', margin: 0, fontFamily: 'system-ui', background: '#0b1e16', color: '#ecf8f2' }}>
-      <div style={{ display: 'flex', gap: 12, alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderBottom: '1px solid #355748', background: '#10271e' }}>
-        <div>
-          {t.loggedInAs} <strong>{profileEmail || session.user?.email}</strong> ({role})
-        </div>
-        <button onClick={handleLogout} style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #a64a4a', background: '#a64a4a', color: '#fff' }}>
-          {t.logout}
-        </button>
-      </div>
-
-      <div style={{ display: 'flex', gap: 10, alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderBottom: '1px solid #355748', background: '#10271e' }}>
-        <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-          <div style={{ color: '#ecf8f2', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{t.siteTitle}</div>
-          <a href="/#registration" style={navLinkStyle}>{t.registration}</a>
-          <a href="/#tournament" style={navLinkStyle}>{t.tournament}</a>
-          <span style={{ ...navLinkStyle, color: '#f2d14c' }}>{t.adminNav}</span>
-        </div>
-        {flagLanguageButtons}
-      </div>
+      <SharedTopNavigation
+        lang={lang}
+        role={role}
+        email={profileEmail || session.user?.email}
+        showRules
+        activePage="admin"
+        onLanguageChange={changeLanguage}
+        onLogout={handleLogout}
+        onNavigate={handleNavigate}
+      />
 
       <div style={{ maxWidth: 1180, margin: '20px auto', padding: '0 12px' }}>
         <div style={{ background: '#10271e', border: '1px solid #355748', borderRadius: 12, padding: 16, marginBottom: 14 }}>

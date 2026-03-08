@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -397,6 +397,13 @@
                 padding: 1rem;
             }
         }
+        /* shared-top-navigation: parent app renders the canonical top headers */
+        .language-selector,
+        .navbar,
+        .hero {
+            display: none !important;
+        }
+
         footer {
             background-color: var(--club-bg);
             color: var(--club-text-soft);
@@ -2531,6 +2538,38 @@
         window.addEventListener('focus', updateAdminNavVisibility);
         setInterval(updateAdminNavVisibility, 1000);
 
+        // Listen to parent app header controls.
+        window.addEventListener('message', event => {
+            const data = event?.data || {};
+
+            if (data.type === 'showdart-set-language') {
+                const next = data.language === 'en' ? 'en' : 'da';
+                if (next !== currentLang) {
+                    currentLang = next;
+                    try { localStorage.setItem('showdart-language', next); } catch (_error) {}
+                    document.querySelectorAll('.language-btn').forEach(btn => {
+                        btn.classList.toggle('active-lang', btn.getAttribute('data-lang') === next);
+                    });
+                    translatePage();
+                    document.title = translate('title');
+                }
+            }
+
+            if (data.type === 'showdart-nav') {
+                const target = data.target;
+                if (target === 'registration' || target === 'tournament') {
+                    const section = document.getElementById(target);
+                    if (section) section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }
+
+            if (data.type === 'showdart-open-rules') {
+                const modalElement = document.getElementById('rulesModal');
+                if (modalElement && window.bootstrap?.Modal) {
+                    window.bootstrap.Modal.getOrCreateInstance(modalElement).show();
+                }
+            }
+        });
         // Language switching functionality
         document.querySelectorAll('.language-btn').forEach(btn => {
             btn.addEventListener('click', function() {

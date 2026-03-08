@@ -1,7 +1,8 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { getSupabaseBrowserClient } from '../lib/supabaseBrowser';
+import { SharedTopNavigation } from '../components/SharedTopNavigation';
 
 const TOKEN_STORAGE_KEY = 'supabase_access_token';
 const LANGUAGE_STORAGE_KEY = 'showdart-language';
@@ -9,20 +10,18 @@ const ROLE_STORAGE_KEY = 'showdart-user-role';
 
 const texts = {
   da: {
-    loading: 'Indlæser...',
-    missingEnvTitle: 'Manglende Supabase miljøvariabler',
-    missingEnvBody: 'Tilføj disse variabler i din lokale .env.local og i Vercel projektindstillinger:',
+    loading: 'Indlaeser...',
+    missingEnvTitle: 'Manglende Supabase miljoevariabler',
+    missingEnvBody: 'Tilfoej disse variabler i din lokale .env.local og i Vercel projektindstillinger:',
     login: 'Log ind',
     signup: 'Opret konto',
     email: 'E-mail',
     password: 'Adgangskode',
     createAccount: 'Opret konto',
     needAccount: 'Har du ikke en konto? Opret konto',
-    haveAccount: 'Har du allerede en konto? Log ind',
-    missingEmailPassword: 'E-mail og adgangskode er påkrævet.',
-    signupSuccess: 'Konto oprettet. Hvis e-mail bekræftelse er slået til, bekræft e-mail først.',
-    loggedInAs: 'Logget ind som',
-    logout: 'Log ud',
+    haveAccount: 'Har du allerede konto? Log ind',
+    missingEmailPassword: 'E-mail og adgangskode er paakraevet.',
+    signupSuccess: 'Konto oprettet. Hvis e-mail bekraeftelse er slaaet til, bekraeft e-mail foerst.',
     tournamentTitle: 'Showdart Turnerings Organisator'
   },
   en: {
@@ -38,8 +37,6 @@ const texts = {
     haveAccount: 'Already have account? Login',
     missingEmailPassword: 'Email and password are required.',
     signupSuccess: 'Signup successful. If email confirmation is enabled, confirm email first.',
-    loggedInAs: 'Logged in as',
-    logout: 'Logout',
     tournamentTitle: 'Showdart Tournament Organizer'
   }
 };
@@ -65,8 +62,6 @@ export default function Page() {
   const isSupabaseConfigured = !!supabase;
 
   const [lang, setLang] = useState('da');
-  const t = texts[lang];
-
   const [loadingSession, setLoadingSession] = useState(true);
   const [session, setSession] = useState(null);
   const [mode, setMode] = useState('login');
@@ -75,8 +70,11 @@ export default function Page() {
   const [authError, setAuthError] = useState('');
   const [profileRole, setProfileRole] = useState('user');
   const [profileEmail, setProfileEmail] = useState('');
-  const iframeRef = useRef(null);
   const [iframeHeight, setIframeHeight] = useState(1200);
+  const [iframeLoaded, setIframeLoaded] = useState(false);
+  const iframeRef = useRef(null);
+
+  const t = texts[lang] || texts.da;
 
   useEffect(() => {
     const initialLang = getInitialLanguage();
@@ -91,6 +89,27 @@ export default function Page() {
     if (typeof window !== 'undefined') {
       localStorage.setItem(LANGUAGE_STORAGE_KEY, nextLang);
     }
+    postToIframe({ type: 'showdart-set-language', language: nextLang });
+  }
+
+  function postToIframe(message) {
+    const win = iframeRef.current?.contentWindow;
+    if (!win) return;
+    win.postMessage(message, '*');
+  }
+
+  function handleNavigate(target) {
+    if (target === 'admin') {
+      window.location.href = '/admin';
+      return;
+    }
+
+    if (target === 'rules') {
+      postToIframe({ type: 'showdart-open-rules' });
+      return;
+    }
+
+    postToIframe({ type: 'showdart-nav', target });
   }
 
   useEffect(() => {
@@ -104,7 +123,6 @@ export default function Page() {
     async function bootstrapSession() {
       const { data } = await supabase.auth.getSession();
       if (!isMounted) return;
-
       setSession(data.session ?? null);
       setStoredAccessToken(data.session ?? null);
       setLoadingSession(false);
@@ -165,6 +183,46 @@ export default function Page() {
     loadProfileRole();
   }, [session, supabase]);
 
+  useEffect(() => {
+    if (!session || !iframeLoaded) return;
+
+    const syncIframeHeight = () => {
+      try {
+        const doc = iframeRef.current?.contentWindow?.document;
+        if (!doc) return;
+        const contentHeight = Math.max(doc.body?.scrollHeight || 0, doc.documentElement?.scrollHeight || 0, 900);
+        setIframeHeight(prev => (Math.abs(prev - contentHeight) > 2 ? contentHeight : prev));
+      } catch {
+        // Ignore transient iframe read errors.
+      }
+    };
+
+    syncIframeHeight();
+    const id = window.setInterval(syncIframeHeight, 500);
+    window.addEventListener('resize', syncIframeHeight);
+    return () => {
+      window.clearInterval(id);
+      window.removeEventListener('resize', syncIframeHeight);
+    };
+  }, [session, iframeLoaded]);
+
+  useEffect(() => {
+    if (!session || !iframeLoaded) return;
+    const params = new URLSearchParams(window.location.search);
+    const nav = params.get('nav');
+    if (nav === 'registration' || nav === 'tournament') {
+      postToIframe({ type: 'showdart-nav', target: nav });
+    }
+    if (nav === 'rules') {
+      postToIframe({ type: 'showdart-open-rules' });
+    }
+    if (nav) {
+      params.delete('nav');
+      const next = params.toString();
+      window.history.replaceState({}, '', next ? `/?${next}` : '/');
+    }
+  }, [session, iframeLoaded]);
+
   async function handleAuthSubmit(e) {
     e.preventDefault();
     setAuthError('');
@@ -197,37 +255,11 @@ export default function Page() {
     }
     setSession(null);
   }
-  useEffect(() => {
-    if (!session) return;
 
-    const syncIframeHeight = () => {
-      try {
-        const iframe = iframeRef.current;
-        const doc = iframe?.contentWindow?.document;
-        if (!doc) return;
-        const contentHeight = Math.max(
-          doc.body?.scrollHeight || 0,
-          doc.documentElement?.scrollHeight || 0,
-          900
-        );
-        setIframeHeight(prev => (Math.abs(prev - contentHeight) > 2 ? contentHeight : prev));
-      } catch {
-        // Ignore transient cross-document access errors during iframe load.
-      }
-    };
-
-    syncIframeHeight();
-    const intervalId = window.setInterval(syncIframeHeight, 500);
-    window.addEventListener('resize', syncIframeHeight);
-    return () => {
-      window.clearInterval(intervalId);
-      window.removeEventListener('resize', syncIframeHeight);
-    };
-  }, [session]);
   const flagLanguageButtons = (
     <div style={{ display: 'flex', gap: 8 }}>
-      <button type="button" onClick={() => changeLanguage('da')} title="Dansk" style={{ width: 36, height: 36, borderRadius: 999, border: lang === 'da' ? '2px solid #f2d14c' : '1px solid #355748', background: '#10271e', color: '#fff', fontSize: 18, lineHeight: 1 }}>🇩🇰</button>
-      <button type="button" onClick={() => changeLanguage('en')} title="English" style={{ width: 36, height: 36, borderRadius: 999, border: lang === 'en' ? '2px solid #f2d14c' : '1px solid #355748', background: '#10271e', color: '#fff', fontSize: 18, lineHeight: 1 }}>🇬🇧</button>
+      <button type="button" onClick={() => changeLanguage('da')} title="Dansk" style={{ width: 36, height: 36, borderRadius: 999, border: lang === 'da' ? '2px solid #f2d14c' : '1px solid #355748', background: '#10271e', color: '#fff', fontSize: 18, lineHeight: 1 }}>{'\uD83C\uDDE9\uD83C\uDDF0'}</button>
+      <button type="button" onClick={() => changeLanguage('en')} title="English" style={{ width: 36, height: 36, borderRadius: 999, border: lang === 'en' ? '2px solid #f2d14c' : '1px solid #355748', background: '#10271e', color: '#fff', fontSize: 18, lineHeight: 1 }}>{'\uD83C\uDDEC\uD83C\uDDE7'}</button>
     </div>
   );
 
@@ -260,20 +292,10 @@ export default function Page() {
           <h2 style={{ marginTop: 0, marginBottom: 16 }}>{mode === 'login' ? t.login : t.signup}</h2>
 
           <label style={{ display: 'block', marginBottom: 6 }}>{t.email}</label>
-          <input
-            type="email"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            style={{ width: '100%', marginBottom: 12, padding: 10, borderRadius: 8, border: '1px solid #355748', background: '#0b1e16', color: '#ecf8f2' }}
-          />
+          <input type="email" value={email} onChange={e => setEmail(e.target.value)} style={{ width: '100%', marginBottom: 12, padding: 10, borderRadius: 8, border: '1px solid #355748', background: '#0b1e16', color: '#ecf8f2' }} />
 
           <label style={{ display: 'block', marginBottom: 6 }}>{t.password}</label>
-          <input
-            type="password"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            style={{ width: '100%', marginBottom: 12, padding: 10, borderRadius: 8, border: '1px solid #355748', background: '#0b1e16', color: '#ecf8f2' }}
-          />
+          <input type="password" value={password} onChange={e => setPassword(e.target.value)} style={{ width: '100%', marginBottom: 12, padding: 10, borderRadius: 8, border: '1px solid #355748', background: '#0b1e16', color: '#ecf8f2' }} />
 
           {authError ? <p style={{ color: '#f3e39f', marginTop: 0 }}>{authError}</p> : null}
 
@@ -281,11 +303,7 @@ export default function Page() {
             {mode === 'login' ? t.login : t.createAccount}
           </button>
 
-          <button
-            type="button"
-            onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
-            style={{ marginTop: 10, width: '100%', padding: 10, borderRadius: 8, border: '1px solid #355748', background: 'transparent', color: '#ecf8f2' }}
-          >
+          <button type="button" onClick={() => setMode(mode === 'login' ? 'signup' : 'login')} style={{ marginTop: 10, width: '100%', padding: 10, borderRadius: 8, border: '1px solid #355748', background: 'transparent', color: '#ecf8f2' }}>
             {mode === 'login' ? t.needAccount : t.haveAccount}
           </button>
         </form>
@@ -295,14 +313,16 @@ export default function Page() {
 
   return (
     <main style={{ width: '100%', minHeight: '100vh', margin: 0, fontFamily: 'system-ui', background: '#0b1e16' }}>
-      <div style={{ display: 'flex', gap: 12, alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderBottom: '1px solid #355748', background: '#10271e', color: '#ecf8f2' }}>
-        <div>
-          {t.loggedInAs} <strong>{profileEmail || session.user.email}</strong> ({profileRole})
-        </div>
-        <button onClick={handleLogout} style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #a64a4a', background: '#a64a4a', color: '#fff' }}>
-          {t.logout}
-        </button>
-      </div>
+      <SharedTopNavigation
+        lang={lang}
+        role={profileRole}
+        email={profileEmail || session.user.email}
+        showRules
+        activePage="tournament"
+        onLanguageChange={changeLanguage}
+        onLogout={handleLogout}
+        onNavigate={handleNavigate}
+      />
 
       <div style={{ width: '100%' }}>
         <iframe
@@ -310,18 +330,8 @@ export default function Page() {
           src="/index.html"
           title={t.tournamentTitle}
           onLoad={() => {
-            try {
-              const doc = iframeRef.current?.contentWindow?.document;
-              if (!doc) return;
-              const contentHeight = Math.max(
-                doc.body?.scrollHeight || 0,
-                doc.documentElement?.scrollHeight || 0,
-                900
-              );
-              setIframeHeight(contentHeight);
-            } catch {
-              // Ignore transient cross-document access errors during iframe load.
-            }
+            setIframeLoaded(true);
+            postToIframe({ type: 'showdart-set-language', language: lang });
           }}
           style={{ width: '100%', height: `${iframeHeight}px`, border: 0 }}
           scrolling="no"
