@@ -1,6 +1,6 @@
-﻿'use client';
+'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { getSupabaseBrowserClient } from '../lib/supabaseBrowser';
 
 const TOKEN_STORAGE_KEY = 'supabase_access_token';
@@ -75,6 +75,8 @@ export default function Page() {
   const [authError, setAuthError] = useState('');
   const [profileRole, setProfileRole] = useState('user');
   const [profileEmail, setProfileEmail] = useState('');
+  const iframeRef = useRef(null);
+  const [iframeHeight, setIframeHeight] = useState(1200);
 
   useEffect(() => {
     const initialLang = getInitialLanguage();
@@ -196,10 +198,38 @@ export default function Page() {
     setSession(null);
   }
 
+
+  useEffect(() => {
+    if (!session) return;
+
+    const syncIframeHeight = () => {
+      try {
+        const iframe = iframeRef.current;
+        const doc = iframe?.contentWindow?.document;
+        if (!doc) return;
+        const contentHeight = Math.max(
+          doc.body?.scrollHeight || 0,
+          doc.documentElement?.scrollHeight || 0,
+          900
+        );
+        setIframeHeight(prev => (Math.abs(prev - contentHeight) > 2 ? contentHeight : prev));
+      } catch {
+        // Ignore transient cross-document access errors during iframe load.
+      }
+    };
+
+    syncIframeHeight();
+    const intervalId = window.setInterval(syncIframeHeight, 500);
+    window.addEventListener('resize', syncIframeHeight);
+    return () => {
+      window.clearInterval(intervalId);
+      window.removeEventListener('resize', syncIframeHeight);
+    };
+  }, [session]);
   const flagLanguageButtons = (
     <div style={{ display: 'flex', gap: 8 }}>
-      <button type="button" onClick={() => changeLanguage('da')} title="Dansk" style={{ width: 36, height: 36, borderRadius: 999, border: lang === 'da' ? '2px solid #f2d14c' : '1px solid #355748', background: '#10271e', color: '#fff', fontSize: 18, lineHeight: 1 }}>🇩🇰</button>
-      <button type="button" onClick={() => changeLanguage('en')} title="English" style={{ width: 36, height: 36, borderRadius: 999, border: lang === 'en' ? '2px solid #f2d14c' : '1px solid #355748', background: '#10271e', color: '#fff', fontSize: 18, lineHeight: 1 }}>🇬🇧</button>
+      <button type="button" onClick={() => changeLanguage('da')} title="Dansk" style={{ width: 36, height: 36, borderRadius: 999, border: lang === 'da' ? '2px solid #f2d14c' : '1px solid #355748', background: '#10271e', color: '#fff', fontSize: 18, lineHeight: 1 }}>{'\uD83C\uDDE9\uD83C\uDDF0'}</button>
+      <button type="button" onClick={() => changeLanguage('en')} title="English" style={{ width: 36, height: 36, borderRadius: 999, border: lang === 'en' ? '2px solid #f2d14c' : '1px solid #355748', background: '#10271e', color: '#fff', fontSize: 18, lineHeight: 1 }}>{'\uD83C\uDDEC\uD83C\uDDE7'}</button>
     </div>
   );
 
@@ -266,8 +296,8 @@ export default function Page() {
   }
 
   return (
-    <main style={{ width: '100vw', height: '100vh', margin: 0, fontFamily: 'system-ui', background: '#0b1e16' }}>
-      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1100, display: 'flex', gap: 12, alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderBottom: '1px solid #355748', background: '#10271e', color: '#ecf8f2' }}>
+    <main style={{ width: '100%', minHeight: '100vh', margin: 0, fontFamily: 'system-ui', background: '#0b1e16' }}>
+      <div style={{ display: 'flex', gap: 12, alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderBottom: '1px solid #355748', background: '#10271e', color: '#ecf8f2' }}>
         <div>
           {t.loggedInAs} <strong>{profileEmail || session.user.email}</strong> ({profileRole})
         </div>
@@ -276,13 +306,30 @@ export default function Page() {
         </button>
       </div>
 
-      <div style={{ width: '100%', height: 'calc(100% - 56px)', marginTop: 56 }}>
+      <div style={{ width: '100%' }}>
         <iframe
+          ref={iframeRef}
           src="/index.html"
           title={t.tournamentTitle}
-          style={{ width: '100%', height: '100%', border: 0 }}
+          onLoad={() => {
+            try {
+              const doc = iframeRef.current?.contentWindow?.document;
+              if (!doc) return;
+              const contentHeight = Math.max(
+                doc.body?.scrollHeight || 0,
+                doc.documentElement?.scrollHeight || 0,
+                900
+              );
+              setIframeHeight(contentHeight);
+            } catch {
+              // Ignore transient cross-document access errors during iframe load.
+            }
+          }}
+          style={{ width: '100%', height: `${iframeHeight}px`, border: 0 }}
+          scrolling="no"
         />
       </div>
     </main>
   );
 }
+
