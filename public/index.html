@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -297,17 +297,44 @@
             margin-left: 2px;
         }
 
+        .navbar-utility {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            margin-left: 1rem;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        .user-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.42rem 0.7rem;
+            border-radius: 999px;
+            border: 1px solid var(--club-border);
+            background: rgba(12, 28, 20, 0.85);
+            color: var(--club-text-soft);
+            font-size: 0.86rem;
+            line-height: 1.2;
+        }
+
+        #userRoleLabel {
+            color: var(--club-gold);
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
         .language-selector {
-            position: absolute;
-            top: 10px;
-            right: 20px;
-            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
         }
 
         .language-btn {
-            width: 40px;
+            width: 38px;
             height: 30px;
-            margin-left: 5px;
             cursor: pointer;
             border: 1px solid var(--club-border-strong);
             border-radius: 6px;
@@ -384,9 +411,15 @@
         }
 
         @media (max-width: 767px) {
-            .language-selector {
-                right: 12px;
-                top: 8px;
+            .navbar-utility {
+                margin-left: 0;
+                margin-top: 0.6rem;
+                justify-content: flex-start;
+            }
+
+            .user-chip {
+                width: 100%;
+                justify-content: flex-start;
             }
 
             .hero {
@@ -407,13 +440,7 @@
     </style>
 </head>
 <body>
-    <!-- Language Selector -->
-    <div class="language-selector">
-        <button class="language-btn flag-dk active-lang" data-lang="da" title="Dansk"></button>
-        <button class="language-btn flag-gb" data-lang="en" title="English"></button>
-    </div>
-
-    <!-- Navigation -->
+        <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container">
             <a class="navbar-brand" href="#" data-translate="title">Showdart Tournament Organizer</a>
@@ -435,6 +462,18 @@
                         <a class="nav-link" href="/admin" target="_top" data-translate="admin">Admin</a>
                     </li>
                 </ul>
+                <div class="navbar-utility">
+                    <div class="language-selector">
+                        <button class="language-btn flag-dk active-lang" data-lang="da" title="Dansk"></button>
+                        <button class="language-btn flag-gb" data-lang="en" title="English"></button>
+                    </div>
+                    <div class="user-chip">
+                        <span data-translate="loggedInAs">Logget ind som</span>
+                        <strong id="userEmailLabel">-</strong>
+                        <span id="userRoleLabel">(user)</span>
+                    </div>
+                    <button id="logoutTopBtn" class="btn btn-outline-danger btn-sm" data-translate="logout">Log ud</button>
+                </div>
             </div>
         </div>
     </nav>
@@ -2134,6 +2173,9 @@
                 "tournament": "Turnering",
                 "rules": "Regler",
                 "admin": "Admin",
+                "loggedInAs": "Logget ind som",
+                "roleUser": "bruger",
+                "roleAdmin": "admin",
                 "playerRegistration": "Spiller Registrering",
                 "playerName": "Spillernavn",
                 "register": "Registrer Spiller",
@@ -2388,6 +2430,9 @@
                 "tournament": "Tournament",
                 "rules": "Rules",
                 "admin": "Admin",
+                "loggedInAs": "Logged in as",
+                "roleUser": "user",
+                "roleAdmin": "admin",
                 "playerRegistration": "Player Registration",
                 "playerName": "Player Name",
                 "register": "Register Player",
@@ -2514,12 +2559,30 @@
             return text;
         }
 
-        function isAdminUser() {
+        function getStoredUserProfile() {
             try {
-                return localStorage.getItem('showdart-user-role') === 'admin';
+                return {
+                    email: localStorage.getItem('showdart-user-email') || '',
+                    role: localStorage.getItem('showdart-user-role') || 'user'
+                };
             } catch (_error) {
-                return false;
+                return { email: '', role: 'user' };
             }
+        }
+
+        function isAdminUser() {
+            return getStoredUserProfile().role === 'admin';
+        }
+
+        function updateUserIdentityChip() {
+            const emailNode = document.getElementById('userEmailLabel');
+            const roleNode = document.getElementById('userRoleLabel');
+            if (!emailNode || !roleNode) return;
+
+            const profile = getStoredUserProfile();
+            emailNode.textContent = profile.email || '-';
+            const roleKey = profile.role === 'admin' ? 'roleAdmin' : 'roleUser';
+            roleNode.textContent = `(${translate(roleKey)})`;
         }
 
         function updateAdminNavVisibility() {
@@ -2528,8 +2591,23 @@
             adminNavItem.style.display = isAdminUser() ? '' : 'none';
         }
 
-        window.addEventListener('focus', updateAdminNavVisibility);
-        setInterval(updateAdminNavVisibility, 1000);
+        function syncHeaderIdentity() {
+            updateAdminNavVisibility();
+            updateUserIdentityChip();
+        }
+
+        const logoutTopBtn = document.getElementById('logoutTopBtn');
+        if (logoutTopBtn) {
+            logoutTopBtn.addEventListener('click', function() {
+                if (window.parent && window.parent !== window) {
+                    window.parent.postMessage({ type: 'showdart-logout' }, '*');
+                }
+            });
+        }
+
+        window.addEventListener('focus', syncHeaderIdentity);
+        window.addEventListener('storage', syncHeaderIdentity);
+        setInterval(syncHeaderIdentity, 1000);
 
         // Language switching functionality
         document.querySelectorAll('.language-btn').forEach(btn => {
@@ -2583,7 +2661,7 @@
             if (navLinks[1]) navLinks[1].textContent = translate('tournament');
             if (navLinks[2]) navLinks[2].textContent = translate('rules');
             if (navLinks[3]) navLinks[3].textContent = translate('admin');
-            updateAdminNavVisibility();
+            syncHeaderIdentity();
             
             // Update hero
             const heroTitle = document.querySelector(SELECTORS.HERO_TITLE);
@@ -2905,7 +2983,7 @@
         // 10) Confirm footer and alerts remain readable after language switch.
 
         // Call translate page on load to set initial text
-        updateAdminNavVisibility();
+        syncHeaderIdentity();
         translatePage();
         initializeCloudPersistence();
     </script>

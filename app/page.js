@@ -6,6 +6,7 @@ import { getSupabaseBrowserClient } from '../lib/supabaseBrowser';
 const TOKEN_STORAGE_KEY = 'supabase_access_token';
 const LANGUAGE_STORAGE_KEY = 'showdart-language';
 const ROLE_STORAGE_KEY = 'showdart-user-role';
+const EMAIL_STORAGE_KEY = 'showdart-user-email';
 
 const texts = {
   da: {
@@ -115,8 +116,13 @@ export default function Page() {
     const { data: subscription } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession ?? null);
       setStoredAccessToken(nextSession ?? null);
-      if (!nextSession && typeof window !== 'undefined') {
-        localStorage.removeItem(ROLE_STORAGE_KEY);
+      if (typeof window !== 'undefined') {
+        if (!nextSession) {
+          localStorage.removeItem(ROLE_STORAGE_KEY);
+          localStorage.removeItem(EMAIL_STORAGE_KEY);
+        } else {
+          localStorage.setItem(EMAIL_STORAGE_KEY, nextSession.user?.email || '');
+        }
       }
       setAuthError('');
     });
@@ -150,6 +156,7 @@ export default function Page() {
         setProfileEmail(session.user.email || '');
         if (typeof window !== 'undefined') {
           localStorage.setItem(ROLE_STORAGE_KEY, 'user');
+          localStorage.setItem(EMAIL_STORAGE_KEY, session.user.email || '');
         }
         return;
       }
@@ -159,6 +166,7 @@ export default function Page() {
       setProfileEmail(payload.email || session.user.email || '');
       if (typeof window !== 'undefined') {
         localStorage.setItem(ROLE_STORAGE_KEY, role);
+        localStorage.setItem(EMAIL_STORAGE_KEY, payload.email || session.user.email || '');
       }
     }
 
@@ -194,6 +202,7 @@ export default function Page() {
     setStoredAccessToken(null);
     if (typeof window !== 'undefined') {
       localStorage.removeItem(ROLE_STORAGE_KEY);
+      localStorage.removeItem(EMAIL_STORAGE_KEY);
     }
     setSession(null);
   }
@@ -226,6 +235,14 @@ export default function Page() {
       window.removeEventListener('resize', syncIframeHeight);
     };
   }, [session]);
+  useEffect(() => {
+    const handleMessage = async event => {
+      if (event?.data?.type !== 'showdart-logout') return;
+      await handleLogout();
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
   const flagLanguageButtons = (
     <div style={{ display: 'flex', gap: 8 }}>
       <button type="button" onClick={() => changeLanguage('da')} title="Dansk" style={{ width: 36, height: 36, borderRadius: 999, border: lang === 'da' ? '2px solid #f2d14c' : '1px solid #355748', background: '#10271e', color: '#fff', fontSize: 18, lineHeight: 1 }}>{'\uD83C\uDDE9\uD83C\uDDF0'}</button>
@@ -297,14 +314,6 @@ export default function Page() {
 
   return (
     <main style={{ width: '100%', minHeight: '100vh', margin: 0, fontFamily: 'system-ui', background: '#0b1e16' }}>
-      <div style={{ display: 'flex', gap: 12, alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderBottom: '1px solid #355748', background: '#10271e', color: '#ecf8f2' }}>
-        <div>
-          {t.loggedInAs} <strong>{profileEmail || session.user.email}</strong> ({profileRole})
-        </div>
-        <button onClick={handleLogout} style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #a64a4a', background: '#a64a4a', color: '#fff' }}>
-          {t.logout}
-        </button>
-      </div>
 
       <div style={{ width: '100%' }}>
         <iframe
