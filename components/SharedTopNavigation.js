@@ -26,6 +26,7 @@ export function SharedTopNavigation({
   role,
   email,
   showRules,
+  showHero = true,
   activePage,
   onLanguageChange,
   onLogout,
@@ -89,6 +90,28 @@ export function SharedTopNavigation({
           </div>
         </div>
       </div>
+
+      {showHero ? (
+        <div
+          style={{
+            backgroundImage:
+              "linear-gradient(115deg, rgba(9, 21, 15, 0.92) 0%, rgba(9, 21, 15, 0.66) 45%, rgba(9, 21, 15, 0.86) 100%), url('https://images.unsplash.com/photo-1582562124811-c09040d0a901?auto=format&fit=crop&w=1400&q=80')",
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            color: '#f4efe1',
+            padding: '3.25rem 0',
+            borderTop: '1px solid rgba(255,255,255,0.05)',
+            borderBottom: '1px solid #355748',
+            boxShadow: 'inset 0 -60px 80px rgba(0,0,0,0.35)'
+          }}
+        >
+          <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 16px', textAlign: 'center' }}>
+            <h1 style={{ margin: 0, fontSize: 'clamp(1.7rem, 4.4vw, 2.55rem)', lineHeight: 1.05, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              {t.siteTitle}
+            </h1>
+          </div>
+        </div>
+      ) : null}
     </>
   );
 }
