@@ -617,9 +617,100 @@
                 this.maxLosses = 2;
                 this.currentRound = 0;
                 this.matches = [];
+                this.skippedPlayers = [];
                 this.started = false;
                 this.pendingTagChanges = false;
                 this.finalResults = null; // Store final match results
+                this.fairnessHistory = {
+                    partners: {},
+                    opponents: {}
+                };
+                this.lastRoundPartnerKeys = [];
+                this.lastRoundOpponentKeys = [];
+            }
+
+            static pairKey(idA, idB) {
+                const first = Math.min(idA, idB);
+                const second = Math.max(idA, idB);
+                return `${first}:${second}`;
+            }
+
+            getPairCount(type, idA, idB) {
+                const key = Tournament.pairKey(idA, idB);
+                const map = this.fairnessHistory[type] || {};
+                return Number.isFinite(map[key]) ? map[key] : 0;
+            }
+
+            getRoundFairnessPenalty(teams) {
+                const previousPartnerSet = new Set(this.lastRoundPartnerKeys || []);
+                const previousOpponentSet = new Set(this.lastRoundOpponentKeys || []);
+                let penalty = 0;
+
+                teams.forEach(([team1, team2]) => {
+                    if (team1.length === 2) {
+                        const key = Tournament.pairKey(team1[0].id, team1[1].id);
+                        penalty += this.getPairCount('partners', team1[0].id, team1[1].id) * 200;
+                        if (previousPartnerSet.has(key)) {
+                            penalty += 800;
+                        }
+                    }
+
+                    if (team2.length === 2) {
+                        const key = Tournament.pairKey(team2[0].id, team2[1].id);
+                        penalty += this.getPairCount('partners', team2[0].id, team2[1].id) * 200;
+                        if (previousPartnerSet.has(key)) {
+                            penalty += 800;
+                        }
+                    }
+
+                    team1.forEach(player1 => {
+                        team2.forEach(player2 => {
+                            const key = Tournament.pairKey(player1.id, player2.id);
+                            penalty += this.getPairCount('opponents', player1.id, player2.id) * 80;
+                            if (previousOpponentSet.has(key)) {
+                                penalty += 280;
+                            }
+                        });
+                    });
+                });
+
+                return penalty;
+            }
+
+            incrementPairCount(type, idA, idB) {
+                const key = Tournament.pairKey(idA, idB);
+                if (!this.fairnessHistory[type]) {
+                    this.fairnessHistory[type] = {};
+                }
+                this.fairnessHistory[type][key] = (this.fairnessHistory[type][key] || 0) + 1;
+                return key;
+            }
+
+            recordFairnessRound() {
+                const partnerKeys = [];
+                const opponentKeys = [];
+
+                this.matches.forEach(match => {
+                    if (match.team1.length === 2) {
+                        const key = this.incrementPairCount('partners', match.team1[0].id, match.team1[1].id);
+                        partnerKeys.push(key);
+                    }
+
+                    if (match.team2.length === 2) {
+                        const key = this.incrementPairCount('partners', match.team2[0].id, match.team2[1].id);
+                        partnerKeys.push(key);
+                    }
+
+                    match.team1.forEach(player1 => {
+                        match.team2.forEach(player2 => {
+                            const key = this.incrementPairCount('opponents', player1.id, player2.id);
+                            opponentKeys.push(key);
+                        });
+                    });
+                });
+
+                this.lastRoundPartnerKeys = [...new Set(partnerKeys)];
+                this.lastRoundOpponentKeys = [...new Set(opponentKeys)];
             }
 
             addPlayer(name) {
@@ -641,188 +732,181 @@
                 this.maxLosses = maxLosses;
                 this.started = true;
                 this.currentRound = 1;
+                this.matches = [];
+                this.skippedPlayers = [];
+                this.finalResults = null;
+                this.pendingTagChanges = false;
+                this.fairnessHistory = {
+                    partners: {},
+                    opponents: {}
+                };
+                this.lastRoundPartnerKeys = [];
+                this.lastRoundOpponentKeys = [];
             }
 
             generateMatches() {
                 this.matches = [];
                 const activePlayers = this.getActivePlayers();
-                
+
                 // Maximum shuffle attempts to prevent infinite loops
                 const maxShuffleAttempts = MATCH_GENERATION_MAX_SHUFFLE_ATTEMPTS;
                 let shuffleAttempts = 0;
-                let validMatchesFound = false;
-                
-                while (!validMatchesFound && shuffleAttempts < maxShuffleAttempts) {
+                let bestCandidate = null;
+                let bestFairnessPenalty = Number.POSITIVE_INFINITY;
+
+                while (shuffleAttempts < maxShuffleAttempts) {
                     shuffleAttempts++;
-                    
+
                     // Track how many players with S tag we're putting into 1v1 matches this round
                     let sTaggedPlayersIn1v1 = 0;
                     const totalSTaggedPlayers = activePlayers.filter(p => p.tags.includes('S')).length;
-                    
+
                     // Shuffle players for random matching
                     const shuffledPlayers = [...activePlayers].sort(() => Math.random() - 0.5);
-                    
+
                     // Keep track of players and teams
-                    const matchedPlayers = [];
                     const teams = [];
-                    let error = null;
                     let skippedPlayers = [];
-                    
+
                     // First, create as many 2v2 matches as possible
                     while (shuffledPlayers.length >= 4) {
                         const team1 = [shuffledPlayers.shift(), shuffledPlayers.shift()];
                         const team2 = [shuffledPlayers.shift(), shuffledPlayers.shift()];
                         teams.push([team1, team2]);
-                        matchedPlayers.push(...team1, ...team2);
                     }
-                    
+
                     // Check if we're about to form 1v1 matches with players that have S tags unnecessarily
-                    // If there are exactly 2 players remaining and both have S tags, and there are more than 2 active players total
-                    // and we could have formed a different combination, we should reshuffle
-                    if (shuffledPlayers.length === 2 && 
-                        shuffledPlayers.every(p => p.tags.includes('S')) && 
+                    if (
+                        shuffledPlayers.length === 2 &&
+                        shuffledPlayers.every(p => p.tags.includes('S')) &&
                         activePlayers.length > 2 &&
-                        activePlayers.some(p => !p.tags.includes('S'))) {
-                            error = "Reshuffling: All remaining players have 'S' tags but other non-S players are available.";
-                            continue;
+                        activePlayers.some(p => !p.tags.includes('S'))
+                    ) {
+                        continue;
                     }
-                    
+
                     // Handle remaining players according to rules
                     if (shuffledPlayers.length === 3) {
                         // Check if we can form a 1v1 match (need at least 2 players without S tag)
                         const nonSTagPlayers = shuffledPlayers.filter(p => !p.tags.includes('S'));
-                        
+
                         if (nonSTagPlayers.length < 2) {
-                            // Not enough players without S tag, try reshuffling
-                            error = "Reshuffling: Need at least 2 players without 'S' tag for 1v1 match.";
                             continue;
                         }
-                        
+
                         // Find player to skip - should be one without O tag if possible
                         const player1 = nonSTagPlayers[0];
                         const player2 = nonSTagPlayers[1];
                         const remainingPlayer = shuffledPlayers.find(p => p !== player1 && p !== player2);
-                        
+
                         // Never allow the same player to skip two rounds in a row.
                         if (remainingPlayer.lastSkippedRound === this.currentRound - 1) {
-                            error = "Reshuffling: A player cannot skip two rounds in a row.";
                             continue;
                         }
-                        
+
                         // Check if the remaining player already has an O tag
                         if (remainingPlayer.tags.includes('O')) {
-                            // Check if there are other players without O tag
                             const nonOTagPlayers = shuffledPlayers.filter(p => !p.tags.includes('O'));
                             if (nonOTagPlayers.length > 0 && nonOTagPlayers.length < 3) {
-                                // Try reshuffling to find a better arrangement
-                                error = "Reshuffling: A player with 'O' tag would need to skip again.";
                                 continue;
                             }
-                            
-                            // Check if all players have O tag
+
                             const allHaveOTag = shuffledPlayers.every(p => p.tags.includes('O'));
                             if (!allHaveOTag) {
-                                error = "Reshuffling: A player with 'O' tag would need to skip while others don't have 'O' tag.";
                                 continue;
                             }
                         }
-                        
+
                         teams.push([[player1], [player2]]);
-                        matchedPlayers.push(player1, player2);
                         skippedPlayers.push(remainingPlayer);
-                        
                     } else if (shuffledPlayers.length === 2) {
                         // Two players play 1v1
-                        // Check if both have S tag
                         const bothHaveSTag = shuffledPlayers.every(p => p.tags.includes('S'));
                         const someHaveSTag = shuffledPlayers.some(p => p.tags.includes('S'));
-                        
+
                         // Update counter for S-tagged players in 1v1 matches
                         sTaggedPlayersIn1v1 += shuffledPlayers.filter(p => p.tags.includes('S')).length;
-                        
+
                         // If some but not all have S tag, and we have more than 2 active players, try reshuffling
                         if (someHaveSTag && !bothHaveSTag && activePlayers.length > 2) {
-                            error = "Reshuffling: Only one player has 'S' tag in 1v1 match.";
                             continue;
                         }
-                        
+
                         // If both have S tag and there are more active players, this is not optimal - try reshuffling
-                        // This prevents forcing players with S tags into 1v1 matches when other options exist
                         if (bothHaveSTag && activePlayers.length > 2) {
-                            error = "Reshuffling: Both players have 'S' tag in 1v1 match while other players are available.";
                             continue;
                         }
-                        
+
                         teams.push([[shuffledPlayers[0]], [shuffledPlayers[1]]]);
-                        matchedPlayers.push(...shuffledPlayers);
-                        
                     } else if (shuffledPlayers.length === 1) {
                         // One player skips
                         const player = shuffledPlayers[0];
-                        
+
                         // Never allow the same player to skip two rounds in a row.
                         if (player.lastSkippedRound === this.currentRound - 1) {
-                            error = "Reshuffling: A player cannot skip two rounds in a row.";
                             continue;
                         }
-                        
+
                         // Check if player already has O tag and if they are the only one
                         if (player.tags.includes('O')) {
                             const nonOTagPlayers = activePlayers.filter(p => !p.tags.includes('O'));
                             if (nonOTagPlayers.length > 0) {
-                                // Try reshuffling to find a better arrangement
-                                error = "Reshuffling: A player with 'O' tag would need to skip again.";
                                 continue;
                             }
                         }
-                        
+
                         skippedPlayers.push(player);
                     }
-                    
-                    // If we reached here without continuing, we have valid matches
-                    if (!error) {
-                        // One final check: If we have an even number of players and we're forcing S-tagged players into 1v1 matches
-                        // when there are non-S-tagged players available, this is probably suboptimal
-                        if (activePlayers.length % 2 === 0 && 
-                            sTaggedPlayersIn1v1 > 0 && 
-                            sTaggedPlayersIn1v1 < totalSTaggedPlayers &&
-                            activePlayers.some(p => !p.tags.includes('S'))) {
-                                // Try another shuffle to see if we can avoid this
-                                if (shuffleAttempts < maxShuffleAttempts - 1) {
-                                    error = "Reshuffling: Suboptimal distribution of S-tagged players in 1v1 matches.";
-                                    continue;
-                                }
+
+                    // If we reached here without continuing, we have a valid candidate
+                    // If we have an even number of players and we're forcing S-tagged players into 1v1 matches
+                    if (
+                        activePlayers.length % 2 === 0 &&
+                        sTaggedPlayersIn1v1 > 0 &&
+                        sTaggedPlayersIn1v1 < totalSTaggedPlayers &&
+                        activePlayers.some(p => !p.tags.includes('S'))
+                    ) {
+                        if (shuffleAttempts < maxShuffleAttempts - 1) {
+                            continue;
                         }
-                        
-                        // Create match objects
-                        this.matches = teams.map((team, index) => {
-                            return {
-                                id: index + 1,
-                                team1: team[0],
-                                team2: team[1],
-                                winner: null
-                            };
-                        });
-                        
-                        // Store skipped players
-                        this.skippedPlayers = skippedPlayers;
-                        
-                        validMatchesFound = true;
+                    }
+
+                    const fairnessPenalty = this.getRoundFairnessPenalty(teams);
+                    if (fairnessPenalty < bestFairnessPenalty) {
+                        bestFairnessPenalty = fairnessPenalty;
+                        bestCandidate = { teams, skippedPlayers };
+                    }
+
+                    // Perfect fairness candidate found; stop early.
+                    if (bestFairnessPenalty === 0) {
+                        break;
                     }
                 }
-                
-                if (!validMatchesFound) {
+
+                if (!bestCandidate) {
                     return {
-                        error: "Could not generate valid matches after multiple attempts. Please check player tags and manually modify them."
+                        error: 'Could not generate valid matches after multiple attempts. Please check player tags and manually modify them.'
                     };
                 }
-                
+
+                // Create match objects from the best fairness candidate.
+                this.matches = bestCandidate.teams.map((team, index) => {
+                    return {
+                        id: index + 1,
+                        team1: team[0],
+                        team2: team[1],
+                        winner: null
+                    };
+                });
+
+                // Store skipped players
+                this.skippedPlayers = bestCandidate.skippedPlayers;
+
                 return {
                     matches: this.matches,
                     skippedPlayers: this.skippedPlayers
                 };
             }
-
             assignTags() {
                 // Assign S tags to players in 1v1 matches
                 this.matches.forEach(match => {
@@ -891,6 +975,7 @@
                     }
                 });
                 
+                this.recordFairnessRound();
                 // Clear matches
                 this.matches = [];
                 
@@ -1140,7 +1225,10 @@
                     winner: match.winner
                 })),
                 skippedPlayerIds: (tournament.skippedPlayers || []).map(player => player.id),
-                finalResultPlayerIds: tournament.finalResults ? tournament.finalResults.map(player => player.id) : null
+                finalResultPlayerIds: tournament.finalResults ? tournament.finalResults.map(player => player.id) : null,
+                fairnessHistory: tournament.fairnessHistory || { partners: {}, opponents: {} },
+                lastRoundPartnerKeys: Array.isArray(tournament.lastRoundPartnerKeys) ? [...tournament.lastRoundPartnerKeys] : [],
+                lastRoundOpponentKeys: Array.isArray(tournament.lastRoundOpponentKeys) ? [...tournament.lastRoundOpponentKeys] : []
             };
         }
 
@@ -1181,6 +1269,15 @@
             tournament.skippedPlayers = Array.isArray(state.skippedPlayerIds)
                 ? state.skippedPlayerIds.map(id => playerMap.get(id)).filter(Boolean)
                 : [];
+
+            tournament.fairnessHistory = state.fairnessHistory && typeof state.fairnessHistory === 'object'
+                ? {
+                    partners: { ...(state.fairnessHistory.partners || {}) },
+                    opponents: { ...(state.fairnessHistory.opponents || {}) }
+                }
+                : { partners: {}, opponents: {} };
+            tournament.lastRoundPartnerKeys = Array.isArray(state.lastRoundPartnerKeys) ? [...state.lastRoundPartnerKeys] : [];
+            tournament.lastRoundOpponentKeys = Array.isArray(state.lastRoundOpponentKeys) ? [...state.lastRoundOpponentKeys] : [];
 
             updatePlayersTable();
             updateTournamentUI();
@@ -1368,6 +1465,9 @@
             tournament.started = false;
             tournament.pendingTagChanges = false;
             tournament.finalResults = null;
+            tournament.fairnessHistory = { partners: {}, opponents: {} };
+            tournament.lastRoundPartnerKeys = [];
+            tournament.lastRoundOpponentKeys = [];
 
             matchesContainer.innerHTML = '';
             tagReminder.style.display = 'none';
@@ -3124,6 +3224,7 @@
     </script>
 </body>
 </html>
+
 
 
 
