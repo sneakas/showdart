@@ -85,8 +85,18 @@ export function SharedTopNavigation({
           </div>
 
           <div style={{ display: 'flex', gap: 8 }}>
-            <button type="button" onClick={() => onLanguageChange?.('da')} title="Dansk" style={{ width: 40, height: 30, borderRadius: 6, border: lang === 'da' ? '2px solid #f2d14c' : '1px solid #3e6353', background: '#10271e', color: '#fff', fontSize: 18, lineHeight: 1, padding: 0 }}>{'\uD83C\uDDE9\uD83C\uDDF0'}</button>
-            <button type="button" onClick={() => onLanguageChange?.('en')} title="English" style={{ width: 40, height: 30, borderRadius: 6, border: lang === 'en' ? '2px solid #f2d14c' : '1px solid #3e6353', background: '#10271e', color: '#fff', fontSize: 18, lineHeight: 1, padding: 0 }}>{'\uD83C\uDDEC\uD83C\uDDE7'}</button>
+            <button
+              type="button"
+              onClick={() => onLanguageChange?.('da')}
+              title="Dansk"
+              style={{ width: 40, height: 30, borderRadius: 6, border: lang === 'da' ? '2px solid #f2d14c' : '1px solid #3e6353', backgroundImage: "url('https://flagcdn.com/w40/dk.png')", backgroundSize: 'cover', backgroundPosition: 'center', backgroundColor: '#10271e', padding: 0 }}
+            />
+            <button
+              type="button"
+              onClick={() => onLanguageChange?.('en')}
+              title="English"
+              style={{ width: 40, height: 30, borderRadius: 6, border: lang === 'en' ? '2px solid #f2d14c' : '1px solid #3e6353', backgroundImage: "url('https://flagcdn.com/w40/gb.png')", backgroundSize: 'cover', backgroundPosition: 'center', backgroundColor: '#10271e', padding: 0 }}
+            />
           </div>
         </div>
       </div>
@@ -100,6 +110,7 @@ export function SharedTopNavigation({
             backgroundPosition: 'center',
             color: '#f4efe1',
             padding: '3.25rem 0',
+            marginBottom: '1.25rem',
             borderTop: '1px solid rgba(255,255,255,0.05)',
             borderBottom: '1px solid #355748',
             boxShadow: 'inset 0 -60px 80px rgba(0,0,0,0.35)'
@@ -119,3 +130,4 @@ export function SharedTopNavigation({
 export function getHeaderTexts(lang) {
   return headerTexts[lang] || headerTexts.da;
 }
+
