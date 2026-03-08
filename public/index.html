@@ -2483,7 +2483,15 @@
         };
         
         // Set default language to Danish
-        let currentLang = 'da';
+        let currentLang = (() => {
+            try {
+                const savedLang = localStorage.getItem('showdart-language');
+                if (savedLang === 'da' || savedLang === 'en') {
+                    return savedLang;
+                }
+            } catch (_error) {}
+            return 'da';
+        })();
 
         // Function to translate text
         function translate(key) {
@@ -2507,6 +2515,7 @@
                 const lang = this.getAttribute('data-lang');
                 if (lang !== currentLang) {
                     currentLang = lang;
+                    try { localStorage.setItem('showdart-language', lang); } catch (_error) {}
                     
                     // Update active button
                     document.querySelectorAll('.language-btn').forEach(b => b.classList.remove('active-lang'));
@@ -2877,6 +2886,7 @@
     </script>
 </body>
 </html>
+
 
 
 
