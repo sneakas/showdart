@@ -510,6 +510,10 @@
                 </div>
                 <div class="card-body">
                     <div class="mb-3">
+                        <label for="tournamentName" class="form-label" data-translate="tournamentNameLabel">Tournament Name</label>
+                        <input type="text" class="form-control" id="tournamentName" maxlength="80">
+                    </div>
+                    <div class="mb-3">
                         <label for="tournamentForm" class="form-label" id="tournamentFormLabel" data-translate="tournamentForm">Tournament Form</label>
                         <select class="form-select" id="tournamentForm">
                             <option value="changing" data-translate="changingTeammates">Changing teammates</option>
@@ -617,6 +621,7 @@
             constructor() {
                 this.players = [];
                 this.fixedTeams = [];
+                this.name = '';
                 this.teammateMode = 'changing';
                 this.maxLosses = 2;
                 this.currentRound = 0;
@@ -856,7 +861,8 @@
                 });
             }
 
-            startTournament(maxLosses) {
+            startTournament(maxLosses, tournamentName = '') {
+                this.name = typeof tournamentName === 'string' ? tournamentName.trim() : '';
                 this.maxLosses = maxLosses;
                 this.started = true;
                 this.currentRound = 1;
@@ -1266,6 +1272,7 @@
         const registrationSubmitButton = document.getElementById('registrationSubmitButton');
         const registeredEntriesTitle = document.getElementById('registeredEntriesTitle');
         const playersTable = document.getElementById('playersTable');
+        const tournamentNameInput = document.getElementById('tournamentName');
         const tournamentFormSelect = document.getElementById('tournamentForm');
         const startTournamentBtn = document.getElementById('startTournament');
         const generateMatchesBtn = document.getElementById('generateMatches');
@@ -1360,6 +1367,10 @@
             if (tournamentFormSelect) {
                 tournamentFormSelect.value = tournament.teammateMode;
                 tournamentFormSelect.disabled = tournament.started;
+            }
+            if (tournamentNameInput) {
+                tournamentNameInput.value = tournament.name || '';
+                tournamentNameInput.disabled = tournament.started;
             }
 
             renderRulesModal();
@@ -1563,6 +1574,7 @@
         function serializeTournamentState() {
             return {
                 version: 2,
+                tournamentName: tournament.name,
                 teammateMode: tournament.teammateMode,
                 players: tournament.players.map(player => ({
                     id: player.id,
@@ -1667,6 +1679,7 @@
 
             tournament.players = hydratedPlayers;
             tournament.fixedTeams = hydratedTeams;
+            tournament.name = typeof state.tournamentName === 'string' ? state.tournamentName : '';
             tournament.setTeammateMode(teammateMode);
             tournament.maxLosses = Number.isInteger(state.maxLosses) ? state.maxLosses : 2;
             tournament.currentRound = Number.isInteger(state.currentRound) ? state.currentRound : 0;
@@ -1763,6 +1776,7 @@
 
         function applyEmptyTournamentState() {
             applyTournamentState({
+                tournamentName: '',
                 teammateMode: 'changing',
                 players: [],
                 fixedTeams: [],
@@ -1909,6 +1923,7 @@
             const currentMode = tournament.teammateMode;
             tournament.players = [];
             tournament.fixedTeams = [];
+            tournament.name = '';
             tournament.setTeammateMode(currentMode);
             tournament.maxLosses = 2;
             tournament.currentRound = 0;
@@ -1934,6 +1949,10 @@
             registrationForm.querySelectorAll('input, button').forEach(el => el.disabled = false);
             if (tournamentFormSelect) {
                 tournamentFormSelect.disabled = false;
+            }
+            if (tournamentNameInput) {
+                tournamentNameInput.value = '';
+                tournamentNameInput.disabled = false;
             }
             clearRegistrationInputs();
             document.getElementById('maxLosses').value = '2';
@@ -2027,6 +2046,12 @@
             updateTournamentUI();
             scheduleCloudSave();
         });
+        if (tournamentNameInput) {
+            tournamentNameInput.addEventListener('input', function() {
+                tournament.name = this.value.trim();
+                scheduleCloudSave();
+            });
+        }
 
         resetTournamentBtn.addEventListener('click', function() {
             if (confirm(translate('confirmResetTournament'))) {
@@ -2045,13 +2070,14 @@
         });
         startTournamentBtn.addEventListener('click', function() {
             const maxLosses = parseInt(document.getElementById('maxLosses').value);
+            const tournamentName = tournamentNameInput ? tournamentNameInput.value.trim() : tournament.name;
             const minimumEntries = isFixedTeammatesMode() ? 2 : 4;
             if (getRegistrationCount() < minimumEntries) {
                 alert(translate(isFixedTeammatesMode() ? 'needTeams' : 'needPlayers'));
                 return;
             }
             
-            tournament.startTournament(maxLosses);
+            tournament.startTournament(maxLosses, tournamentName);
             
             if (currentRoundSpan) {
                 currentRoundSpan.textContent = tournament.currentRound;
@@ -2065,6 +2091,9 @@
             
             registrationForm.querySelectorAll('input, button').forEach(el => el.disabled = true);
             tournamentFormSelect.disabled = true;
+            if (tournamentNameInput) {
+                tournamentNameInput.disabled = true;
+            }
             startTournamentBtn.disabled = true;
             generateMatchesBtn.disabled = false;
             
@@ -2945,6 +2974,7 @@
                 "tags": "Tags",
                 "actions": "Handlinger",
                 "tournamentSettings": "Turneringsindstillinger",
+                "tournamentNameLabel": "Turneringsnavn",
                 "tournamentForm": "Turneringsform",
                 "changingTeammates": "Skiftende makkere",
                 "fixedTeammates": "Faste makkere",
@@ -3234,6 +3264,7 @@
                 "tags": "Tags",
                 "actions": "Actions",
                 "tournamentSettings": "Tournament Settings",
+                "tournamentNameLabel": "Tournament Name",
                 "tournamentForm": "Tournament Form",
                 "changingTeammates": "Changing teammates",
                 "fixedTeammates": "Fixed teammates",

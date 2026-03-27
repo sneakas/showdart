@@ -227,15 +227,15 @@ export default function ScreenPage() {
 
   const entryLabel = screenState.isFixedTeams ? t.team : t.player;
   const modeLabel = screenState.isFixedTeams ? t.fixedTeams : t.changingTeams;
+  const displayTitle = screenState.tournamentName || t.title;
 
   return (
     <main style={pageStyle}>
-      <section style={{ maxWidth: 1280, margin: '0 auto' }}>
+      <section style={{ maxWidth: 1280, margin: '0 auto', textTransform: 'uppercase' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'flex-start', marginBottom: 24, flexWrap: 'wrap' }}>
           <div>
             <div style={{ color: '#9db9ab', letterSpacing: '0.08em', textTransform: 'uppercase', fontSize: 12, marginBottom: 8 }}>{modeLabel}</div>
-            <h1 style={{ margin: 0, fontSize: 'clamp(2rem, 5vw, 3.4rem)', lineHeight: 1 }}>{t.title}</h1>
-            <p style={{ margin: '10px 0 0', color: '#cfe4d8' }}>{t.subtitle}</p>
+            <h1 style={{ margin: 0, fontSize: 'clamp(2.4rem, 6vw, 4.6rem)', lineHeight: 1, letterSpacing: '0.08em' }}>{displayTitle}</h1>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 10 }}>
