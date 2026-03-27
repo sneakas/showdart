@@ -34,6 +34,8 @@ const texts = {
     onBye: 'Sidder over',
     updated: 'Senest opdateret',
     live: 'Live',
+    scanQr: 'Scan QR-kode',
+    scanQrHint: 'Åbn skærmen på din telefon',
     tournamentNotStarted: 'Turneringen er ikke startet',
     fixedTeams: 'Faste makkere',
     changingTeams: 'Skiftende makkere'
@@ -64,6 +66,8 @@ const texts = {
     onBye: 'Bye',
     updated: 'Last updated',
     live: 'Live',
+    scanQr: 'Scan QR Code',
+    scanQrHint: 'Open this screen on your phone',
     tournamentNotStarted: 'Tournament not started',
     fixedTeams: 'Fixed teammates',
     changingTeams: 'Changing teammates'
@@ -116,6 +120,7 @@ export default function ScreenPage() {
   const [screenMeta, setScreenMeta] = useState(null);
   const [tournamentState, setTournamentState] = useState(null);
   const [updatedAt, setUpdatedAt] = useState(null);
+  const [shareUrl, setShareUrl] = useState('');
 
   const t = texts[lang] || texts.da;
   const screenState = useMemo(() => buildScreenState(tournamentState), [tournamentState]);
@@ -134,6 +139,11 @@ export default function ScreenPage() {
     localStorage.setItem(LANGUAGE_STORAGE_KEY, lang);
     document.documentElement.lang = lang;
   }, [lang]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    setShareUrl(window.location.href);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -228,6 +238,9 @@ export default function ScreenPage() {
   const entryLabel = screenState.isFixedTeams ? t.team : t.player;
   const modeLabel = screenState.isFixedTeams ? t.fixedTeams : t.changingTeams;
   const displayTitle = screenState.tournamentName || t.title;
+  const qrSrc = shareUrl
+    ? `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=0&data=${encodeURIComponent(shareUrl)}`
+    : '';
 
   return (
     <main style={pageStyle}>
@@ -238,26 +251,40 @@ export default function ScreenPage() {
             <h1 style={{ margin: 0, fontSize: 'clamp(2.4rem, 6vw, 4.6rem)', lineHeight: 1, letterSpacing: '0.08em' }}>{displayTitle}</h1>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 10 }}>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button
-                type="button"
-                onClick={() => setLang('da')}
-                style={{ width: 40, height: 30, borderRadius: 6, border: lang === 'da' ? '2px solid #f2d14c' : '1px solid #3e6353', backgroundImage: "url('https://flagcdn.com/w40/dk.png')", backgroundSize: 'cover', backgroundPosition: 'center', backgroundColor: '#10271e', padding: 0 }}
-                aria-label="Skift sprog til dansk"
-              />
-              <button
-                type="button"
-                onClick={() => setLang('en')}
-                style={{ width: 40, height: 30, borderRadius: 6, border: lang === 'en' ? '2px solid #f2d14c' : '1px solid #3e6353', backgroundImage: "url('https://flagcdn.com/w40/gb.png')", backgroundSize: 'cover', backgroundPosition: 'center', backgroundColor: '#10271e', padding: 0 }}
-                aria-label="Switch language to English"
-              />
+          <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 10 }}>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button
+                  type="button"
+                  onClick={() => setLang('da')}
+                  style={{ width: 40, height: 30, borderRadius: 6, border: lang === 'da' ? '2px solid #f2d14c' : '1px solid #3e6353', backgroundImage: "url('https://flagcdn.com/w40/dk.png')", backgroundSize: 'cover', backgroundPosition: 'center', backgroundColor: '#10271e', padding: 0 }}
+                  aria-label="Skift sprog til dansk"
+                />
+                <button
+                  type="button"
+                  onClick={() => setLang('en')}
+                  style={{ width: 40, height: 30, borderRadius: 6, border: lang === 'en' ? '2px solid #f2d14c' : '1px solid #3e6353', backgroundImage: "url('https://flagcdn.com/w40/gb.png')", backgroundSize: 'cover', backgroundPosition: 'center', backgroundColor: '#10271e', padding: 0 }}
+                  aria-label="Switch language to English"
+                />
+              </div>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#10271e', border: '1px solid #355748', borderRadius: 999, padding: '8px 12px' }}>
+                <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#46c37b', boxShadow: '0 0 12px rgba(70,195,123,0.6)' }} />
+                <strong>{t.live}</strong>
+                <span style={{ color: '#cfe4d8' }}>{t.updated}: {formatUpdatedAt(updatedAt, lang)}</span>
+              </div>
             </div>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#10271e', border: '1px solid #355748', borderRadius: 999, padding: '8px 12px' }}>
-              <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#46c37b', boxShadow: '0 0 12px rgba(70,195,123,0.6)' }} />
-              <strong>{t.live}</strong>
-              <span style={{ color: '#cfe4d8' }}>{t.updated}: {formatUpdatedAt(updatedAt, lang)}</span>
-            </div>
+
+            {qrSrc ? (
+              <div style={{ background: '#10271e', border: '1px solid #355748', borderRadius: 18, padding: 12, textAlign: 'center', width: 170, textTransform: 'none' }}>
+                <div style={{ color: '#9db9ab', fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>{t.scanQr}</div>
+                <img
+                  src={qrSrc}
+                  alt={t.scanQr}
+                  style={{ width: '100%', height: 'auto', borderRadius: 10, background: '#fff', padding: 8, display: 'block' }}
+                />
+                <div style={{ marginTop: 8, color: '#cfe4d8', fontSize: 12, lineHeight: 1.35 }}>{t.scanQrHint}</div>
+              </div>
+            ) : null}
           </div>
         </div>
 
