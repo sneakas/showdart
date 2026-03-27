@@ -9,16 +9,16 @@ const LANGUAGE_STORAGE_KEY = 'showdart-language';
 
 const texts = {
   da: {
-    loading: 'Indlaeser tilskuerskaerm...',
-    invalidTitle: 'Ugyldigt skaermlink',
+    loading: 'Indlæser tilskuerskærm...',
+    invalidTitle: 'Ugyldigt skærmlink',
     invalidBody: 'Dette link er ikke gyldigt eller kunne ikke hentes.',
-    title: 'Showdart Live Skaerm',
+    title: 'Showdart Live Skærm',
     subtitle: 'Separat visning for deltagere og tilskuere',
     betweenRounds: 'Mellem runder',
     roundLive: 'Aktuelle kampe',
     registrationOpen: 'Registrerede deltagere',
-    waitingTitle: 'Venter pa turnering',
-    waitingBody: 'Turneringen er ikke startet endnu. Skaermen opdaterer automatisk, naar arrangoren opretter eller opdaterer turneringen.',
+    waitingTitle: 'Venter på turnering',
+    waitingBody: 'Turneringen er ikke startet endnu. Skærmen opdaterer automatisk, når arrangøren opretter eller opdaterer turneringen.',
     standings: 'Stilling',
     finalResults: 'Slutstilling',
     losses: 'Nederlag',
@@ -31,7 +31,7 @@ const texts = {
     place: 'Plads',
     vs: 'VS',
     winner: 'Vinder',
-    onBye: 'Staar over',
+    onBye: 'Står over',
     updated: 'Senest opdateret',
     live: 'Live',
     tournamentNotStarted: 'Turneringen er ikke startet',
@@ -394,9 +394,9 @@ export default function ScreenPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {screenState.finalResults.map((entry, index) => (
+                  {screenState.finalPlacements.map(entry => (
                     <tr key={entry.id} style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-                      <td style={{ padding: '12px', fontWeight: 700 }}>{index + 1}</td>
+                      <td style={{ padding: '12px', fontWeight: 700 }}>{entry.place}</td>
                       <td style={{ padding: '12px', fontWeight: 700 }}>{entry.name}</td>
                     </tr>
                   ))}
