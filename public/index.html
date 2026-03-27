@@ -880,19 +880,6 @@
                         </ul>
                     </div>
 
-                    <div class="card between-rounds-card" id="betweenRoundsCard" style="display: none;">
-                        <div class="card-header" data-translate="betweenRoundsTitle">Between Rounds</div>
-                        <div class="card-body">
-                            <div class="between-rounds-headline">
-                                <div>
-                                    <h5 class="mb-1" data-translate="standingsPreviewTitle">Current Standings</h5>
-                                    <div class="section-helper-text" id="betweenRoundsHelperText" data-translate="betweenRoundsReady">Review the standings, then generate the next round when you are ready.</div>
-                                </div>
-                            </div>
-                            <div id="standingsSummary"></div>
-                        </div>
-                    </div>
-
                     <div id="matchesContainer">
                         <!-- Matches will be added here dynamically -->
                     </div>
@@ -1922,45 +1909,7 @@
         }
 
         function renderStandingsSummary() {
-            if (!betweenRoundsCard || !standingsSummary) {
-                return;
-            }
-
-            const activeEntries = tournament.getActiveEntries();
-            const hasRoundAssignments = tournament.matches.length > 0 || ((tournament.skippedPlayers || []).length > 0);
-            const showBetweenRounds = tournament.started && !hasRoundAssignments && !tournament.finalResults && activeEntries.length > 1;
-
-            if (!showBetweenRounds) {
-                betweenRoundsCard.style.display = 'none';
-                standingsSummary.innerHTML = '';
-                return;
-            }
-
-            const rows = getSortedEntriesForOverview().map((entry, index) => `
-                <tr class="${entry.active ? '' : 'table-danger'}">
-                    <td>${index + 1}</td>
-                    <td>${entry.name}${isFixedTeammatesMode() ? `<div class="text-muted small">${entry.memberOne || ''}${entry.memberTwo ? ` / ${entry.memberTwo}` : ''}</div>` : ''}</td>
-                    <td>${entry.losses}/${tournament.maxLosses}</td>
-                    <td>${getEntryStatusText(entry)}</td>
-                </tr>
-            `).join('');
-
-            standingsSummary.innerHTML = `
-                <div class="table-responsive">
-                    <table class="table table-striped standings-mini-table mb-0">
-                        <thead>
-                            <tr>
-                                <th>${translate('place')}</th>
-                                <th>${translate(isFixedTeammatesMode() ? 'teamName' : 'player')}</th>
-                                <th>${translate('losses')}</th>
-                                <th>${translate('status')}</th>
-                            </tr>
-                        </thead>
-                        <tbody>${rows}</tbody>
-                    </table>
-                </div>
-            `;
-            betweenRoundsCard.style.display = '';
+            return;
         }
 
         function insertAlertBeforeMatches(id, className, html, autoDismissMs = 0) {
@@ -2631,12 +2580,10 @@
             tournament.assignTags();
             updatePlayersTable();
             tournament.pendingTagChanges = false;
-            approveTagChangesBtn.disabled = true;
 
             renderCurrentRoundView();
+            updateTournamentUI();
             scheduleCloudSave();
-            generateMatchesBtn.disabled = true;
-            completeRoundBtn.disabled = false;
         });
 
         completeRoundBtn.addEventListener('click', function() {
@@ -3188,6 +3135,7 @@
                     
                     this.classList.remove('btn-outline-primary');
                     this.classList.add('btn-primary');
+                    updateTournamentUI();
                     scheduleCloudSave();
                 });
             });
