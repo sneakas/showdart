@@ -2560,7 +2560,6 @@
                                 <div class="card skipped-player border-warning">
                                     <div class="card-body text-center">
                                         <h5>${team.name}</h5>
-                                        <p class="text-muted mb-2">${team.memberOne} &amp; ${team.memberTwo}</p>
                                         <p class="text-warning fw-bold">${translate('teamBye')}</p>
                                     </div>
                                 </div>
@@ -2613,23 +2612,18 @@
                 matchCard.className = 'card mb-3';
 
                 if (match.mode === 'fixed') {
-                    const team1Members = match.team1.map(player => player.name).join(' & ');
-                    const team2Members = match.team2.map(player => player.name).join(' & ');
-
                     matchCard.innerHTML = `
                         <div class="card-header">${translate('match')} #${match.id}</div>
                         <div class="card-body">
                             <div class="row align-items-center">
                                 <div class="col-5 text-center">
                                     <h5>${match.team1Label}</h5>
-                                    <p class="text-muted">${team1Members}</p>
                                 </div>
                                 <div class="col-2 text-center">
                                     <h5>${translate('vs')}</h5>
                                 </div>
                                 <div class="col-5 text-center">
                                     <h5>${match.team2Label}</h5>
-                                    <p class="text-muted">${team2Members}</p>
                                 </div>
                             </div>
                             <div class="row mt-3">
