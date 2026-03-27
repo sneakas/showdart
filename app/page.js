@@ -21,7 +21,16 @@ const texts = {
     haveAccount: 'Har du allerede konto? Log ind',
     missingEmailPassword: 'E-mail og adgangskode er paakraevet.',
     signupSuccess: 'Konto oprettet. Hvis e-mail bekraeftelse er slaaet til, bekraeft e-mail foerst.',
-    tournamentTitle: 'Showdart Turnerings Organisator'
+    tournamentTitle: 'Showdart Turnerings Organisator',
+    screenPanelTitle: 'Tilskuerskaerm',
+    screenPanelBody: 'Aabn dette link pa en separat skaerm for deltagere og tilskuere.',
+    screenOpen: 'Aabn skaerm',
+    screenCopy: 'Kopier link',
+    screenCopied: 'Tilskuerskaerm-link kopieret.',
+    screenCopyFailed: 'Kunne ikke kopiere linket.',
+    screenLoading: 'Indlaeser tilskuerskaerm-link...',
+    screenLive: 'Live opdateringer aktive',
+    screenError: 'Kunne ikke klargoere tilskuerskaermen.'
   },
   en: {
     loading: 'Loading...',
@@ -36,7 +45,16 @@ const texts = {
     haveAccount: 'Already have account? Login',
     missingEmailPassword: 'Email and password are required.',
     signupSuccess: 'Signup successful. If email confirmation is enabled, confirm email first.',
-    tournamentTitle: 'Showdart Tournament Organizer'
+    tournamentTitle: 'Showdart Tournament Organizer',
+    screenPanelTitle: 'Spectator Screen',
+    screenPanelBody: 'Open this link on a separate display for participants and spectators.',
+    screenOpen: 'Open Screen',
+    screenCopy: 'Copy Link',
+    screenCopied: 'Spectator screen link copied.',
+    screenCopyFailed: 'Could not copy the link.',
+    screenLoading: 'Loading spectator screen link...',
+    screenLive: 'Live updates active',
+    screenError: 'Could not prepare the spectator screen.'
   }
 };
 
@@ -71,7 +89,13 @@ export default function Page() {
   const [profileEmail, setProfileEmail] = useState('');
   const [iframeHeight, setIframeHeight] = useState(1200);
   const [iframeLoaded, setIframeLoaded] = useState(false);
+  const [screenInfo, setScreenInfo] = useState(null);
+  const [screenError, setScreenError] = useState('');
+  const [screenNotice, setScreenNotice] = useState('');
   const iframeRef = useRef(null);
+  const screenChannelRef = useRef(null);
+  const screenChannelReadyRef = useRef(false);
+  const pendingScreenPayloadRef = useRef(null);
 
   const t = texts[lang] || texts.da;
 
@@ -93,6 +117,24 @@ export default function Page() {
     const win = iframeRef.current?.contentWindow;
     if (!win) return;
     win.postMessage(message, getTargetOrigin());
+  }
+
+  async function sendSpectatorPayload(payload) {
+    const channel = screenChannelRef.current;
+    if (!channel || !screenChannelReadyRef.current) {
+      pendingScreenPayloadRef.current = payload;
+      return;
+    }
+
+    try {
+      await channel.send({
+        type: 'broadcast',
+        event: 'tournament-state',
+        payload
+      });
+    } catch (_error) {
+      pendingScreenPayloadRef.current = payload;
+    }
   }
 
   function changeLanguage(nextLang) {
@@ -181,6 +223,80 @@ export default function Page() {
   }, [session, supabase]);
 
   useEffect(() => {
+    if (!session?.access_token) {
+      setScreenInfo(null);
+      setScreenError('');
+      return;
+    }
+
+    let cancelled = false;
+
+    async function loadScreenInfo() {
+      setScreenError('');
+
+      const response = await fetch('/api/tournament-screen?id=showdart-default', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
+      });
+
+      const payload = await response.json();
+      if (cancelled) return;
+
+      if (!response.ok) {
+        setScreenInfo(null);
+        setScreenError(payload?.error || 'Spectator screen error');
+        return;
+      }
+
+      setScreenInfo(payload);
+    }
+
+    loadScreenInfo();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [session]);
+
+  useEffect(() => {
+    if (!supabase || !screenInfo?.realtimeChannel || !session) {
+      return undefined;
+    }
+
+    screenChannelReadyRef.current = false;
+    pendingScreenPayloadRef.current = null;
+
+    const channel = supabase.channel(screenInfo.realtimeChannel, {
+      config: {
+        broadcast: { self: false }
+      }
+    });
+
+    screenChannelRef.current = channel;
+
+    channel.subscribe(async status => {
+      const isReady = status === 'SUBSCRIBED';
+      screenChannelReadyRef.current = isReady;
+
+      if (!isReady || !pendingScreenPayloadRef.current) {
+        return;
+      }
+
+      const nextPayload = pendingScreenPayloadRef.current;
+      pendingScreenPayloadRef.current = null;
+      await sendSpectatorPayload(nextPayload);
+    });
+
+    return () => {
+      screenChannelReadyRef.current = false;
+      pendingScreenPayloadRef.current = null;
+      screenChannelRef.current = null;
+      supabase.removeChannel(channel);
+    };
+  }, [screenInfo, session, supabase]);
+
+  useEffect(() => {
     if (typeof window === 'undefined') return undefined;
 
     const allowedOrigin = window.location.origin;
@@ -188,11 +304,21 @@ export default function Page() {
     function handleIframeMessage(event) {
       if (event.origin !== allowedOrigin) return;
       const data = event.data || {};
-      if (data.type !== 'showdart-height') return;
-      const nextHeight = Number(data.height);
-      if (!Number.isFinite(nextHeight)) return;
-      const safeHeight = Math.max(900, Math.ceil(nextHeight));
-      setIframeHeight(prev => (Math.abs(prev - safeHeight) > 2 ? safeHeight : prev));
+      if (data.type === 'showdart-height') {
+        const nextHeight = Number(data.height);
+        if (!Number.isFinite(nextHeight)) return;
+        const safeHeight = Math.max(900, Math.ceil(nextHeight));
+        setIframeHeight(prev => (Math.abs(prev - safeHeight) > 2 ? safeHeight : prev));
+        return;
+      }
+
+      if (data.type === 'showdart-state-sync' && data.state && typeof data.state === 'object') {
+        sendSpectatorPayload({
+          tournamentId: data.tournamentId || 'showdart-default',
+          state: data.state,
+          updatedAt: data.updatedAt || new Date().toISOString()
+        });
+      }
     }
 
     window.addEventListener('message', handleIframeMessage);
@@ -224,6 +350,11 @@ export default function Page() {
     postToIframe({ type: 'showdart-set-role', role: profileRole === 'admin' ? 'admin' : 'user' });
   }, [session, iframeLoaded, profileRole]);
 
+  useEffect(() => {
+    if (!iframeLoaded || !screenInfo?.realtimeChannel) return;
+    postToIframe({ type: 'showdart-request-state-sync' });
+  }, [iframeLoaded, screenInfo]);
+
   async function handleAuthSubmit(e) {
     e.preventDefault();
     setAuthError('');
@@ -253,6 +384,27 @@ export default function Page() {
     setStoredAccessToken(null);
     setSession(null);
   }
+
+  async function handleCopyScreenLink() {
+    if (!screenInfo?.screenUrl) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(screenInfo.screenUrl);
+      setScreenNotice(t.screenCopied);
+    } catch (_error) {
+      setScreenNotice(t.screenCopyFailed);
+    }
+  }
+
+  useEffect(() => {
+    if (!screenNotice) return undefined;
+    const timer = window.setTimeout(() => {
+      setScreenNotice('');
+    }, 2500);
+    return () => window.clearTimeout(timer);
+  }, [screenNotice]);
 
   const flagLanguageButtons = (
     <div style={{ display: 'flex', gap: 8 }}>
@@ -333,6 +485,39 @@ export default function Page() {
         onLogout={handleLogout}
         onNavigate={handleNavigate}
       />
+
+      <section style={{ maxWidth: 1200, margin: '0 auto', padding: '0 16px 16px' }}>
+        <div style={{ background: '#10271e', border: '1px solid #355748', borderRadius: 12, padding: 16, color: '#ecf8f2', display: 'flex', gap: 16, alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+          <div style={{ minWidth: 260 }}>
+            <div style={{ fontSize: 12, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#9db9ab', marginBottom: 6 }}>
+              {t.screenPanelTitle}
+            </div>
+            <div style={{ fontWeight: 700, marginBottom: 4 }}>{t.screenLive}</div>
+            <div style={{ color: '#d9ece2' }}>{t.screenPanelBody}</div>
+            {screenNotice ? <div style={{ marginTop: 8, color: '#f2d14c' }}>{screenNotice}</div> : null}
+            {screenError ? <div style={{ marginTop: 8, color: '#f3a7a7' }}>{t.screenError}</div> : null}
+          </div>
+
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              disabled={!screenInfo?.screenUrl}
+              onClick={() => screenInfo?.screenUrl && window.open(screenInfo.screenUrl, '_blank', 'noopener,noreferrer')}
+              style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid #3e6353', background: '#1a3b30', color: '#f2d14c', fontWeight: 700, cursor: screenInfo?.screenUrl ? 'pointer' : 'default', opacity: screenInfo?.screenUrl ? 1 : 0.65 }}
+            >
+              {screenInfo?.screenUrl ? t.screenOpen : t.screenLoading}
+            </button>
+            <button
+              type="button"
+              disabled={!screenInfo?.screenUrl}
+              onClick={handleCopyScreenLink}
+              style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid #355748', background: 'transparent', color: '#ecf8f2', fontWeight: 700, cursor: screenInfo?.screenUrl ? 'pointer' : 'default', opacity: screenInfo?.screenUrl ? 1 : 0.65 }}
+            >
+              {t.screenCopy}
+            </button>
+          </div>
+        </div>
+      </section>
 
       <div style={{ width: '100%' }}>
         <iframe

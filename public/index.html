@@ -1236,6 +1236,7 @@
         const shell = window.createShowdartShell({ allowedOrigin: ALLOWED_APP_ORIGIN });
         const getAuthHeaders = shell.getAuthHeaders;
         const notifyParentHeight = shell.notifyParentHeight;
+        const postToParent = shell.postToParent;
         const SELECTORS = {
             REGISTRATION_SECTION: '#registration',
             TOURNAMENT_SETTINGS_CARD: '.card.mt-4',
@@ -1248,6 +1249,7 @@
         };
 
         let cloudSaveTimer = null;
+        let stateSyncTimer = null;
         let cloudPersistenceInitialized = false;
         let cloudPersistenceAvailable = true;
         let isHydratingCloudState = false;
@@ -1613,6 +1615,26 @@
             };
         }
 
+        function emitTournamentStateSync() {
+            postToParent({
+                type: 'showdart-state-sync',
+                tournamentId: CLOUD_PERSISTENCE.tournamentId,
+                state: serializeTournamentState(),
+                updatedAt: new Date().toISOString()
+            });
+        }
+
+        function scheduleTournamentStateSync(delay = 120) {
+            if (stateSyncTimer) {
+                clearTimeout(stateSyncTimer);
+            }
+
+            stateSyncTimer = setTimeout(() => {
+                stateSyncTimer = null;
+                emitTournamentStateSync();
+            }, delay);
+        }
+
         function applyTournamentState(state) {
             if (!state || typeof state !== 'object') {
                 return false;
@@ -1808,6 +1830,8 @@
             if (!cloudPersistenceInitialized || isHydratingCloudState) {
                 return;
             }
+
+            scheduleTournamentStateSync();
 
             if (cloudSaveTimer) {
                 clearTimeout(cloudSaveTimer);
@@ -3423,6 +3447,11 @@
                 if (modalElement && window.bootstrap?.Modal) {
                     window.bootstrap.Modal.getOrCreateInstance(modalElement).show();
                 }
+                return;
+            }
+
+            if (data.type === 'showdart-request-state-sync') {
+                emitTournamentStateSync();
             }
         });
         document.querySelectorAll('.language-btn').forEach(btn => {
