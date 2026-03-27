@@ -423,13 +423,13 @@ export default function ScreenPage() {
         ) : null}
 
         {showQrCode ? (
-          <section style={{ display: 'flex', justifyContent: 'center', marginTop: 24 }}>
-            <div style={{ background: '#10271e', border: '1px solid #355748', borderRadius: 18, padding: 14, textAlign: 'center', width: 190, textTransform: 'none' }}>
+          <section style={{ display: 'flex', justifyContent: 'center', marginTop: 24, paddingInline: 12 }}>
+            <div style={{ background: '#10271e', border: '1px solid #355748', borderRadius: 18, padding: 14, textAlign: 'center', width: 190, maxWidth: '100%', textTransform: 'none' }}>
               <div style={{ color: '#9db9ab', fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10 }}>{t.scanQr}</div>
               <img
                 src={qrSrc}
                 alt={t.scanQr}
-                style={{ width: '100%', height: 'auto', borderRadius: 10, background: '#fff', padding: 8, display: 'block' }}
+                style={{ width: '100%', maxWidth: '100%', height: 'auto', borderRadius: 10, background: '#fff', padding: 8, display: 'block', boxSizing: 'border-box', margin: '0 auto' }}
               />
               <div style={{ marginTop: 10, color: '#cfe4d8', fontSize: 12, lineHeight: 1.35 }}>{t.scanQrHint}</div>
             </div>
