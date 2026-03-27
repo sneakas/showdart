@@ -3132,9 +3132,19 @@
                         btn.classList.remove('btn-primary');
                         btn.classList.add('btn-outline-primary');
                     });
+                    matchCard.querySelectorAll('.round-team-panel').forEach((panel, index) => {
+                        panel.classList.toggle('is-winner', index === (winner - 1));
+                    });
                     
                     this.classList.remove('btn-outline-primary');
                     this.classList.add('btn-primary');
+                    const matchTag = matchCard.querySelector('.round-match-tag');
+                    if (matchTag && match) {
+                        const winnerLabel = winner === 1
+                            ? (match.team1Label || (Array.isArray(match.team1) ? match.team1.map(player => player.name).join(', ') : ''))
+                            : (match.team2Label || (Array.isArray(match.team2) ? match.team2.map(player => player.name).join(', ') : ''));
+                        matchTag.textContent = `${translate('winner')}: ${winnerLabel}`;
+                    }
                     updateTournamentUI();
                     scheduleCloudSave();
                 });
