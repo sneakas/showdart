@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useParams } from 'next/navigation';
 import { getSupabaseBrowserClient } from '../../../lib/supabaseBrowser';
 import { buildScreenState } from '../../../lib/tournamentScreenState';
 
@@ -103,9 +104,11 @@ function getStatusText(entry, t) {
   return t.eliminated;
 }
 
-export default function ScreenPage({ params }) {
+export default function ScreenPage() {
   const supabase = useMemo(() => getSupabaseBrowserClient(), []);
-  const token = decodeURIComponent(params?.token || '');
+  const params = useParams();
+  const rawToken = Array.isArray(params?.token) ? params.token[0] : params?.token;
+  const token = decodeURIComponent(rawToken || '');
 
   const [lang, setLang] = useState('da');
   const [loading, setLoading] = useState(true);
@@ -138,21 +141,26 @@ export default function ScreenPage({ params }) {
     async function loadScreen() {
       setLoading(true);
       setError('');
+      try {
+        const response = await fetch(`/api/tournament-screen/public?token=${encodeURIComponent(token)}`);
+        const payload = await response.json();
+        if (cancelled) return;
 
-      const response = await fetch(`/api/tournament-screen/public?token=${encodeURIComponent(token)}`);
-      const payload = await response.json();
-      if (cancelled) return;
+        if (!response.ok) {
+          setError(payload?.error || 'Screen error');
+          setLoading(false);
+          return;
+        }
 
-      if (!response.ok) {
-        setError(payload?.error || 'Screen error');
+        setScreenMeta(payload);
+        setTournamentState(payload.state || null);
+        setUpdatedAt(payload.updatedAt || null);
         setLoading(false);
-        return;
+      } catch (_error) {
+        if (cancelled) return;
+        setError('Failed to load spectator screen');
+        setLoading(false);
       }
-
-      setScreenMeta(payload);
-      setTournamentState(payload.state || null);
-      setUpdatedAt(payload.updatedAt || null);
-      setLoading(false);
     }
 
     if (token) {
@@ -211,6 +219,7 @@ export default function ScreenPage({ params }) {
         <section style={{ maxWidth: 860, margin: '0 auto', background: '#10271e', border: '1px solid #355748', borderRadius: 18, padding: 24 }}>
           <h1 style={{ marginTop: 0 }}>{t.invalidTitle}</h1>
           <p>{t.invalidBody}</p>
+          <p style={{ color: '#cfe4d8', marginBottom: 0 }}>{error}</p>
         </section>
       </main>
     );
