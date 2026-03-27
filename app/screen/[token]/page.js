@@ -31,7 +31,7 @@ const texts = {
     place: 'Plads',
     vs: 'VS',
     winner: 'Vinder',
-    onBye: 'Står over',
+    onBye: 'Sidder over',
     updated: 'Senest opdateret',
     live: 'Live',
     tournamentNotStarted: 'Turneringen er ikke startet',
