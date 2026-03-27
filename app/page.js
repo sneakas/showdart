@@ -487,15 +487,19 @@ export default function Page() {
       />
 
       <section style={{ maxWidth: 1200, margin: '0 auto', padding: '0 16px 16px' }}>
-        <div style={{ background: '#10271e', border: '1px solid #355748', borderRadius: 12, padding: 16, color: '#ecf8f2', display: 'flex', gap: 16, alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' }}>
-          <div style={{ minWidth: 260 }}>
-            <div style={{ fontSize: 12, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#9db9ab', marginBottom: 6 }}>
-              {t.screenPanelTitle}
+        <div style={{ background: '#10271e', border: '1px solid #355748', borderRadius: 12, padding: '12px 14px', color: '#ecf8f2', display: 'flex', gap: 14, alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', minWidth: 260 }}>
+            <div>
+              <div style={{ fontSize: 12, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#9db9ab', marginBottom: 4 }}>
+                {t.screenPanelTitle}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#d9ece2', fontWeight: 700 }}>
+                <span style={{ width: 10, height: 10, borderRadius: '50%', background: screenInfo?.screenUrl ? '#46c37b' : '#b88b45', boxShadow: `0 0 12px ${screenInfo?.screenUrl ? 'rgba(70,195,123,0.55)' : 'rgba(184,139,69,0.45)'}` }} />
+                {screenInfo?.screenUrl ? t.screenLive : t.screenLoading}
+              </div>
             </div>
-            <div style={{ fontWeight: 700, marginBottom: 4 }}>{t.screenLive}</div>
-            <div style={{ color: '#d9ece2' }}>{t.screenPanelBody}</div>
-            {screenNotice ? <div style={{ marginTop: 8, color: '#f2d14c' }}>{screenNotice}</div> : null}
-            {screenError ? <div style={{ marginTop: 8, color: '#f3a7a7' }}>{t.screenError}</div> : null}
+            {screenNotice ? <div style={{ color: '#f2d14c', fontSize: 14 }}>{screenNotice}</div> : null}
+            {screenError ? <div style={{ color: '#f3a7a7', fontSize: 14 }}>{t.screenError}</div> : null}
           </div>
 
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>

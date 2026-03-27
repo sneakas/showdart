@@ -373,6 +373,277 @@
             line-height: 1.05;
         }
 
+        .setup-toolbar {
+            display: grid;
+            grid-template-columns: minmax(240px, 2fr) repeat(2, minmax(170px, 1fr)) auto;
+            gap: 0.85rem;
+            align-items: end;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            background: rgba(12, 30, 23, 0.76);
+            border: 1px solid var(--club-border);
+            border-radius: 12px;
+        }
+
+        .setup-toolbar .setup-field,
+        .setup-toolbar .setup-action {
+            min-width: 0;
+        }
+
+        .registration-section-card .card-header,
+        .tournament-section-card .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .registration-summary-meta,
+        .section-helper-text,
+        .summary-label {
+            color: var(--club-text-muted);
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+        }
+
+        #registrationPanelContent {
+            display: block;
+        }
+
+        .registration-section-card.panel-collapsed #registrationPanelContent,
+        .registration-section-card.panel-collapsed #setupToolbar {
+            display: none;
+        }
+
+        .registration-collapsed-copy {
+            display: none;
+            padding: 0.95rem 1rem;
+            border-radius: 12px;
+            border: 1px dashed var(--club-border);
+            color: var(--club-text-soft);
+            background: rgba(12, 30, 23, 0.42);
+        }
+
+        .registration-section-card.panel-collapsed .registration-collapsed-copy {
+            display: block;
+        }
+
+        .compact-entry-form {
+            margin-bottom: 1rem;
+        }
+
+        .compact-entry-form .row {
+            margin-bottom: 0.75rem !important;
+        }
+
+        .tournament-summary-strip {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 0.85rem;
+            margin-bottom: 1rem;
+        }
+
+        .summary-chip {
+            padding: 0.95rem 1rem;
+            border-radius: 12px;
+            border: 1px solid var(--club-border);
+            background: rgba(12, 30, 23, 0.72);
+            min-height: 84px;
+        }
+
+        .summary-chip strong {
+            display: block;
+            margin-top: 0.3rem;
+            color: var(--club-text);
+            font-size: 1.25rem;
+            font-family: 'Barlow Condensed', sans-serif;
+            letter-spacing: 0.04em;
+            line-height: 1.05;
+        }
+
+        .summary-chip .small {
+            margin-top: 0.35rem;
+        }
+
+        .tournament-action-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 0.9rem;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .tournament-action-group {
+            display: flex;
+            gap: 0.65rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .between-rounds-card {
+            margin-bottom: 1rem;
+        }
+
+        .between-rounds-card .card-body {
+            padding-top: 1rem;
+        }
+
+        .between-rounds-headline {
+            display: flex;
+            justify-content: space-between;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-bottom: 0.85rem;
+        }
+
+        .standings-mini-table th,
+        .standings-mini-table td {
+            padding-top: 0.55rem;
+            padding-bottom: 0.55rem;
+        }
+
+        .standings-mini-table th {
+            color: #f7f1d6 !important;
+        }
+
+        .round-board-intro {
+            background: rgba(12, 30, 23, 0.75);
+            border: 1px solid var(--club-border);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .round-board-headline {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.85rem;
+            flex-wrap: wrap;
+        }
+
+        .round-board-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1rem;
+        }
+
+        .round-match-card {
+            margin-bottom: 0;
+        }
+
+        .round-match-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            margin-bottom: 0.9rem;
+        }
+
+        .round-match-index {
+            color: var(--club-gold);
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+        }
+
+        .round-match-tag {
+            color: var(--club-text-muted);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+        }
+
+        .round-versus-stack {
+            display: grid;
+            gap: 0.7rem;
+        }
+
+        .round-team-panel {
+            border-radius: 12px;
+            padding: 1rem 0.95rem;
+            text-align: center;
+            background: rgba(8, 20, 15, 0.72);
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .round-team-panel.is-winner {
+            border-color: var(--club-gold);
+            box-shadow: 0 0 0 1px rgba(242, 209, 76, 0.18);
+            background: rgba(32, 58, 46, 0.92);
+        }
+
+        .round-team-name {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 1.35rem;
+            letter-spacing: 0.04em;
+            line-height: 1.05;
+            margin: 0;
+        }
+
+        .round-team-meta {
+            margin-top: 0.45rem;
+            color: var(--club-text-muted);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+
+        .round-versus-label {
+            text-align: center;
+            color: var(--club-text-muted);
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-weight: 800;
+        }
+
+        .winner-choice-label {
+            margin: 0.95rem 0 0.55rem;
+            text-align: center;
+            color: var(--club-text-soft);
+            font-weight: 700;
+        }
+
+        .winner-choice-group {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.6rem;
+        }
+
+        .winner-choice-btn {
+            width: 100%;
+            min-height: 52px;
+        }
+
+        .bye-strip {
+            margin-bottom: 1rem;
+            padding: 0.95rem 1rem;
+            border-radius: 12px;
+            border: 1px solid rgba(242, 209, 76, 0.38);
+            background: rgba(70, 56, 17, 0.28);
+        }
+
+        .bye-pill-row {
+            display: flex;
+            gap: 0.65rem;
+            flex-wrap: wrap;
+            margin-top: 0.75rem;
+        }
+
+        .bye-pill {
+            padding: 0.55rem 0.8rem;
+            border-radius: 999px;
+            border: 1px solid var(--club-border);
+            background: rgba(12, 30, 23, 0.72);
+            font-weight: 700;
+        }
+
         @media (min-width: 768px) {
             .card-body {
                 padding: 1.35rem 1.35rem;
@@ -387,6 +658,20 @@
             .language-selector {
                 right: 12px;
                 top: 8px;
+            }
+
+            .setup-toolbar {
+                grid-template-columns: 1fr;
+            }
+
+            .tournament-action-row,
+            .between-rounds-headline,
+            .round-board-headline {
+                align-items: stretch;
+            }
+
+            .winner-choice-group {
+                grid-template-columns: 1fr;
             }
 
             .hero {
@@ -455,34 +740,71 @@
 
     <div class="container">
         <!-- Registration Section -->
-        <section id="registration" class="mb-5">
-            <div class="card">
-                <div class="card-header" id="registrationCardTitle" data-translate="playerRegistration">
-                    Player Registration
+        <section id="registration" class="mb-4">
+            <div class="card registration-section-card" id="registrationSectionCard">
+                <div class="card-header">
+                    <span id="registrationCardTitle" data-translate="playerRegistration">Player Registration</span>
+                    <span class="registration-summary-meta" id="registrationMetaText"></span>
                 </div>
                 <div class="card-body">
-                    <form id="registrationForm">
-                        <div class="row mb-3" id="individualRegistrationFields">
-                            <div class="col-md-6">
-                                <label for="playerName" class="form-label" data-translate="playerName">Player Name</label>
-                                <input type="text" class="form-control" id="playerName" required>
+                    <div class="setup-toolbar" id="setupToolbar">
+                        <div class="setup-field">
+                            <label for="tournamentName" class="form-label" data-translate="tournamentNameLabel">Tournament Name</label>
+                            <input type="text" class="form-control" id="tournamentName" maxlength="80">
+                        </div>
+                        <div class="setup-field">
+                            <label for="tournamentForm" class="form-label" id="tournamentFormLabel" data-translate="tournamentForm">Tournament Form</label>
+                            <select class="form-select" id="tournamentForm">
+                                <option value="changing" data-translate="changingTeammates">Changing teammates</option>
+                                <option value="fixed" data-translate="fixedTeammates">Fixed teammates</option>
+                            </select>
+                        </div>
+                        <div class="setup-field">
+                            <label for="maxLosses" class="form-label" data-translate="maxLosses">Maximum Losses Before Elimination</label>
+                            <input type="number" class="form-control" id="maxLosses" min="1" value="2">
+                        </div>
+                        <div class="setup-action">
+                            <button id="startTournament" class="btn btn-success w-100" data-translate="startTournament">Start Tournament</button>
+                        </div>
+                    </div>
+
+                    <div class="registration-collapsed-copy" id="registrationCollapsedCopy" data-translate="registrationCollapsedHelp">
+                        Registration is hidden during the tournament. Use the button above to reopen it.
+                    </div>
+
+                    <div id="registrationPanelContent">
+                        <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap mb-3">
+                            <div>
+                                <h5 id="registeredEntriesTitle" class="mb-1" data-translate="registeredPlayers">Registered Players</h5>
+                                <div class="section-helper-text" id="registrationHelperText" data-translate="registrationHelperText">Add players or teams here before you start, then reopen only when you need changes.</div>
                             </div>
                         </div>
-                        <div class="row mb-3" id="fixedTeamRegistrationFields" style="display: none;">
-                            <div class="col-md-6 mb-3 mb-md-0">
-                                <label for="teamMemberOne" class="form-label" id="teamMemberOneLabel" data-translate="teamMemberOne">Team Member 1</label>
-                                <input type="text" class="form-control" id="teamMemberOne">
+
+                        <form id="registrationForm" class="compact-entry-form">
+                            <div class="row mb-3" id="individualRegistrationFields">
+                                <div class="col-md-8 col-lg-6">
+                                    <label for="playerName" class="form-label" data-translate="playerName">Player Name</label>
+                                    <input type="text" class="form-control" id="playerName" required>
+                                </div>
+                                <div class="col-md-4 col-lg-3 d-grid align-self-end">
+                                    <button type="submit" class="btn btn-primary" id="registrationSubmitButton" data-translate="register">Register Player</button>
+                                </div>
                             </div>
-                            <div class="col-md-6">
-                                <label for="teamMemberTwo" class="form-label" id="teamMemberTwoLabel" data-translate="teamMemberTwo">Team Member 2</label>
-                                <input type="text" class="form-control" id="teamMemberTwo">
+                            <div class="row mb-3" id="fixedTeamRegistrationFields" style="display: none;">
+                                <div class="col-lg-4 col-md-6 mb-3 mb-lg-0">
+                                    <label for="teamMemberOne" class="form-label" id="teamMemberOneLabel" data-translate="teamMemberOne">Team Member 1</label>
+                                    <input type="text" class="form-control" id="teamMemberOne">
+                                </div>
+                                <div class="col-lg-4 col-md-6 mb-3 mb-lg-0">
+                                    <label for="teamMemberTwo" class="form-label" id="teamMemberTwoLabel" data-translate="teamMemberTwo">Team Member 2</label>
+                                    <input type="text" class="form-control" id="teamMemberTwo">
+                                </div>
+                                <div class="col-lg-4 d-grid align-self-end">
+                                    <button type="submit" class="btn btn-primary" id="registrationSubmitButtonFixed" data-submit-proxy="registrationSubmitButton" data-translate="registerTeam">Register Team</button>
+                                </div>
                             </div>
-                        </div>
-                        <button type="submit" class="btn btn-primary" id="registrationSubmitButton" data-translate="register">Register Player</button>
-                    </form>
-                    
-                    <div class="mt-4">
-                        <h5 id="registeredEntriesTitle" data-translate="registeredPlayers">Registered Players</h5>
+                        </form>
+
                         <div class="table-responsive">
                             <table class="table table-striped" id="playersTable">
                                 <thead>
@@ -503,48 +825,53 @@
                     </div>
                 </div>
             </div>
-            
-            <div class="card mt-4">
-                <div class="card-header" data-translate="tournamentSettings">
-                    Tournament Settings
-                </div>
-                <div class="card-body">
-                    <div class="mb-3">
-                        <label for="tournamentName" class="form-label" data-translate="tournamentNameLabel">Tournament Name</label>
-                        <input type="text" class="form-control" id="tournamentName" maxlength="80">
-                    </div>
-                    <div class="mb-3">
-                        <label for="tournamentForm" class="form-label" id="tournamentFormLabel" data-translate="tournamentForm">Tournament Form</label>
-                        <select class="form-select" id="tournamentForm">
-                            <option value="changing" data-translate="changingTeammates">Changing teammates</option>
-                            <option value="fixed" data-translate="fixedTeammates">Fixed teammates</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label for="maxLosses" class="form-label" data-translate="maxLosses">Maximum Losses Before Elimination</label>
-                        <input type="number" class="form-control" id="maxLosses" min="1" value="2">
-                    </div>
-                    <button id="startTournament" class="btn btn-success" data-translate="startTournament">Start Tournament</button>
-                </div>
-            </div>
         </section>
 
         <!-- Tournament Section -->
         <section id="tournament" class="mb-5">
-            <div class="card">
-                <div class="card-header" data-translate="currentRoundHeader">
-                    Current Round: <span id="currentRound">0</span>
+            <div class="card tournament-section-card">
+                <div class="card-header">
+                    <span data-translate="tournamentOverview">Tournament Overview</span>
+                    <span class="registration-summary-meta" id="tournamentPhaseMeta"></span>
                 </div>
                 <div class="card-body">
-                    <div class="d-flex justify-content-between mb-3">
-                        <h5 data-translate="activePlayersHeader">Active Players: <span id="activePlayers">0</span></h5>
-                        <div>
-                            <button id="toggleRegistrationPanel" class="btn btn-outline-success me-2" style="display: none;" data-translate="playerRegistration">Spiller Registrering</button>
-                            <button id="approveTagChanges" class="btn btn-outline-success me-2" disabled data-translate="approveTagChanges">Approve Tag Changes</button>
-                            <button id="generateMatches" class="btn btn-primary" disabled data-translate="generateMatches">Generate Matches</button>
+                    <div class="tournament-summary-strip">
+                        <div class="summary-chip">
+                            <span class="summary-label" data-translate="tournamentNameLabel">Tournament Name</span>
+                            <strong id="summaryTournamentName">-</strong>
+                        </div>
+                        <div class="summary-chip">
+                            <span class="summary-label" data-translate="currentRound">Current Round</span>
+                            <strong id="summaryCurrentRound"><span id="currentRound">0</span></strong>
+                        </div>
+                        <div class="summary-chip">
+                            <span class="summary-label" data-translate="activeEntriesSummary">Active Entries</span>
+                            <strong id="summaryActiveEntries">0</strong>
+                        </div>
+                        <div class="summary-chip">
+                            <span class="summary-label" data-translate="tournamentForm">Tournament Form</span>
+                            <strong id="summaryTournamentForm">-</strong>
+                        </div>
+                        <div class="summary-chip">
+                            <span class="summary-label" data-translate="maxLossesSummary">Max Losses</span>
+                            <strong id="summaryMaxLosses">0</strong>
+                            <div class="small" id="cloudStatusIndicator"></div>
                         </div>
                     </div>
-                    
+
+                    <div class="tournament-action-row" id="tournamentActionRow">
+                        <div>
+                            <div id="activePlayersLabel" class="section-helper-text" data-translate="activePlayersHeader">Active Players: <span id="activePlayers">0</span></div>
+                        </div>
+                        <div class="tournament-action-group">
+                            <button id="toggleRegistrationPanel" class="btn btn-outline-success" style="display: none;" data-translate="openRegistrationPanel">Open Registration</button>
+                            <button id="approveTagChanges" class="btn btn-outline-success" disabled data-translate="approveTagChanges">Approve Tag Changes</button>
+                            <button id="generateMatches" class="btn btn-primary" disabled data-translate="generateMatches">Generate Matches</button>
+                            <button id="completeRound" class="btn btn-success" disabled data-translate="completeRound">Complete Round</button>
+                            <button id="resetTournament" class="btn btn-outline-danger" data-translate="resetTournament">Reset Tournament</button>
+                        </div>
+                    </div>
+
                     <div class="alert alert-info mb-3" id="tagReminder" style="display: none;">
                         <strong data-translate="reminder">Reminder:</strong> <span data-translate="after">After each round, please assign:</span>
                         <ul class="mb-0">
@@ -552,13 +879,23 @@
                             <li data-translate="oTagDesc">"O" tag to players who skipped the round</li>
                         </ul>
                     </div>
-                    
+
+                    <div class="card between-rounds-card" id="betweenRoundsCard" style="display: none;">
+                        <div class="card-header" data-translate="betweenRoundsTitle">Between Rounds</div>
+                        <div class="card-body">
+                            <div class="between-rounds-headline">
+                                <div>
+                                    <h5 class="mb-1" data-translate="standingsPreviewTitle">Current Standings</h5>
+                                    <div class="section-helper-text" id="betweenRoundsHelperText" data-translate="betweenRoundsReady">Review the standings, then generate the next round when you are ready.</div>
+                                </div>
+                            </div>
+                            <div id="standingsSummary"></div>
+                        </div>
+                    </div>
+
                     <div id="matchesContainer">
                         <!-- Matches will be added here dynamically -->
                     </div>
-                    
-                    <button id="completeRound" class="btn btn-success mt-3" disabled data-translate="completeRound">Complete Round</button>
-                    <button id="resetTournament" class="btn btn-outline-danger mt-3 ms-2" data-translate="resetTournament">Reset Tournament</button>
                 </div>
             </div>
         </section>
@@ -1245,9 +1582,8 @@
         const postToParent = shell.postToParent;
         const SELECTORS = {
             REGISTRATION_SECTION: '#registration',
-            TOURNAMENT_SETTINGS_CARD: '.card.mt-4',
             TOURNAMENT_SECTION: '#tournament',
-            TOURNAMENT_BUTTON_CONTAINER: '#tournament .d-flex.justify-content-between div',
+            TOURNAMENT_BUTTON_CONTAINER: '#tournamentActionRow .tournament-action-group',
             NAVBAR_BRAND: '.navbar-brand',
             NAV_LINKS: '.nav-link',
             HERO_TITLE: '.hero h1',
@@ -1263,15 +1599,21 @@
         // DOM elements
         const registrationForm = document.getElementById('registrationForm');
         const registrationSection = document.querySelector(SELECTORS.REGISTRATION_SECTION);
+        const registrationSectionCard = document.getElementById('registrationSectionCard');
         const registrationCardTitle = document.getElementById('registrationCardTitle');
+        const registrationMetaText = document.getElementById('registrationMetaText');
+        const registrationCollapsedCopy = document.getElementById('registrationCollapsedCopy');
+        const registrationPanelContent = document.getElementById('registrationPanelContent');
         const individualRegistrationFields = document.getElementById('individualRegistrationFields');
         const fixedTeamRegistrationFields = document.getElementById('fixedTeamRegistrationFields');
         const playerNameInput = document.getElementById('playerName');
         const teamMemberOneInput = document.getElementById('teamMemberOne');
         const teamMemberTwoInput = document.getElementById('teamMemberTwo');
         const registrationSubmitButton = document.getElementById('registrationSubmitButton');
+        const registrationSubmitButtonFixed = document.getElementById('registrationSubmitButtonFixed');
         const registeredEntriesTitle = document.getElementById('registeredEntriesTitle');
         const playersTable = document.getElementById('playersTable');
+        const setupToolbar = document.getElementById('setupToolbar');
         const tournamentNameInput = document.getElementById('tournamentName');
         const tournamentFormSelect = document.getElementById('tournamentForm');
         const startTournamentBtn = document.getElementById('startTournament');
@@ -1279,6 +1621,7 @@
         const completeRoundBtn = document.getElementById('completeRound');
         const currentRoundSpan = document.getElementById('currentRound');
         const activePlayersSpan = document.getElementById('activePlayers');
+        const activePlayersLabel = document.getElementById('activePlayersLabel');
         const matchesContainer = document.getElementById('matchesContainer');
         const rulesModalContent = document.getElementById('rulesModalContent');
         const tagReminder = document.getElementById('tagReminder');
@@ -1286,6 +1629,14 @@
         const toggleRegistrationPanelBtn = document.getElementById('toggleRegistrationPanel');
         const resetTournamentBtn = document.getElementById('resetTournament');
         const cloudStatusIndicator = document.getElementById('cloudStatusIndicator');
+        const summaryTournamentName = document.getElementById('summaryTournamentName');
+        const summaryCurrentRound = document.getElementById('summaryCurrentRound');
+        const summaryActiveEntries = document.getElementById('summaryActiveEntries');
+        const summaryTournamentForm = document.getElementById('summaryTournamentForm');
+        const summaryMaxLosses = document.getElementById('summaryMaxLosses');
+        const tournamentPhaseMeta = document.getElementById('tournamentPhaseMeta');
+        const betweenRoundsCard = document.getElementById('betweenRoundsCard');
+        const standingsSummary = document.getElementById('standingsSummary');
 
         // Core runtime state lives in:
         // - tournament.players: roster and per-player lifecycle state
@@ -1329,6 +1680,29 @@
             }
         }
 
+        function getRegistrationPanelVisible() {
+            if (!registrationPanelContent) {
+                return true;
+            }
+            return registrationPanelContent.style.display !== 'none';
+        }
+
+        function updateRegistrationToggleButton() {
+            if (!toggleRegistrationPanelBtn) {
+                return;
+            }
+
+            if (!tournament.started) {
+                toggleRegistrationPanelBtn.style.display = 'none';
+                return;
+            }
+
+            const isOpen = getRegistrationPanelVisible();
+            toggleRegistrationPanelBtn.style.display = '';
+            toggleRegistrationPanelBtn.textContent = translate(isOpen ? 'closeRegistrationPanel' : 'openRegistrationPanel');
+            toggleRegistrationPanelBtn.setAttribute('data-translate', isOpen ? 'closeRegistrationPanel' : 'openRegistrationPanel');
+        }
+
         function updateRegistrationModeUI() {
             const fixedMode = isFixedTeammatesMode();
             const registrationTitleKey = fixedMode ? 'teamRegistration' : 'playerRegistration';
@@ -1345,9 +1719,12 @@
                 registrationSubmitButton.textContent = translate(submitKey);
                 registrationSubmitButton.setAttribute('data-translate', submitKey);
             }
+            if (registrationSubmitButtonFixed) {
+                registrationSubmitButtonFixed.textContent = translate(submitKey);
+                registrationSubmitButtonFixed.setAttribute('data-translate', submitKey);
+            }
             if (toggleRegistrationPanelBtn) {
-                toggleRegistrationPanelBtn.textContent = translate(registrationTitleKey);
-                toggleRegistrationPanelBtn.setAttribute('data-translate', registrationTitleKey);
+                updateRegistrationToggleButton();
             }
             if (individualRegistrationFields) {
                 individualRegistrationFields.style.display = fixedMode ? 'none' : '';
@@ -1371,6 +1748,9 @@
             if (tournamentNameInput) {
                 tournamentNameInput.value = tournament.name || '';
                 tournamentNameInput.disabled = tournament.started;
+            }
+            if (setupToolbar) {
+                setupToolbar.style.display = tournament.started ? 'none' : 'grid';
             }
 
             renderRulesModal();
@@ -1449,10 +1829,138 @@
         }
 
         function setRegistrationPanelVisibility(visible) {
-            if (!registrationSection) {
+            if (!registrationSectionCard) {
                 return;
             }
-            registrationSection.style.display = visible ? '' : 'none';
+            registrationSectionCard.classList.toggle('panel-collapsed', !visible);
+            if (registrationPanelContent) {
+                registrationPanelContent.style.display = visible ? '' : 'none';
+            }
+            if (registrationCollapsedCopy) {
+                registrationCollapsedCopy.style.display = visible ? 'none' : 'block';
+            }
+            updateRegistrationToggleButton();
+            notifyParentHeight();
+        }
+
+        function getSortedEntriesForOverview() {
+            const entries = isFixedTeammatesMode() ? [...tournament.fixedTeams] : [...tournament.players];
+
+            return entries.sort((a, b) => {
+                if (a.active !== b.active) {
+                    return b.active - a.active;
+                }
+                if (a.active && b.active && a.losses !== b.losses) {
+                    return a.losses - b.losses;
+                }
+
+                const aRound = a.eliminationRound === 'final' ? Number.MAX_SAFE_INTEGER : (Number(a.eliminationRound) || 0);
+                const bRound = b.eliminationRound === 'final' ? Number.MAX_SAFE_INTEGER : (Number(b.eliminationRound) || 0);
+                if (aRound !== bRound) {
+                    return bRound - aRound;
+                }
+
+                return (a.id || 0) - (b.id || 0);
+            });
+        }
+
+        function getEntryStatusText(entry) {
+            return entry.active
+                ? translate('active')
+                : entry.eliminationRound === 'final'
+                    ? translate('eliminatedFinal')
+                    : translateWithParams('eliminatedR', { round: entry.eliminationRound });
+        }
+
+        function updateRegistrationMeta() {
+            if (!registrationMetaText) {
+                return;
+            }
+
+            const total = getRegistrationCount();
+            const active = getActiveEntryCount();
+            const entryLabel = translate(isFixedTeammatesMode() ? 'registeredTeamsMeta' : 'registeredPlayersMeta');
+
+            if (!tournament.started) {
+                registrationMetaText.textContent = `${total} ${entryLabel}`;
+                return;
+            }
+
+            registrationMetaText.textContent = `${total} ${entryLabel} · ${active} ${translate('activeEntriesMeta')}`;
+        }
+
+        function updateTournamentSummary() {
+            if (summaryTournamentName) {
+                summaryTournamentName.textContent = tournament.name || translate('title');
+            }
+            if (currentRoundSpan) {
+                currentRoundSpan.textContent = String(tournament.currentRound || 0);
+            }
+            if (summaryActiveEntries) {
+                summaryActiveEntries.textContent = String(getActiveEntryCount());
+            }
+            if (summaryTournamentForm) {
+                summaryTournamentForm.textContent = translate(isFixedTeammatesMode() ? 'fixedTeammates' : 'changingTeammates');
+            }
+            if (summaryMaxLosses) {
+                summaryMaxLosses.textContent = String(tournament.maxLosses || 0);
+            }
+            if (tournamentPhaseMeta) {
+                if (!tournament.started) {
+                    tournamentPhaseMeta.textContent = translate('setupPhase');
+                } else if (tournament.finalResults) {
+                    tournamentPhaseMeta.textContent = translate('resultsPhase');
+                } else if (tournament.matches.length > 0 || (tournament.skippedPlayers || []).length > 0) {
+                    tournamentPhaseMeta.textContent = translate('liveRoundPhase');
+                } else {
+                    tournamentPhaseMeta.textContent = translate('betweenRoundsPhase');
+                }
+            }
+            if (activePlayersLabel) {
+                activePlayersLabel.innerHTML = `${getActiveCountLabel()} <span id="activePlayers">${getActiveEntryCount()}</span>`;
+            }
+        }
+
+        function renderStandingsSummary() {
+            if (!betweenRoundsCard || !standingsSummary) {
+                return;
+            }
+
+            const activeEntries = tournament.getActiveEntries();
+            const hasRoundAssignments = tournament.matches.length > 0 || ((tournament.skippedPlayers || []).length > 0);
+            const showBetweenRounds = tournament.started && !hasRoundAssignments && !tournament.finalResults && activeEntries.length > 1;
+
+            if (!showBetweenRounds) {
+                betweenRoundsCard.style.display = 'none';
+                standingsSummary.innerHTML = '';
+                return;
+            }
+
+            const rows = getSortedEntriesForOverview().map((entry, index) => `
+                <tr class="${entry.active ? '' : 'table-danger'}">
+                    <td>${index + 1}</td>
+                    <td>${entry.name}${isFixedTeammatesMode() ? `<div class="text-muted small">${entry.memberOne || ''}${entry.memberTwo ? ` / ${entry.memberTwo}` : ''}</div>` : ''}</td>
+                    <td>${entry.losses}/${tournament.maxLosses}</td>
+                    <td>${getEntryStatusText(entry)}</td>
+                </tr>
+            `).join('');
+
+            standingsSummary.innerHTML = `
+                <div class="table-responsive">
+                    <table class="table table-striped standings-mini-table mb-0">
+                        <thead>
+                            <tr>
+                                <th>${translate('place')}</th>
+                                <th>${translate(isFixedTeammatesMode() ? 'teamName' : 'player')}</th>
+                                <th>${translate('losses')}</th>
+                                <th>${translate('status')}</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rows}</tbody>
+                    </table>
+                </div>
+            `;
+            betweenRoundsCard.style.display = '';
         }
 
         function insertAlertBeforeMatches(id, className, html, autoDismissMs = 0) {
@@ -1509,11 +2017,11 @@
             }
 
             if (mode === 'ready') {
-                cloudStatusIndicator.className = 'small text-muted mb-3';
+                cloudStatusIndicator.className = 'small text-muted';
             } else if (mode === 'auth') {
-                cloudStatusIndicator.className = 'small text-warning mb-3';
+                cloudStatusIndicator.className = 'small text-warning';
             } else {
-                cloudStatusIndicator.className = 'small text-danger mb-3';
+                cloudStatusIndicator.className = 'small text-danger';
             }
 
             cloudStatusIndicator.textContent = cloudStatusText(mode);
@@ -1736,14 +2244,7 @@
                     tournamentFormSelect.disabled = true;
                 }
                 startTournamentBtn.disabled = true;
-                const settingsCard = document.querySelector(SELECTORS.TOURNAMENT_SETTINGS_CARD);
-                if (settingsCard) {
-                    settingsCard.style.display = 'none';
-                }
                 setRegistrationPanelVisibility(false);
-                if (toggleRegistrationPanelBtn) {
-                    toggleRegistrationPanelBtn.style.display = '';
-                }
             } else {
                 registrationForm.querySelectorAll('input, button').forEach(el => el.disabled = false);
                 if (tournamentFormSelect) {
@@ -1961,15 +2462,7 @@
             generateMatchesBtn.disabled = true;
             completeRoundBtn.disabled = true;
             approveTagChangesBtn.disabled = true;
-
-            const settingsCard = document.querySelector(SELECTORS.TOURNAMENT_SETTINGS_CARD);
-            if (settingsCard) {
-                settingsCard.style.display = '';
-            }
             setRegistrationPanelVisibility(true);
-            if (toggleRegistrationPanelBtn) {
-                toggleRegistrationPanelBtn.style.display = 'none';
-            }
 
             const playFinalBtn = document.getElementById('playFinal');
             if (playFinalBtn) {
@@ -2062,9 +2555,9 @@
             if (!tournament.started) {
                 return;
             }
-            const isHidden = registrationSection && registrationSection.style.display === 'none';
-            setRegistrationPanelVisibility(isHidden);
-            if (isHidden && registrationSection) {
+            const shouldOpen = !getRegistrationPanelVisible();
+            setRegistrationPanelVisibility(shouldOpen);
+            if (shouldOpen && registrationSection) {
                 registrationSection.scrollIntoView({ behavior: 'smooth' });
             }
         });
@@ -2096,15 +2589,7 @@
             }
             startTournamentBtn.disabled = true;
             generateMatchesBtn.disabled = false;
-            
-            const settingsCard = document.querySelector(SELECTORS.TOURNAMENT_SETTINGS_CARD);
-            if (settingsCard) {
-                settingsCard.style.display = 'none';
-            }
             setRegistrationPanelVisibility(false);
-            if (toggleRegistrationPanelBtn) {
-                toggleRegistrationPanelBtn.style.display = '';
-            }
             
             const tournamentSection = document.querySelector(SELECTORS.TOURNAMENT_SECTION);
             if (tournamentSection) {
@@ -2252,84 +2737,79 @@
             const theadRow = playersTable.querySelector('thead tr');
             const tbody = playersTable.querySelector('tbody');
             tbody.innerHTML = '';
-
-            const sortEntries = entries => {
-                if (!tournament.started) {
-                    return entries;
-                }
-
-                entries.sort((a, b) => {
-                    if (a.active !== b.active) {
-                        return b.active - a.active;
-                    }
-                    if (a.active && b.active) {
-                        return a.losses - b.losses;
-                    }
-
-                    const aRound = a.eliminationRound === 'final' ? Number.MAX_SAFE_INTEGER : (Number(a.eliminationRound) || 0);
-                    const bRound = b.eliminationRound === 'final' ? Number.MAX_SAFE_INTEGER : (Number(b.eliminationRound) || 0);
-                    return bRound - aRound;
-                });
-
-                return entries;
-            };
-
-            const getStatusText = entry => (
-                entry.active
-                    ? translate('active')
-                    : entry.eliminationRound === 'final'
-                        ? translate('eliminatedFinal')
-                        : translateWithParams('eliminatedR', { round: entry.eliminationRound })
-            );
+            const sortedEntries = getSortedEntriesForOverview();
+            const started = tournament.started;
 
             if (isFixedTeammatesMode()) {
                 if (theadRow) {
-                    theadRow.innerHTML = `
-                        <th>#</th>
-                        <th>${translate('teamName')}</th>
-                        <th>${translate('teamMembers')}</th>
-                        <th>${translate('status')}</th>
-                        <th>${translate('losses')}</th>
-                        <th>${translate('actions')}</th>
-                    `;
+                    theadRow.innerHTML = started
+                        ? `
+                            <th>#</th>
+                            <th>${translate('teamName')}</th>
+                            <th>${translate('status')}</th>
+                            <th>${translate('losses')}</th>
+                            <th>${translate('actions')}</th>
+                        `
+                        : `
+                            <th>#</th>
+                            <th>${translate('teamName')}</th>
+                            <th>${translate('actions')}</th>
+                        `;
                 }
 
-                const teamsToDisplay = sortEntries([...tournament.fixedTeams]);
-                teamsToDisplay.forEach(team => {
+                sortedEntries.forEach(team => {
                     const row = document.createElement('tr');
                     if (!team.active) {
                         row.classList.add('table-danger');
                     }
 
                     const recentlyEliminated = team.eliminationRound === tournament.currentRound - 1;
-                    row.innerHTML = `
-                        <td>${team.id}</td>
-                        <td>${recentlyEliminated ? '<strong>' : ''}${team.name}${recentlyEliminated ? '</strong>' : ''}</td>
-                        <td>${team.memberOne}<br><span class="text-muted">${team.memberTwo}</span></td>
-                        <td>${getStatusText(team)}</td>
-                        <td>${team.losses}/${tournament.maxLosses}</td>
-                        <td>
-                            <button class="btn btn-sm btn-danger remove-entry" data-kind="team" data-id="${team.id}" ${tournament.started && !team.active ? 'disabled' : ''}>
-                                ${tournament.started && team.active ? translate('eliminate') : translate('remove')}
-                            </button>
-                        </td>
+                    const nameCell = `
+                        ${recentlyEliminated ? '<strong>' : ''}${team.name}${recentlyEliminated ? '</strong>' : ''}
+                        <div class="text-muted small mt-1">${team.memberOne} / ${team.memberTwo}</div>
                     `;
+                    row.innerHTML = started
+                        ? `
+                            <td>${team.id}</td>
+                            <td>${nameCell}</td>
+                            <td>${getEntryStatusText(team)}</td>
+                            <td>${team.losses}/${tournament.maxLosses}</td>
+                            <td>
+                                <button class="btn btn-sm btn-danger remove-entry" data-kind="team" data-id="${team.id}" ${tournament.started && !team.active ? 'disabled' : ''}>
+                                    ${tournament.started && team.active ? translate('eliminate') : translate('remove')}
+                                </button>
+                            </td>
+                        `
+                        : `
+                            <td>${team.id}</td>
+                            <td>${nameCell}</td>
+                            <td>
+                                <button class="btn btn-sm btn-danger remove-entry" data-kind="team" data-id="${team.id}">
+                                    ${translate('remove')}
+                                </button>
+                            </td>
+                        `;
                     tbody.appendChild(row);
                 });
             } else {
                 if (theadRow) {
-                    theadRow.innerHTML = `
-                        <th>#</th>
-                        <th>${translate('playerName')}</th>
-                        <th>${translate('status')}</th>
-                        <th>${translate('losses')}</th>
-                        <th>${translate('tags')}</th>
-                        <th>${translate('actions')}</th>
-                    `;
+                    theadRow.innerHTML = started
+                        ? `
+                            <th>#</th>
+                            <th>${translate('playerName')}</th>
+                            <th>${translate('status')}</th>
+                            <th>${translate('losses')}</th>
+                            <th>${translate('tags')}</th>
+                            <th>${translate('actions')}</th>
+                        `
+                        : `
+                            <th>#</th>
+                            <th>${translate('playerName')}</th>
+                            <th>${translate('actions')}</th>
+                        `;
                 }
 
-                const playersToDisplay = sortEntries([...tournament.players]);
-                playersToDisplay.forEach(player => {
+                sortedEntries.forEach(player => {
                     const row = document.createElement('tr');
                     if (!player.active) {
                         row.classList.add('table-danger');
@@ -2341,25 +2821,34 @@
                         return `<span class="player-tag tag-${tag.toLowerCase()} ${isModified ? 'pending-tag-change' : ''}">${tag}${isModified ? '<span class="tag-change-indicator">*</span>' : ''}</span>`;
                     }).join('');
 
-                    row.innerHTML = `
-                        <td>${player.id}</td>
-                        <td>${recentlyEliminated ? '<strong>' : ''}${player.name}${recentlyEliminated ? '</strong>' : ''}</td>
-                        <td>${getStatusText(player)}</td>
-                        <td>${player.losses}/${tournament.maxLosses}</td>
-                        <td>
-                            ${tagsHTML}
-                            ${tournament.started ? `
-                            <div class="btn-group btn-group-sm ms-2">
-                                <button class="btn btn-sm ${player.tags.includes('S') ? (player.modifiedTags.includes('S') ? 'btn-primary pending-tag-change' : 'btn-primary') : 'btn-outline-primary'} toggle-tag" data-id="${player.id}" data-tag="S">S</button>
-                                <button class="btn btn-sm ${player.tags.includes('O') ? (player.modifiedTags.includes('O') ? 'btn-danger pending-tag-change' : 'btn-danger') : 'btn-outline-danger'} toggle-tag" data-id="${player.id}" data-tag="O">O</button>
-                            </div>` : ''}
-                        </td>
-                        <td>
-                            <button class="btn btn-sm btn-danger remove-entry" data-kind="player" data-id="${player.id}" ${tournament.started && !player.active ? 'disabled' : ''}>
-                                ${tournament.started && player.active ? translate('eliminate') : translate('remove')}
-                            </button>
-                        </td>
-                    `;
+                    row.innerHTML = started
+                        ? `
+                            <td>${player.id}</td>
+                            <td>${recentlyEliminated ? '<strong>' : ''}${player.name}${recentlyEliminated ? '</strong>' : ''}</td>
+                            <td>${getEntryStatusText(player)}</td>
+                            <td>${player.losses}/${tournament.maxLosses}</td>
+                            <td>
+                                ${tagsHTML}
+                                <div class="btn-group btn-group-sm ms-2">
+                                    <button class="btn btn-sm ${player.tags.includes('S') ? (player.modifiedTags.includes('S') ? 'btn-primary pending-tag-change' : 'btn-primary') : 'btn-outline-primary'} toggle-tag" data-id="${player.id}" data-tag="S">S</button>
+                                    <button class="btn btn-sm ${player.tags.includes('O') ? (player.modifiedTags.includes('O') ? 'btn-danger pending-tag-change' : 'btn-danger') : 'btn-outline-danger'} toggle-tag" data-id="${player.id}" data-tag="O">O</button>
+                                </div>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-danger remove-entry" data-kind="player" data-id="${player.id}" ${tournament.started && !player.active ? 'disabled' : ''}>
+                                    ${tournament.started && player.active ? translate('eliminate') : translate('remove')}
+                                </button>
+                            </td>
+                        `
+                        : `
+                            <td>${player.id}</td>
+                            <td>${player.name}</td>
+                            <td>
+                                <button class="btn btn-sm btn-danger remove-entry" data-kind="player" data-id="${player.id}">
+                                    ${translate('remove')}
+                                </button>
+                            </td>
+                        `;
                     tbody.appendChild(row);
                 });
             }
@@ -2399,6 +2888,7 @@
             });
 
             if (isFixedTeammatesMode()) {
+                updateRegistrationMeta();
                 return;
             }
 
@@ -2453,6 +2943,8 @@
                     scheduleCloudSave();
                 });
             });
+
+            updateRegistrationMeta();
         }
 
         // translatePage() is intentionally defined once in the i18n section below.
@@ -2478,40 +2970,27 @@
             const hasRoundAssignments = tournament.matches.length > 0 || ((tournament.skippedPlayers || []).length > 0);
             const isBetweenRounds = tournament.started && !hasRoundAssignments && !tournament.finalResults;
             const tournamentIsOver = tournament.started && !tournament.finalResults && activeEntries.length <= 1;
+            const canApproveTags = !fixedMode && tournament.pendingTagChanges && tournament.currentRound > 0 && !hasRoundAssignments && !tournament.finalResults;
+            const canGenerateMatches = tournament.started && !tournament.finalResults && !tournamentIsOver && !hasRoundAssignments && !canApproveTags;
+            const canCompleteRound = tournament.started && !tournament.finalResults && hasRoundAssignments;
 
             updateRegistrationModeUI();
-            approveTagChangesBtn.style.display = fixedMode ? 'none' : '';
+            updateRegistrationMeta();
+            updateTournamentSummary();
+            renderStandingsSummary();
             tagReminder.style.display = 'none';
 
-            if (!tournament.started || tournamentIsOver) {
-                generateMatchesBtn.disabled = true;
-                completeRoundBtn.disabled = true;
-                approveTagChangesBtn.disabled = true;
-            } else if (tournament.finalResults) {
-                generateMatchesBtn.disabled = true;
-                completeRoundBtn.disabled = true;
-                approveTagChangesBtn.disabled = true;
-            } else if (hasRoundAssignments) {
-                generateMatchesBtn.disabled = true;
-                completeRoundBtn.disabled = false;
-                approveTagChangesBtn.disabled = true;
-            } else {
-                completeRoundBtn.disabled = true;
-                if (tournament.pendingTagChanges && tournament.currentRound > 0) {
-                    generateMatchesBtn.disabled = true;
-                    approveTagChangesBtn.disabled = false;
-                } else {
-                    generateMatchesBtn.disabled = false;
-                    approveTagChangesBtn.disabled = true;
-                }
-            }
-            
-            if (!fixedMode && tournament.pendingTagChanges && tournament.currentRound > 0 && tournament.matches.length === 0) {
-                approveTagChangesBtn.disabled = false;
-                generateMatchesBtn.disabled = true;
+            generateMatchesBtn.style.display = canGenerateMatches ? '' : 'none';
+            generateMatchesBtn.disabled = !canGenerateMatches;
+
+            completeRoundBtn.style.display = canCompleteRound ? '' : 'none';
+            completeRoundBtn.disabled = !canCompleteRound;
+
+            approveTagChangesBtn.style.display = canApproveTags ? '' : 'none';
+            approveTagChangesBtn.disabled = !canApproveTags;
+
+            if (canApproveTags) {
                 showPendingTagChangesAlert();
-            } else if (isBetweenRounds || fixedMode) {
-                approveTagChangesBtn.disabled = true;
             }
             
             const playFinalBtn = document.getElementById('playFinal');
@@ -2521,7 +3000,7 @@
                 if (!playFinalBtn) {
                     const finalBtn = document.createElement('button');
                     finalBtn.id = 'playFinal';
-                    finalBtn.className = 'btn btn-warning me-2';
+                    finalBtn.className = 'btn btn-warning';
                     finalBtn.textContent = translate('playFinal');
                     finalBtn.setAttribute('data-translate', 'playFinal');
                     
@@ -2539,56 +3018,50 @@
             } else if (playFinalBtn && (activeEntries.length > FINAL_MATCH_ACTIVE_PLAYERS_THRESHOLD || tournament.finalResults || tournamentIsOver)) {
                 playFinalBtn.remove();
             }
+
+            if (isBetweenRounds && matchesContainer && !matchesContainer.innerHTML.trim()) {
+                renderStandingsSummary();
+            }
         }
 
         function renderCurrentRoundView() {
             matchesContainer.innerHTML = '';
 
-            if (isFixedTeammatesMode()) {
-                const matchesHeader = document.createElement('div');
-                matchesHeader.className = 'alert alert-primary mb-3';
-                const skipCount = tournament.skippedPlayers ? tournament.skippedPlayers.length : 0;
+            const intro = document.createElement('div');
+            intro.className = 'round-board-intro';
 
-                matchesHeader.innerHTML = `
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <h5 class="mb-0">${translate('round')} ${tournament.currentRound} ${translate('matchesRound')}</h5>
-                        <span class="badge bg-secondary">${translate('fixedTeammates')}</span>
-                    </div>
-                    <div>
-                        <p class="mb-0">${skipCount > 0 ? translateWithParams('teamByeNotice', { count: skipCount }) : translate('fixedTeamRoundReady')}</p>
-                    </div>
-                `;
-                matchesContainer.appendChild(matchesHeader);
+            let helperText = translate('roundBoardReady');
+            if (isFixedTeammatesMode()) {
+                const skipCount = tournament.skippedPlayers ? tournament.skippedPlayers.length : 0;
+                helperText = skipCount > 0 ? translateWithParams('teamByeNotice', { count: skipCount }) : translate('fixedTeamRoundReady');
             } else {
                 const has1v1Matches = tournament.matches.some(match => match.team1.length === 1 && match.team2.length === 1);
                 const skipCount = tournament.skippedPlayers ? tournament.skippedPlayers.length : 0;
-                const needsTagsMessage = [];
+                const notes = [];
 
                 if (has1v1Matches) {
-                    const playersIn1v1 = tournament.matches.filter(match => match.team1.length === 1).length * 2;
-                    needsTagsMessage.push(`${playersIn1v1} ${translate('players')} in 1v1 ${translate('match')}es ${translate('need')} "S" tags`);
+                    notes.push(translate('oneVOneRoundNote'));
                 }
-
                 if (skipCount > 0) {
-                    needsTagsMessage.push(`${skipCount} ${translate('player')}${skipCount > 1 ? 's' : ''} ${translate('skipping')} ${translate('need')}${skipCount === 1 ? 's' : ''} "O" tag`);
+                    notes.push(translateWithParams('playerByeNotice', { count: skipCount }));
                 }
 
-                const matchesHeader = document.createElement('div');
-                matchesHeader.className = 'alert alert-primary mb-3';
-                matchesHeader.innerHTML = `
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <h5 class="mb-0">${translate('round')} ${tournament.currentRound} ${translate('matchesRound')}</h5>
-                        <span class="badge bg-success">${translate('tagsAssigned')}</span>
-                    </div>
-                    <div>
-                        ${needsTagsMessage.length > 0
-                            ? `<p class="mb-0"><strong>${translate('tagsNeeded')}:</strong> ${needsTagsMessage.join(', ')}</p>`
-                            : `<p class="mb-0">${translate('noTags')}</p>`
-                        }
-                    </div>
-                `;
-                matchesContainer.appendChild(matchesHeader);
+                if (notes.length > 0) {
+                    helperText = `<strong>${translate('tagsNeeded')}:</strong> ${notes.join(' · ')}`;
+                }
             }
+
+            intro.innerHTML = `
+                <div class="round-board-headline">
+                    <div>
+                        <div class="section-helper-text">${translate('liveRoundTitle')}</div>
+                        <h5 class="mb-0">${translate('round')} ${tournament.currentRound}</h5>
+                    </div>
+                    <span class="badge ${isFixedTeammatesMode() ? 'bg-secondary' : 'bg-success'}">${translate(isFixedTeammatesMode() ? 'fixedTeammates' : 'changingTeammates')}</span>
+                </div>
+                <div class="mt-3">${helperText}</div>
+            `;
+            matchesContainer.appendChild(intro);
 
             renderMatches(tournament.matches, tournament.skippedPlayers || []);
         }
@@ -2604,95 +3077,51 @@
             }
             
             if (skippingPlayers && skippingPlayers.length > 0) {
-                const skippingCard = document.createElement('div');
-                skippingCard.className = 'card mb-3';
-
-                if (isFixedTeammatesMode()) {
-                    let teamsHTML = '';
-                    skippingPlayers.forEach(team => {
-                        teamsHTML += `
-                            <div class="col-md-6 mb-2">
-                                <div class="card skipped-player border-warning">
-                                    <div class="card-body text-center">
-                                        <h5>${team.name}</h5>
-                                        <p class="text-warning fw-bold">${translate('teamBye')}</p>
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-                    });
-
-                    skippingCard.innerHTML = `
-                        <div class="card-header bg-warning text-dark">${translate('skippingTeams')}</div>
-                        <div class="card-body">
-                            <div class="row">
-                                ${teamsHTML}
-                            </div>
-                        </div>
-                    `;
-                } else {
-                    let playersHTML = '';
-                    skippingPlayers.forEach(player => {
-                        const hasOTag = player.tags.includes('O');
-                        
-                        playersHTML += `
-                            <div class="col-md-4 mb-2">
-                                <div class="card ${hasOTag ? 'border-danger' : ''} skipped-player">
-                                    <div class="card-body text-center">
-                                        <h5>${player.name}</h5>
-                                        <p class="text-danger fw-bold">${translate('skippingRound')}</p>
-                                        <p class="small text-warning">${translate('willReceiveOTag')}</p>
-                                        ${hasOTag ? `<p class="small text-danger">${translate('alreadyHasOTag')}</p>` : ''}
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-                    });
-                    
-                    skippingCard.innerHTML = `
-                        <div class="card-header bg-danger text-white">${translate('skippingPlayers')}</div>
-                        <div class="card-body">
-                            <div class="row">
-                                ${playersHTML}
-                            </div>
-                        </div>
-                    `;
-                }
-                
-                matchesContainer.appendChild(skippingCard);
+                const byeStrip = document.createElement('div');
+                byeStrip.className = 'bye-strip';
+                byeStrip.innerHTML = `
+                    <div class="section-helper-text">${translate(isFixedTeammatesMode() ? 'skippingTeams' : 'skippingPlayers')}</div>
+                    <div class="bye-pill-row">
+                        ${skippingPlayers.map(entry => `<div class="bye-pill">${entry.name}</div>`).join('')}
+                    </div>
+                `;
+                matchesContainer.appendChild(byeStrip);
             }
-            
+
+            const board = document.createElement('div');
+            board.className = 'round-board-grid';
+
             matches.forEach(match => {
                 const matchCard = document.createElement('div');
-                matchCard.className = 'card mb-3';
+                matchCard.className = 'card round-match-card';
 
                 if (match.mode === 'fixed') {
+                    const winnerLabel = match.winner === 1 ? match.team1Label : match.winner === 2 ? match.team2Label : '';
                     matchCard.innerHTML = `
-                        <div class="card-header">${translate('match')} #${match.id}</div>
                         <div class="card-body">
-                            <div class="row align-items-center">
-                                <div class="col-5 text-center">
-                                    <h5>${match.team1Label}</h5>
+                            <div class="round-match-head">
+                                <div class="round-match-index">${translate('match')} #${match.id}</div>
+                                <div class="round-match-tag">${winnerLabel ? `${translate('winner')}: ${winnerLabel}` : translate('readyToScore')}</div>
+                            </div>
+                            <div class="round-versus-stack">
+                                <div class="round-team-panel ${match.winner === 1 ? 'is-winner' : ''}">
+                                    <h5 class="round-team-name">${match.team1Label}</h5>
+                                    <div class="round-team-meta">${translate('team')} 1</div>
                                 </div>
-                                <div class="col-2 text-center">
-                                    <h5>${translate('vs')}</h5>
-                                </div>
-                                <div class="col-5 text-center">
-                                    <h5>${match.team2Label}</h5>
+                                <div class="round-versus-label">${translate('vs')}</div>
+                                <div class="round-team-panel ${match.winner === 2 ? 'is-winner' : ''}">
+                                    <h5 class="round-team-name">${match.team2Label}</h5>
+                                    <div class="round-team-meta">${translate('team')} 2</div>
                                 </div>
                             </div>
-                            <div class="row mt-3">
-                                <div class="col-12 text-center">
-                                    <p>${translate('selectWinner')}:</p>
-                                    <div class="btn-group" role="group">
-                                        <button type="button" class="btn ${match.winner === 1 ? 'btn-primary' : 'btn-outline-primary'} select-winner" data-match="${match.id}" data-winner="1">
-                                            ${match.team1Label}
-                                        </button>
-                                        <button type="button" class="btn ${match.winner === 2 ? 'btn-primary' : 'btn-outline-primary'} select-winner" data-match="${match.id}" data-winner="2">
-                                            ${match.team2Label}
-                                        </button>
-                                    </div>
-                                </div>
+                            <p class="winner-choice-label">${translate('selectWinner')}:</p>
+                            <div class="winner-choice-group">
+                                <button type="button" class="btn ${match.winner === 1 ? 'btn-primary' : 'btn-outline-primary'} select-winner winner-choice-btn" data-match="${match.id}" data-winner="1">
+                                    ${match.team1Label}
+                                </button>
+                                <button type="button" class="btn ${match.winner === 2 ? 'btn-primary' : 'btn-outline-primary'} select-winner winner-choice-btn" data-match="${match.id}" data-winner="2">
+                                    ${match.team2Label}
+                                </button>
                             </div>
                         </div>
                     `;
@@ -2700,58 +3129,45 @@
                     const team1Names = match.team1.map(player => player.name).join(', ');
                     const team2Names = match.team2.map(player => player.name).join(', ');
                     const is1v1 = match.team1.length === 1 && match.team2.length === 1;
-                    let tagInfo = '';
-
-                    if (is1v1) {
-                        const team1HasSTag = match.team1[0].tags.includes('S');
-                        const team2HasSTag = match.team2[0].tags.includes('S');
-
-                        if (team1HasSTag && team2HasSTag) {
-                            tagInfo = ` (1v1 - ${translate('bothHaveSTag')})`;
-                        } else if (team1HasSTag || team2HasSTag) {
-                            tagInfo = ` (1v1 - ${translate('oneHasSTag')})`;
-                        } else {
-                            tagInfo = ` (1v1 - ${translate('willReceiveSTag')})`;
-                        }
-                    }
+                    const winnerLabel = match.winner === 1 ? team1Names : match.winner === 2 ? team2Names : '';
+                    const tagInfo = is1v1
+                        ? (match.team1[0].tags.includes('S') || match.team2[0].tags.includes('S') ? translate('oneVOneMatch') : translate('oneVOneRoundNote'))
+                        : translate('teamMatch');
 
                     matchCard.innerHTML = `
-                        <div class="card-header ${is1v1 ? 'bg-primary text-white' : ''}">${is1v1 ? translate('oneVOneMatch') + ' ' : ''}${translate('match')} #${match.id}${tagInfo}</div>
                         <div class="card-body">
-                            <div class="row align-items-center">
-                                <div class="col-5 text-center">
-                                    <h5>${team1Names}</h5>
-                                    <p class="text-muted">${match.team1.length === 1 ? translate('oneVOneMatch') : translate('team') + ' 1'}</p>
-                                    ${match.team1.length === 1 ? `<p class="small ${match.team1[0].tags.includes('S') ? 'text-primary' : 'text-secondary'}">${match.team1[0].tags.includes('S') ? translate('hasSTag') : ''}</p>` : ''}
+                            <div class="round-match-head">
+                                <div class="round-match-index">${translate('match')} #${match.id}</div>
+                                <div class="round-match-tag">${winnerLabel ? `${translate('winner')}: ${winnerLabel}` : tagInfo}</div>
+                            </div>
+                            <div class="round-versus-stack">
+                                <div class="round-team-panel ${match.winner === 1 ? 'is-winner' : ''}">
+                                    <h5 class="round-team-name">${team1Names}</h5>
+                                    <div class="round-team-meta">${match.team1.length === 1 ? translate('oneVOneMatch') : `${translate('team')} 1`}</div>
                                 </div>
-                                <div class="col-2 text-center">
-                                    <h5>${translate('vs')}</h5>
-                                </div>
-                                <div class="col-5 text-center">
-                                    <h5>${team2Names}</h5>
-                                    <p class="text-muted">${match.team2.length === 1 ? translate('oneVOneMatch') : translate('team') + ' 2'}</p>
-                                    ${match.team2.length === 1 ? `<p class="small ${match.team2[0].tags.includes('S') ? 'text-primary' : 'text-secondary'}">${match.team2[0].tags.includes('S') ? translate('hasSTag') : ''}</p>` : ''}
+                                <div class="round-versus-label">${translate('vs')}</div>
+                                <div class="round-team-panel ${match.winner === 2 ? 'is-winner' : ''}">
+                                    <h5 class="round-team-name">${team2Names}</h5>
+                                    <div class="round-team-meta">${match.team2.length === 1 ? translate('oneVOneMatch') : `${translate('team')} 2`}</div>
                                 </div>
                             </div>
-                            <div class="row mt-3">
-                                <div class="col-12 text-center">
-                                    <p>${translate('selectWinner')}:</p>
-                                    <div class="btn-group" role="group">
-                                        <button type="button" class="btn ${match.winner === 1 ? 'btn-primary' : 'btn-outline-primary'} select-winner" data-match="${match.id}" data-winner="1">
-                                            ${match.team1.length === 1 ? match.team1[0].name : translate('team') + ' 1'}
-                                        </button>
-                                        <button type="button" class="btn ${match.winner === 2 ? 'btn-primary' : 'btn-outline-primary'} select-winner" data-match="${match.id}" data-winner="2">
-                                            ${match.team2.length === 1 ? match.team2[0].name : translate('team') + ' 2'}
-                                        </button>
-                                    </div>
-                                </div>
+                            <p class="winner-choice-label">${translate('selectWinner')}:</p>
+                            <div class="winner-choice-group">
+                                <button type="button" class="btn ${match.winner === 1 ? 'btn-primary' : 'btn-outline-primary'} select-winner winner-choice-btn" data-match="${match.id}" data-winner="1">
+                                    ${team1Names}
+                                </button>
+                                <button type="button" class="btn ${match.winner === 2 ? 'btn-primary' : 'btn-outline-primary'} select-winner winner-choice-btn" data-match="${match.id}" data-winner="2">
+                                    ${team2Names}
+                                </button>
                             </div>
                         </div>
                     `;
                 }
                 
-                matchesContainer.appendChild(matchCard);
+                board.appendChild(matchCard);
             });
+
+            matchesContainer.appendChild(board);
             
             document.querySelectorAll('.select-winner').forEach(button => {
                 button.addEventListener('click', function() {
@@ -2961,21 +3377,21 @@
                 "tournament": "Turnering",
                 "rules": "Regler",
                 "admin": "Admin",
-                "playerRegistration": "Spiller Registrering",
-                "teamRegistration": "Holdregistrering",
+                "playerRegistration": "Tilf\u00f8j Spillere",
+                "teamRegistration": "Tilf\u00f8j Hold",
                 "playerName": "Spillernavn",
                 "teamMemberOne": "Holdspiller 1",
                 "teamMemberTwo": "Holdspiller 2",
                 "register": "Registrer Spiller",
                 "registerPlayer": "Registrer Spiller",
                 "registerTeam": "Registrer Hold",
-                "registeredPlayers": "Registrerede Spillere",
-                "registeredTeams": "Registrerede Hold",
+                "registeredPlayers": "Deltageroversigt",
+                "registeredTeams": "Holdoversigt",
                 "status": "Status",
                 "losses": "Nederlag",
                 "tags": "Tags",
                 "actions": "Handlinger",
-                "tournamentSettings": "Turneringsindstillinger",
+                "tournamentSettings": "Turneringsops\u00e6tning",
                 "tournamentNameLabel": "Turneringsnavn",
                 "tournamentForm": "Turneringsform",
                 "changingTeammates": "Skiftende makkere",
@@ -2989,9 +3405,32 @@
                 "activeTeamsHeader": "Aktive Hold:",
                 "teams": "hold",
                 "approveTagChanges": "Godkend Tag Ændringer",
-                "generateMatches": "Generer Kampe",
+                "generateMatches": "Generer N\u00e6ste Runde",
                 "completeRound": "Afslut Runde",
                 "resetTournament": "Nulstil Turnering",
+                "tournamentOverview": "Turneringsoverblik",
+                "registrationCollapsedHelp": "Registreringen er skjult under turneringen. Brug knappen ovenfor for at \u00e5bne den igen.",
+                "registrationHelperText": "Tilf\u00f8j deltagere her f\u00f8r start, og \u00e5bn panelet igen kun n\u00e5r du skal lave \u00e6ndringer.",
+                "openRegistrationPanel": "\u00c5bn Registrering",
+                "closeRegistrationPanel": "Luk Registrering",
+                "activeEntriesSummary": "Aktive Deltagere",
+                "maxLossesSummary": "Maks. Nederlag",
+                "betweenRoundsTitle": "Mellem Runder",
+                "standingsPreviewTitle": "Aktuel Stilling",
+                "betweenRoundsReady": "Gennemg\u00e5 stillingen, og generer n\u00e6ste runde n\u00e5r du er klar.",
+                "setupPhase": "Ops\u00e6tning",
+                "resultsPhase": "Slutresultater",
+                "liveRoundPhase": "Runde I Gang",
+                "betweenRoundsPhase": "Klar Til N\u00e6ste Runde",
+                "registeredPlayersMeta": "spillere",
+                "registeredTeamsMeta": "hold",
+                "activeEntriesMeta": "aktive",
+                "liveRoundTitle": "Aktuel Runde",
+                "roundBoardReady": "Runden er klar. V\u00e6lg vindere for at forts\u00e6tte.",
+                "oneVOneRoundNote": "1v1-kampe giver S-tags",
+                "playerByeNotice": "{count} spillere sidder over og skal have O-tag",
+                "readyToScore": "V\u00e6lg vinder",
+                "teamMatch": "Holdkamp",
                 "confirmResetTournament": "Er du sikker på, at du vil nulstille turneringen? Dette sletter alle spillere, kampe og resultater.",
                 "confirmTournamentFormChange": "Skift af turneringsform nulstiller de registrerede deltagere. Vil du fortsætte?",
                 "tournamentRules": "Turneringsregler",
@@ -3251,21 +3690,21 @@
                 "tournament": "Tournament",
                 "rules": "Rules",
                 "admin": "Admin",
-                "playerRegistration": "Player Registration",
-                "teamRegistration": "Team Registration",
+                "playerRegistration": "Add Players",
+                "teamRegistration": "Add Teams",
                 "playerName": "Player Name",
                 "teamMemberOne": "Team Member 1",
                 "teamMemberTwo": "Team Member 2",
                 "register": "Register Player",
                 "registerPlayer": "Register Player",
                 "registerTeam": "Register Team",
-                "registeredPlayers": "Registered Players",
-                "registeredTeams": "Registered Teams",
+                "registeredPlayers": "Entry Manager",
+                "registeredTeams": "Team Manager",
                 "status": "Status",
                 "losses": "Losses",
                 "tags": "Tags",
                 "actions": "Actions",
-                "tournamentSettings": "Tournament Settings",
+                "tournamentSettings": "Tournament Setup",
                 "tournamentNameLabel": "Tournament Name",
                 "tournamentForm": "Tournament Form",
                 "changingTeammates": "Changing teammates",
@@ -3279,9 +3718,32 @@
                 "activeTeamsHeader": "Active Teams:",
                 "teams": "teams",
                 "approveTagChanges": "Approve Tag Changes",
-                "generateMatches": "Generate Matches",
+                "generateMatches": "Generate Next Round",
                 "completeRound": "Complete Round",
                 "resetTournament": "Reset Tournament",
+                "tournamentOverview": "Tournament Overview",
+                "registrationCollapsedHelp": "Registration is hidden during the tournament. Use the button above to reopen it.",
+                "registrationHelperText": "Add entries here before you start, then reopen the panel only when you need to make changes.",
+                "openRegistrationPanel": "Open Registration",
+                "closeRegistrationPanel": "Close Registration",
+                "activeEntriesSummary": "Active Entries",
+                "maxLossesSummary": "Max Losses",
+                "betweenRoundsTitle": "Between Rounds",
+                "standingsPreviewTitle": "Current Standings",
+                "betweenRoundsReady": "Review the standings, then generate the next round when you are ready.",
+                "setupPhase": "Setup",
+                "resultsPhase": "Results",
+                "liveRoundPhase": "Live Round",
+                "betweenRoundsPhase": "Ready For Next Round",
+                "registeredPlayersMeta": "players",
+                "registeredTeamsMeta": "teams",
+                "activeEntriesMeta": "active",
+                "liveRoundTitle": "Current Round",
+                "roundBoardReady": "This round is ready. Select winners to continue.",
+                "oneVOneRoundNote": "1v1 matches will need S tags",
+                "playerByeNotice": "{count} players are sitting out and need O tags",
+                "readyToScore": "Choose winner",
+                "teamMatch": "Team Match",
                 "confirmResetTournament": "Are you sure you want to reset the tournament? This will clear all players, matches, and results.",
                 "confirmTournamentFormChange": "Changing tournament form will clear the registered entries. Do you want to continue?",
                 "tournamentRules": "Tournament Rules",
@@ -3469,6 +3931,9 @@
             if (data.type === 'showdart-nav') {
                 const target = data.target;
                 if (target === 'registration' || target === 'tournament') {
+                    if (target === 'registration' && tournament.started) {
+                        setRegistrationPanelVisibility(true);
+                    }
                     const section = document.getElementById(target);
                     if (section) section.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }
