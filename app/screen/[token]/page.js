@@ -34,6 +34,8 @@ const texts = {
     onBye: 'Sidder over',
     lane: 'Bane',
     waitingForLane: 'Venter på bane',
+    temporaryStandings: 'Midlertidig stilling',
+    temporaryStandingsHint: 'Live kampe vender tilbage automatisk',
     updated: 'Senest opdateret',
     live: 'Live',
     scanQr: 'Scan QR-kode',
@@ -68,6 +70,8 @@ const texts = {
     onBye: 'Bye',
     lane: 'Lane',
     waitingForLane: 'Waiting for lane',
+    temporaryStandings: 'Temporary standings',
+    temporaryStandingsHint: 'Live matches return automatically',
     updated: 'Last updated',
     live: 'Live',
     scanQr: 'Scan QR Code',
@@ -125,9 +129,10 @@ export default function ScreenPage() {
   const [tournamentState, setTournamentState] = useState(null);
   const [updatedAt, setUpdatedAt] = useState(null);
   const [shareUrl, setShareUrl] = useState('');
+  const [clockTick, setClockTick] = useState(0);
 
   const t = texts[lang] || texts.da;
-  const screenState = useMemo(() => buildScreenState(tournamentState), [tournamentState]);
+  const screenState = useMemo(() => buildScreenState(tournamentState), [tournamentState, clockTick]);
 
   useEffect(() => {
     const initialLang = getInitialLanguage();
@@ -215,6 +220,26 @@ export default function ScreenPage() {
       supabase.removeChannel(channel);
     };
   }, [screenMeta, supabase]);
+
+  useEffect(() => {
+    const expiresAt = Number(tournamentState?.spectatorOverride?.expiresAt || 0);
+    if (!expiresAt || expiresAt <= Date.now()) {
+      return undefined;
+    }
+
+    const intervalId = window.setInterval(() => {
+      setClockTick(Date.now());
+    }, 250);
+    const timeoutId = window.setTimeout(() => {
+      window.clearInterval(intervalId);
+      setClockTick(Date.now());
+    }, Math.max(0, expiresAt - Date.now()) + 300);
+
+    return () => {
+      window.clearInterval(intervalId);
+      window.clearTimeout(timeoutId);
+    };
+  }, [tournamentState?.spectatorOverride?.expiresAt]);
 
   const pageStyle = {
     minHeight: '100vh',
@@ -320,11 +345,29 @@ export default function ScreenPage() {
           <section style={{ background: '#10271e', border: '1px solid #355748', borderRadius: 18, padding: 24 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center', marginBottom: 18, flexWrap: 'wrap' }}>
               <div>
-                <div style={{ color: '#9db9ab', textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: 12 }}>{t.betweenRounds}</div>
+                <div style={{ color: '#9db9ab', textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: 12 }}>
+                  {screenState.spectatorOverride?.active ? t.temporaryStandings : t.betweenRounds}
+                </div>
                 <h2 style={{ margin: '6px 0 0' }}>{t.standings}</h2>
               </div>
               <div style={{ fontSize: 22, fontWeight: 700 }}>{t.round} {screenState.currentRound}</div>
             </div>
+            {screenState.spectatorOverride?.active ? (
+              <div style={{ marginBottom: 18 }}>
+                <div style={{ color: '#cfe4d8', marginBottom: 8, fontSize: 13 }}>{t.temporaryStandingsHint}</div>
+                <div style={{ height: 8, borderRadius: 999, background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
+                  <div
+                    style={{
+                      width: `${Math.max(0, Math.min(100, screenState.spectatorOverride.progress * 100))}%`,
+                      height: '100%',
+                      borderRadius: 999,
+                      background: 'linear-gradient(90deg, #f2d14c 0%, #93e0a9 100%)',
+                      transition: 'width 240ms linear'
+                    }}
+                  />
+                </div>
+              </div>
+            ) : null}
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>

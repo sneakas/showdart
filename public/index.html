@@ -954,6 +954,7 @@
                             <button id="toggleRegistrationPanel" class="btn btn-outline-success" style="display: none;" data-translate="openRegistrationPanel">Open Registration</button>
                             <button id="approveTagChanges" class="btn btn-outline-success" disabled data-translate="approveTagChanges">Approve Tag Changes</button>
                             <button id="generateMatches" class="btn btn-primary" disabled data-translate="generateMatches">Generate Matches</button>
+                            <button id="showStandingsOnScreen" class="btn btn-outline-info" style="display: none;" data-translate="showStandingsOnScreen">Show Standings For 30 Seconds</button>
                             <button id="completeRound" class="btn btn-success" disabled data-translate="completeRound">Complete Round</button>
                             <button id="resetTournament" class="btn btn-outline-danger" data-translate="resetTournament">Reset Tournament</button>
                         </div>
@@ -1054,6 +1055,7 @@
                 this.started = false;
                 this.pendingTagChanges = false;
                 this.finalResults = null;
+                this.spectatorOverride = null;
                 this.fairnessHistory = {
                     partners: {},
                     opponents: {}
@@ -1115,6 +1117,19 @@
 
             getLaneLabel(laneNumber) {
                 return Number.isInteger(laneNumber) ? `Lane ${laneNumber}` : 'Waiting';
+            }
+
+            clearSpectatorOverride() {
+                this.spectatorOverride = null;
+            }
+
+            showStandingsOnSpectator(durationMs = 30000) {
+                this.spectatorOverride = {
+                    mode: 'standings',
+                    round: this.currentRound,
+                    durationMs: Number.isFinite(Number(durationMs)) ? Number(durationMs) : 30000,
+                    expiresAt: Date.now() + (Number.isFinite(Number(durationMs)) ? Number(durationMs) : 30000)
+                };
             }
 
             assignLanesToMatches() {
@@ -1364,6 +1379,7 @@
                 this.skippedPlayers = [];
                 this.finalResults = null;
                 this.pendingTagChanges = false;
+                this.clearSpectatorOverride();
                 this.fairnessHistory = {
                     partners: {},
                     opponents: {}
@@ -1593,6 +1609,7 @@
             generateMatches() {
                 this.matches = [];
                 this.skippedPlayers = [];
+                this.clearSpectatorOverride();
                 const result = this.isFixedTeammatesMode()
                     ? this.generateFixedTeammateMatches()
                     : this.generateChangingTeammateMatches();
@@ -1690,6 +1707,7 @@
                 this.recordFairnessRound();
                 this.matches = [];
                 this.skippedPlayers = [];
+                this.clearSpectatorOverride();
                 
                 const activeEntries = this.getActiveEntries();
                 const isOver = activeEntries.length <= 1;
@@ -1706,10 +1724,12 @@
             }
             
             startFinalMatch() {
+                this.clearSpectatorOverride();
                 return this.getActiveEntries();
             }
             
             completeFinal(rankedEntries) {
+                this.clearSpectatorOverride();
                 this.finalResults = rankedEntries;
                 
                 rankedEntries.forEach((entry, index) => {
@@ -1781,6 +1801,7 @@
         const laneCountInput = document.getElementById('laneCount');
         const startTournamentBtn = document.getElementById('startTournament');
         const generateMatchesBtn = document.getElementById('generateMatches');
+        const showStandingsOnScreenBtn = document.getElementById('showStandingsOnScreen');
         const completeRoundBtn = document.getElementById('completeRound');
         const currentRoundSpan = document.getElementById('currentRound');
         const activePlayersSpan = document.getElementById('activePlayers');
@@ -2322,6 +2343,14 @@
                 currentRound: tournament.currentRound,
                 started: tournament.started,
                 pendingTagChanges: tournament.pendingTagChanges,
+                spectatorOverride: tournament.spectatorOverride
+                    ? {
+                        mode: tournament.spectatorOverride.mode,
+                        round: tournament.spectatorOverride.round,
+                        durationMs: tournament.spectatorOverride.durationMs,
+                        expiresAt: tournament.spectatorOverride.expiresAt
+                    }
+                    : null,
                 matches: tournament.matches.map(match => (
                     match.mode === 'fixed'
                         ? {
@@ -2416,6 +2445,14 @@
             tournament.currentRound = Number.isInteger(state.currentRound) ? state.currentRound : 0;
             tournament.started = !!state.started;
             tournament.pendingTagChanges = teammateMode === 'fixed' ? false : !!state.pendingTagChanges;
+            tournament.spectatorOverride = state.spectatorOverride && typeof state.spectatorOverride === 'object'
+                ? {
+                    mode: state.spectatorOverride.mode,
+                    round: Number.isInteger(state.spectatorOverride.round) ? state.spectatorOverride.round : tournament.currentRound,
+                    durationMs: Number.isFinite(Number(state.spectatorOverride.durationMs)) ? Number(state.spectatorOverride.durationMs) : 30000,
+                    expiresAt: Number.isFinite(Number(state.spectatorOverride.expiresAt)) ? Number(state.spectatorOverride.expiresAt) : 0
+                }
+                : null;
             tournament.finalResults = teammateMode === 'fixed'
                 ? (Array.isArray(state.finalResultTeamIds)
                     ? state.finalResultTeamIds.map(id => teamMap.get(id)).filter(Boolean)
@@ -2659,6 +2696,7 @@
             tournament.started = false;
             tournament.pendingTagChanges = false;
             tournament.finalResults = null;
+            tournament.clearSpectatorOverride();
             tournament.fairnessHistory = { partners: {}, opponents: {} };
             tournament.lastRoundPartnerKeys = [];
             tournament.lastRoundOpponentKeys = [];
@@ -2758,6 +2796,7 @@
             tournament.skippedPlayers = [];
             tournament.pendingTagChanges = false;
             tournament.finalResults = null;
+            tournament.clearSpectatorOverride();
             tournament.fairnessHistory = { partners: {}, opponents: {} };
             tournament.lastRoundPartnerKeys = [];
             tournament.lastRoundOpponentKeys = [];
@@ -2888,6 +2927,18 @@
             updateTournamentUI();
             scheduleCloudSave();
         });
+
+        if (showStandingsOnScreenBtn) {
+            showStandingsOnScreenBtn.addEventListener('click', function() {
+                const hasRoundAssignments = tournament.matches.length > 0 || ((tournament.skippedPlayers || []).length > 0);
+                if (!hasRoundAssignments || tournament.finalResults) {
+                    return;
+                }
+
+                tournament.showStandingsOnSpectator(30000);
+                scheduleCloudSave();
+            });
+        }
 
         completeRoundBtn.addEventListener('click', function() {
             const allMatchesComplete = tournament.matches.every(match => match.winner !== null);
@@ -3223,6 +3274,7 @@
             const canApproveTags = !fixedMode && tournament.pendingTagChanges && tournament.currentRound > 0 && !hasRoundAssignments && !tournament.finalResults;
             const canGenerateMatches = tournament.started && !tournament.finalResults && !tournamentIsOver && !hasRoundAssignments && !canApproveTags;
             const canCompleteRound = tournament.started && !tournament.finalResults && hasRoundAssignments;
+            const canShowStandingsOnScreen = tournament.started && !tournament.finalResults && hasRoundAssignments;
 
             updateRegistrationModeUI();
             updateRegistrationMeta();
@@ -3233,6 +3285,11 @@
 
             generateMatchesBtn.style.display = canGenerateMatches ? '' : 'none';
             generateMatchesBtn.disabled = !canGenerateMatches;
+
+            if (showStandingsOnScreenBtn) {
+                showStandingsOnScreenBtn.style.display = canShowStandingsOnScreen ? '' : 'none';
+                showStandingsOnScreenBtn.disabled = !canShowStandingsOnScreen;
+            }
 
             completeRoundBtn.style.display = canCompleteRound ? '' : 'none';
             completeRoundBtn.disabled = !canCompleteRound;
@@ -3712,6 +3769,7 @@
                 "teams": "hold",
                 "approveTagChanges": "Godkend Tag Ændringer",
                 "generateMatches": "Generer N\u00e6ste Runde",
+                "showStandingsOnScreen": "Vis Stilling I 30 Sek.",
                 "completeRound": "Afslut Runde",
                 "resetTournament": "Nulstil Turnering",
                 "tournamentOverview": "Turneringsoverblik",
@@ -4037,6 +4095,7 @@
                 "teams": "teams",
                 "approveTagChanges": "Approve Tag Changes",
                 "generateMatches": "Generate Next Round",
+                "showStandingsOnScreen": "Show Standings For 30 Sec.",
                 "completeRound": "Complete Round",
                 "resetTournament": "Reset Tournament",
                 "tournamentOverview": "Tournament Overview",
