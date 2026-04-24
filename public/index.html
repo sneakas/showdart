@@ -545,11 +545,39 @@
             margin-bottom: 0.9rem;
         }
 
+        .round-match-head-meta {
+            display: grid;
+            gap: 0.35rem;
+            justify-items: end;
+        }
+
         .round-match-index {
             color: var(--club-gold);
             font-weight: 800;
             text-transform: uppercase;
             letter-spacing: 0.07em;
+        }
+
+        .round-match-lane {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 32px;
+            padding: 0.35rem 0.75rem;
+            border-radius: 999px;
+            border: 1px solid rgba(242, 209, 76, 0.38);
+            background: rgba(70, 56, 17, 0.24);
+            color: var(--club-gold);
+            font-size: 0.76rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+        }
+
+        .round-match-lane.is-waiting {
+            border-color: rgba(180, 197, 189, 0.24);
+            background: rgba(18, 39, 31, 0.8);
+            color: var(--club-text-soft);
         }
 
         .round-match-tag {
@@ -619,6 +647,57 @@
         .winner-choice-btn {
             width: 100%;
             min-height: 52px;
+        }
+
+        .lane-config-panel {
+            margin-bottom: 1rem;
+            padding: 1rem;
+            border-radius: 12px;
+            border: 1px solid var(--club-border);
+            background: rgba(12, 30, 23, 0.75);
+        }
+
+        .lane-config-headline {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.9rem;
+            flex-wrap: wrap;
+            margin-bottom: 0.85rem;
+        }
+
+        .lane-config-meta {
+            color: var(--club-text-soft);
+            font-weight: 700;
+        }
+
+        .lane-toggle-row {
+            display: flex;
+            gap: 0.65rem;
+            flex-wrap: wrap;
+        }
+
+        .lane-toggle-btn {
+            min-width: 110px;
+        }
+
+        .lane-toggle-btn.is-active {
+            box-shadow: 0 0 0 1px rgba(25, 135, 84, 0.28);
+        }
+
+        .lane-assignment-row {
+            display: grid;
+            gap: 0.45rem;
+            margin-top: 1rem;
+        }
+
+        .lane-assignment-label {
+            margin: 0;
+            color: var(--club-text-soft);
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
         }
 
         .bye-strip {
@@ -763,6 +842,10 @@
                             <label for="maxLosses" class="form-label" data-translate="maxLosses">Maximum Losses Before Elimination</label>
                             <input type="number" class="form-control" id="maxLosses" min="1" value="2">
                         </div>
+                        <div class="setup-field">
+                            <label for="laneCount" class="form-label" data-translate="laneCountLabel">Number of Lanes</label>
+                            <input type="number" class="form-control" id="laneCount" min="1" max="32" value="2">
+                        </div>
                         <div class="setup-action">
                             <button id="startTournament" class="btn btn-success w-100" data-translate="startTournament">Start Tournament</button>
                         </div>
@@ -857,6 +940,10 @@
                             <strong id="summaryMaxLosses">0</strong>
                             <div class="small" id="cloudStatusIndicator"></div>
                         </div>
+                        <div class="summary-chip">
+                            <span class="summary-label" data-translate="laneSummary">Lanes</span>
+                            <strong id="summaryLaneCount">0/0</strong>
+                        </div>
                     </div>
 
                     <div class="tournament-action-row" id="tournamentActionRow">
@@ -870,6 +957,17 @@
                             <button id="completeRound" class="btn btn-success" disabled data-translate="completeRound">Complete Round</button>
                             <button id="resetTournament" class="btn btn-outline-danger" data-translate="resetTournament">Reset Tournament</button>
                         </div>
+                    </div>
+
+                    <div class="lane-config-panel" id="laneConfigPanel" style="display: none;">
+                        <div class="lane-config-headline">
+                            <div>
+                                <div class="section-helper-text" data-translate="laneSelectionTitle">Lane Setup For Next Round</div>
+                                <div class="section-helper-text" data-translate="laneSelectionHelp">Choose which lanes are active before you generate the next round.</div>
+                            </div>
+                            <div class="lane-config-meta" id="laneSelectionMeta"></div>
+                        </div>
+                        <div class="lane-toggle-row" id="laneToggleRow"></div>
                     </div>
 
                     <div class="alert alert-info mb-3" id="tagReminder" style="display: none;">
@@ -948,6 +1046,8 @@
                 this.name = '';
                 this.teammateMode = 'changing';
                 this.maxLosses = 2;
+                this.laneCount = 2;
+                this.activeLanes = [1, 2];
                 this.currentRound = 0;
                 this.matches = [];
                 this.skippedPlayers = [];
@@ -982,7 +1082,75 @@
                 return `team-${id}`;
             }
 
-            buildFixedMatch(team1, team2, id, winner = null) {
+            normalizeLaneCount(value) {
+                const parsed = parseInt(value, 10);
+                if (!Number.isFinite(parsed)) {
+                    return 2;
+                }
+                return Math.max(1, Math.min(32, parsed));
+            }
+
+            getAllLaneNumbers() {
+                return Array.from({ length: this.laneCount }, (_, index) => index + 1);
+            }
+
+            getActiveLaneNumbers() {
+                return [...new Set((Array.isArray(this.activeLanes) ? this.activeLanes : [])
+                    .map(value => parseInt(value, 10))
+                    .filter(value => Number.isInteger(value) && value >= 1 && value <= this.laneCount))]
+                    .sort((left, right) => left - right);
+            }
+
+            setLaneCount(value) {
+                this.laneCount = this.normalizeLaneCount(value);
+                this.activeLanes = this.getAllLaneNumbers();
+            }
+
+            setActiveLanes(laneNumbers) {
+                this.activeLanes = [...new Set((Array.isArray(laneNumbers) ? laneNumbers : [])
+                    .map(value => parseInt(value, 10))
+                    .filter(value => Number.isInteger(value) && value >= 1 && value <= this.laneCount))]
+                    .sort((left, right) => left - right);
+            }
+
+            getLaneLabel(laneNumber) {
+                return Number.isInteger(laneNumber) ? `Lane ${laneNumber}` : 'Waiting';
+            }
+
+            assignLanesToMatches() {
+                const activeLanes = this.getActiveLaneNumbers();
+                this.matches.forEach((match, index) => {
+                    match.laneNumber = Number.isInteger(activeLanes[index]) ? activeLanes[index] : null;
+                });
+            }
+
+            assignLaneToMatch(matchId, laneNumber) {
+                const match = this.matches.find(entry => entry.id === matchId);
+                if (!match) {
+                    return false;
+                }
+
+                const normalizedLane = Number.isInteger(laneNumber) && laneNumber >= 1 && laneNumber <= this.laneCount
+                    ? laneNumber
+                    : null;
+
+                if (normalizedLane !== null && !this.activeLanes.includes(normalizedLane)) {
+                    this.activeLanes = [...this.getActiveLaneNumbers(), normalizedLane].sort((left, right) => left - right);
+                }
+
+                if (normalizedLane !== null) {
+                    this.matches.forEach(otherMatch => {
+                        if (otherMatch.id !== matchId && otherMatch.winner === null && otherMatch.laneNumber === normalizedLane) {
+                            otherMatch.laneNumber = null;
+                        }
+                    });
+                }
+
+                match.laneNumber = normalizedLane;
+                return true;
+            }
+
+            buildFixedMatch(team1, team2, id, winner = null, laneNumber = null) {
                 return {
                     id,
                     mode: 'fixed',
@@ -998,7 +1166,8 @@
                         { id: `${team2.id}-1`, name: team2.memberOne },
                         { id: `${team2.id}-2`, name: team2.memberTwo }
                     ],
-                    winner
+                    winner,
+                    laneNumber: Number.isInteger(laneNumber) ? laneNumber : null
                 };
             }
 
@@ -1185,9 +1354,10 @@
                 });
             }
 
-            startTournament(maxLosses, tournamentName = '') {
+            startTournament(maxLosses, tournamentName = '', laneCount = this.laneCount) {
                 this.name = typeof tournamentName === 'string' ? tournamentName.trim() : '';
                 this.maxLosses = maxLosses;
+                this.setLaneCount(laneCount);
                 this.started = true;
                 this.currentRound = 1;
                 this.matches = [];
@@ -1353,7 +1523,8 @@
                     mode: 'changing',
                     team1: team[0],
                     team2: team[1],
-                    winner: null
+                    winner: null,
+                    laneNumber: null
                 }));
                 this.skippedPlayers = bestCandidate.skippedPlayers;
 
@@ -1422,9 +1593,13 @@
             generateMatches() {
                 this.matches = [];
                 this.skippedPlayers = [];
-                return this.isFixedTeammatesMode()
+                const result = this.isFixedTeammatesMode()
                     ? this.generateFixedTeammateMatches()
                     : this.generateChangingTeammateMatches();
+                if (!result.error) {
+                    this.assignLanesToMatches();
+                }
+                return result;
             }
 
             assignTags() {
@@ -1603,6 +1778,7 @@
         const setupToolbar = document.getElementById('setupToolbar');
         const tournamentNameInput = document.getElementById('tournamentName');
         const tournamentFormSelect = document.getElementById('tournamentForm');
+        const laneCountInput = document.getElementById('laneCount');
         const startTournamentBtn = document.getElementById('startTournament');
         const generateMatchesBtn = document.getElementById('generateMatches');
         const completeRoundBtn = document.getElementById('completeRound');
@@ -1621,9 +1797,11 @@
         const summaryActiveEntries = document.getElementById('summaryActiveEntries');
         const summaryTournamentForm = document.getElementById('summaryTournamentForm');
         const summaryMaxLosses = document.getElementById('summaryMaxLosses');
+        const summaryLaneCount = document.getElementById('summaryLaneCount');
         const tournamentPhaseMeta = document.getElementById('tournamentPhaseMeta');
-        const betweenRoundsCard = document.getElementById('betweenRoundsCard');
-        const standingsSummary = document.getElementById('standingsSummary');
+        const laneConfigPanel = document.getElementById('laneConfigPanel');
+        const laneSelectionMeta = document.getElementById('laneSelectionMeta');
+        const laneToggleRow = document.getElementById('laneToggleRow');
 
         // Core runtime state lives in:
         // - tournament.players: roster and per-player lifecycle state
@@ -1735,6 +1913,10 @@
             if (tournamentNameInput) {
                 tournamentNameInput.value = tournament.name || '';
                 tournamentNameInput.disabled = tournament.started;
+            }
+            if (laneCountInput) {
+                laneCountInput.value = String(tournament.laneCount || 2);
+                laneCountInput.disabled = tournament.started;
             }
             if (setupToolbar) {
                 setupToolbar.style.display = tournament.started ? 'none' : 'grid';
@@ -1892,6 +2074,10 @@
             if (summaryMaxLosses) {
                 summaryMaxLosses.textContent = String(tournament.maxLosses || 0);
             }
+            if (summaryLaneCount) {
+                const activeLaneCount = tournament.getActiveLaneNumbers().length;
+                summaryLaneCount.textContent = `${activeLaneCount}/${tournament.laneCount || 0}`;
+            }
             if (tournamentPhaseMeta) {
                 if (!tournament.started) {
                     tournamentPhaseMeta.textContent = translate('setupPhase');
@@ -1906,6 +2092,83 @@
             if (activePlayersLabel) {
                 activePlayersLabel.innerHTML = `${getActiveCountLabel()} <span id="activePlayers">${getActiveEntryCount()}</span>`;
             }
+        }
+
+        function getLaneDisplayLabel(laneNumber) {
+            return Number.isInteger(laneNumber)
+                ? translateWithParams('laneLabel', { lane: laneNumber })
+                : translate('waitingForLane');
+        }
+
+        function getSortedDisplayMatches(matches) {
+            return [...matches].sort((left, right) => {
+                const laneLeft = Number.isInteger(left.laneNumber) ? left.laneNumber : Number.MAX_SAFE_INTEGER;
+                const laneRight = Number.isInteger(right.laneNumber) ? right.laneNumber : Number.MAX_SAFE_INTEGER;
+                if (laneLeft !== laneRight) {
+                    return laneLeft - laneRight;
+                }
+
+                if ((left.winner === null) !== (right.winner === null)) {
+                    return left.winner === null ? -1 : 1;
+                }
+
+                return (left.id || 0) - (right.id || 0);
+            });
+        }
+
+        function renderLaneConfigurationPanel() {
+            if (!laneConfigPanel || !laneToggleRow || !laneSelectionMeta) {
+                return;
+            }
+
+            const activeEntries = tournament.getActiveEntries();
+            const tournamentIsOver = tournament.started && !tournament.finalResults && activeEntries.length <= 1;
+            const hasRoundAssignments = tournament.matches.length > 0 || ((tournament.skippedPlayers || []).length > 0);
+            const shouldShow = tournament.started && !tournament.finalResults && !tournamentIsOver && !hasRoundAssignments;
+
+            laneConfigPanel.style.display = shouldShow ? '' : 'none';
+            if (!shouldShow) {
+                return;
+            }
+
+            const activeLanes = tournament.getActiveLaneNumbers();
+            laneSelectionMeta.textContent = translateWithParams('laneSelectionMeta', {
+                active: activeLanes.length,
+                total: tournament.laneCount
+            });
+
+            laneToggleRow.innerHTML = tournament.getAllLaneNumbers().map(laneNumber => {
+                const isActive = activeLanes.includes(laneNumber);
+                return `
+                    <button
+                        type="button"
+                        class="btn btn-sm ${isActive ? 'btn-success is-active' : 'btn-outline-secondary'} lane-toggle-btn"
+                        data-lane="${laneNumber}"
+                        aria-pressed="${isActive ? 'true' : 'false'}"
+                    >
+                        ${translateWithParams('laneShort', { lane: laneNumber })}
+                    </button>
+                `;
+            }).join('');
+
+            laneToggleRow.querySelectorAll('.lane-toggle-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const laneNumber = parseInt(this.getAttribute('data-lane'), 10);
+                    const nextActiveLanes = tournament.getActiveLaneNumbers();
+                    const laneIndex = nextActiveLanes.indexOf(laneNumber);
+
+                    if (laneIndex >= 0) {
+                        nextActiveLanes.splice(laneIndex, 1);
+                    } else {
+                        nextActiveLanes.push(laneNumber);
+                    }
+
+                    tournament.setActiveLanes(nextActiveLanes);
+                    renderLaneConfigurationPanel();
+                    updateTournamentSummary();
+                    scheduleCloudSave();
+                });
+            });
         }
 
         function renderStandingsSummary() {
@@ -2054,6 +2317,8 @@
                     lastSkippedRound: Number.isInteger(team.lastSkippedRound) ? team.lastSkippedRound : null
                 })),
                 maxLosses: tournament.maxLosses,
+                laneCount: tournament.laneCount,
+                activeLanes: tournament.getActiveLaneNumbers(),
                 currentRound: tournament.currentRound,
                 started: tournament.started,
                 pendingTagChanges: tournament.pendingTagChanges,
@@ -2064,14 +2329,16 @@
                             mode: 'fixed',
                             team1TeamId: match.team1TeamId,
                             team2TeamId: match.team2TeamId,
-                            winner: match.winner
+                            winner: match.winner,
+                            laneNumber: Number.isInteger(match.laneNumber) ? match.laneNumber : null
                         }
                         : {
                             id: match.id,
                             mode: 'changing',
                             team1PlayerIds: match.team1.map(player => player.id),
                             team2PlayerIds: match.team2.map(player => player.id),
-                            winner: match.winner
+                            winner: match.winner,
+                            laneNumber: Number.isInteger(match.laneNumber) ? match.laneNumber : null
                         }
                 )),
                 skippedPlayerIds: !isFixedTeammatesMode() ? (tournament.skippedPlayers || []).map(player => player.id) : [],
@@ -2139,6 +2406,13 @@
             tournament.name = typeof state.tournamentName === 'string' ? state.tournamentName : '';
             tournament.setTeammateMode(teammateMode);
             tournament.maxLosses = Number.isInteger(state.maxLosses) ? state.maxLosses : 2;
+            tournament.laneCount = tournament.normalizeLaneCount(state.laneCount);
+            tournament.activeLanes = Array.isArray(state.activeLanes)
+                ? [...new Set(state.activeLanes
+                    .map(value => parseInt(value, 10))
+                    .filter(value => Number.isInteger(value) && value >= 1 && value <= tournament.laneCount))]
+                    .sort((left, right) => left - right)
+                : tournament.getAllLaneNumbers();
             tournament.currentRound = Number.isInteger(state.currentRound) ? state.currentRound : 0;
             tournament.started = !!state.started;
             tournament.pendingTagChanges = teammateMode === 'fixed' ? false : !!state.pendingTagChanges;
@@ -2157,7 +2431,7 @@
                     if (!team1 || !team2) {
                         return null;
                     }
-                    return tournament.buildFixedMatch(team1, team2, matchData.id, matchData.winner ?? null);
+                    return tournament.buildFixedMatch(team1, team2, matchData.id, matchData.winner ?? null, matchData.laneNumber ?? null);
                 }
 
                 return {
@@ -2165,7 +2439,8 @@
                     mode: 'changing',
                     team1: (matchData.team1PlayerIds || []).map(id => playerMap.get(id)).filter(Boolean),
                     team2: (matchData.team2PlayerIds || []).map(id => playerMap.get(id)).filter(Boolean),
-                    winner: matchData.winner ?? null
+                    winner: matchData.winner ?? null,
+                    laneNumber: Number.isInteger(matchData.laneNumber) ? matchData.laneNumber : null
                 };
             }).filter(Boolean) : [];
 
@@ -2371,11 +2646,13 @@
 
         function resetTournamentState() {
             const currentMode = tournament.teammateMode;
+            const currentLaneCount = tournament.laneCount;
             tournament.players = [];
             tournament.fixedTeams = [];
             tournament.name = '';
             tournament.setTeammateMode(currentMode);
             tournament.maxLosses = 2;
+            tournament.setLaneCount(currentLaneCount);
             tournament.currentRound = 0;
             tournament.matches = [];
             tournament.skippedPlayers = [];
@@ -2403,6 +2680,10 @@
             if (tournamentNameInput) {
                 tournamentNameInput.value = '';
                 tournamentNameInput.disabled = false;
+            }
+            if (laneCountInput) {
+                laneCountInput.value = String(tournament.laneCount || 2);
+                laneCountInput.disabled = false;
             }
             clearRegistrationInputs();
             document.getElementById('maxLosses').value = '2';
@@ -2494,6 +2775,19 @@
                 scheduleCloudSave();
             });
         }
+        if (laneCountInput) {
+            laneCountInput.addEventListener('input', function() {
+                if (tournament.started) {
+                    this.value = String(tournament.laneCount || 2);
+                    return;
+                }
+
+                tournament.setLaneCount(this.value);
+                this.value = String(tournament.laneCount || 2);
+                updateTournamentUI();
+                scheduleCloudSave();
+            });
+        }
 
         resetTournamentBtn.addEventListener('click', function() {
             if (confirm(translate('confirmResetTournament'))) {
@@ -2513,13 +2807,14 @@
         startTournamentBtn.addEventListener('click', function() {
             const maxLosses = parseInt(document.getElementById('maxLosses').value);
             const tournamentName = tournamentNameInput ? tournamentNameInput.value.trim() : tournament.name;
+            const laneCount = laneCountInput ? parseInt(laneCountInput.value, 10) : tournament.laneCount;
             const minimumEntries = isFixedTeammatesMode() ? 2 : 4;
             if (getRegistrationCount() < minimumEntries) {
                 alert(translate(isFixedTeammatesMode() ? 'needTeams' : 'needPlayers'));
                 return;
             }
             
-            tournament.startTournament(maxLosses, tournamentName);
+            tournament.startTournament(maxLosses, tournamentName, laneCount);
             
             if (currentRoundSpan) {
                 currentRoundSpan.textContent = tournament.currentRound;
@@ -2536,6 +2831,9 @@
             if (tournamentNameInput) {
                 tournamentNameInput.disabled = true;
             }
+            if (laneCountInput) {
+                laneCountInput.disabled = true;
+            }
             startTournamentBtn.disabled = true;
             generateMatchesBtn.disabled = false;
             setRegistrationPanelVisibility(false);
@@ -2546,6 +2844,11 @@
             }
         });
         generateMatchesBtn.addEventListener('click', function() {
+            if (tournament.getActiveLaneNumbers().length === 0) {
+                alert(translate('selectAtLeastOneLane'));
+                return;
+            }
+
             if (!isFixedTeammatesMode()) {
                 const activePlayers = tournament.getActivePlayers();
                 const allHaveOTag = activePlayers.length > 0 && activePlayers.every(player => player.tags.includes('O'));
@@ -2924,6 +3227,7 @@
             updateRegistrationModeUI();
             updateRegistrationMeta();
             updateTournamentSummary();
+            renderLaneConfigurationPanel();
             renderStandingsSummary();
             tagReminder.style.display = 'none';
 
@@ -2998,6 +3302,11 @@
                 }
             }
 
+            const waitingMatches = tournament.matches.filter(match => !Number.isInteger(match.laneNumber)).length;
+            if (waitingMatches > 0) {
+                helperText += ` <br><strong>${translate('laneAssignment')}:</strong> ${translateWithParams('waitingMatchesNotice', { count: waitingMatches })}`;
+            }
+
             intro.innerHTML = `
                 <div class="round-board-headline">
                     <div>
@@ -3038,9 +3347,18 @@
             const board = document.createElement('div');
             board.className = 'round-board-grid';
 
-            matches.forEach(match => {
+            getSortedDisplayMatches(matches).forEach(match => {
                 const matchCard = document.createElement('div');
                 matchCard.className = 'card round-match-card';
+                const laneLabel = getLaneDisplayLabel(match.laneNumber);
+                const laneOptions = `
+                    <option value="">${translate('waitingForLane')}</option>
+                    ${tournament.getAllLaneNumbers().map(laneNumber => `
+                        <option value="${laneNumber}" ${match.laneNumber === laneNumber ? 'selected' : ''}>
+                            ${translateWithParams('laneLabel', { lane: laneNumber })}${tournament.getActiveLaneNumbers().includes(laneNumber) ? '' : ` - ${translate('inactiveLane')}`}
+                        </option>
+                    `).join('')}
+                `;
 
                 if (match.mode === 'fixed') {
                     const winnerLabel = match.winner === 1 ? match.team1Label : match.winner === 2 ? match.team2Label : '';
@@ -3048,7 +3366,10 @@
                         <div class="card-body">
                             <div class="round-match-head">
                                 <div class="round-match-index">${translate('match')} #${match.id}</div>
-                                <div class="round-match-tag">${winnerLabel ? `${translate('winner')}: ${winnerLabel}` : translate('readyToScore')}</div>
+                                <div class="round-match-head-meta">
+                                    <div class="round-match-lane ${match.laneNumber === null ? 'is-waiting' : ''}">${laneLabel}</div>
+                                    <div class="round-match-tag">${winnerLabel ? `${translate('winner')}: ${winnerLabel}` : translate('readyToScore')}</div>
+                                </div>
                             </div>
                             <div class="round-versus-stack">
                                 <div class="round-team-panel ${match.winner === 1 ? 'is-winner' : ''}">
@@ -3070,6 +3391,12 @@
                                     ${match.team2Label}
                                 </button>
                             </div>
+                            <div class="lane-assignment-row">
+                                <label class="lane-assignment-label" for="lane-select-${match.id}">${translate('laneAssignment')}</label>
+                                <select class="form-select form-select-sm lane-select" id="lane-select-${match.id}" data-match="${match.id}">
+                                    ${laneOptions}
+                                </select>
+                            </div>
                         </div>
                     `;
                 } else {
@@ -3085,7 +3412,10 @@
                         <div class="card-body">
                             <div class="round-match-head">
                                 <div class="round-match-index">${translate('match')} #${match.id}</div>
-                                <div class="round-match-tag">${winnerLabel ? `${translate('winner')}: ${winnerLabel}` : tagInfo}</div>
+                                <div class="round-match-head-meta">
+                                    <div class="round-match-lane ${match.laneNumber === null ? 'is-waiting' : ''}">${laneLabel}</div>
+                                    <div class="round-match-tag">${winnerLabel ? `${translate('winner')}: ${winnerLabel}` : tagInfo}</div>
+                                </div>
                             </div>
                             <div class="round-versus-stack">
                                 <div class="round-team-panel ${match.winner === 1 ? 'is-winner' : ''}">
@@ -3106,6 +3436,12 @@
                                 <button type="button" class="btn ${match.winner === 2 ? 'btn-primary' : 'btn-outline-primary'} select-winner winner-choice-btn" data-match="${match.id}" data-winner="2">
                                     ${team2Names}
                                 </button>
+                            </div>
+                            <div class="lane-assignment-row">
+                                <label class="lane-assignment-label" for="lane-select-${match.id}">${translate('laneAssignment')}</label>
+                                <select class="form-select form-select-sm lane-select" id="lane-select-${match.id}" data-match="${match.id}">
+                                    ${laneOptions}
+                                </select>
                             </div>
                         </div>
                     `;
@@ -3146,6 +3482,17 @@
                         matchTag.textContent = `${translate('winner')}: ${winnerLabel}`;
                     }
                     updateTournamentUI();
+                    scheduleCloudSave();
+                });
+            });
+
+            document.querySelectorAll('.lane-select').forEach(select => {
+                select.addEventListener('change', function() {
+                    const matchId = parseInt(this.getAttribute('data-match'), 10);
+                    const laneValue = this.value === '' ? null : parseInt(this.value, 10);
+                    tournament.assignLaneToMatch(matchId, laneValue);
+                    renderCurrentRoundView();
+                    updateTournamentSummary();
                     scheduleCloudSave();
                 });
             });
@@ -3357,6 +3704,7 @@
                 "teamName": "Hold",
                 "teamMembers": "Medlemmer",
                 "maxLosses": "Maksimalt Antal Nederlag Før Eliminering",
+                "laneCountLabel": "Antal Baner",
                 "startTournament": "Start Turnering",
                 "currentRound": "Nuværende Runde",
                 "activePlayers": "Aktive Spillere",
@@ -3373,6 +3721,17 @@
                 "closeRegistrationPanel": "Luk Registrering",
                 "activeEntriesSummary": "Aktive Deltagere",
                 "maxLossesSummary": "Maks. Nederlag",
+                "laneSummary": "Baner",
+                "laneSelectionTitle": "Baner Til Næste Runde",
+                "laneSelectionHelp": "Vælg hvilke baner der er aktive, før du genererer den næste runde.",
+                "laneSelectionMeta": "{active} af {total} baner aktive",
+                "laneAssignment": "Bane",
+                "laneLabel": "Bane {lane}",
+                "laneShort": "Bane {lane}",
+                "waitingForLane": "Venter på bane",
+                "inactiveLane": "inaktiv",
+                "waitingMatchesNotice": "{count} kampe venter på bane",
+                "selectAtLeastOneLane": "Vælg mindst én aktiv bane, før du genererer runden.",
                 "betweenRoundsTitle": "Mellem Runder",
                 "standingsPreviewTitle": "Aktuel Stilling",
                 "betweenRoundsReady": "Gennemg\u00e5 stillingen, og generer n\u00e6ste runde n\u00e5r du er klar.",
@@ -3670,6 +4029,7 @@
                 "teamName": "Team",
                 "teamMembers": "Members",
                 "maxLosses": "Maximum Losses Before Elimination",
+                "laneCountLabel": "Number of Lanes",
                 "startTournament": "Start Tournament",
                 "currentRound": "Current Round",
                 "activePlayers": "Active Players",
@@ -3686,6 +4046,17 @@
                 "closeRegistrationPanel": "Close Registration",
                 "activeEntriesSummary": "Active Entries",
                 "maxLossesSummary": "Max Losses",
+                "laneSummary": "Lanes",
+                "laneSelectionTitle": "Lanes For Next Round",
+                "laneSelectionHelp": "Choose which lanes are active before you generate the next round.",
+                "laneSelectionMeta": "{active} of {total} lanes active",
+                "laneAssignment": "Lane",
+                "laneLabel": "Lane {lane}",
+                "laneShort": "Lane {lane}",
+                "waitingForLane": "Waiting for lane",
+                "inactiveLane": "inactive",
+                "waitingMatchesNotice": "{count} matches are waiting for a lane",
+                "selectAtLeastOneLane": "Select at least one active lane before you generate the round.",
                 "betweenRoundsTitle": "Between Rounds",
                 "standingsPreviewTitle": "Current Standings",
                 "betweenRoundsReady": "Review the standings, then generate the next round when you are ready.",

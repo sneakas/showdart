@@ -32,6 +32,8 @@ const texts = {
     vs: 'VS',
     winner: 'Vinder',
     onBye: 'Sidder over',
+    lane: 'Bane',
+    waitingForLane: 'Venter på bane',
     updated: 'Senest opdateret',
     live: 'Live',
     scanQr: 'Scan QR-kode',
@@ -64,6 +66,8 @@ const texts = {
     vs: 'VS',
     winner: 'Winner',
     onBye: 'Bye',
+    lane: 'Lane',
+    waitingForLane: 'Waiting for lane',
     updated: 'Last updated',
     live: 'Live',
     scanQr: 'Scan QR Code',
@@ -242,6 +246,7 @@ export default function ScreenPage() {
     ? `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=0&data=${encodeURIComponent(shareUrl)}`
     : '';
   const showQrCode = Boolean(qrSrc) && (screenState.phase === 'waiting' || screenState.phase === 'registration');
+  const getLaneLabel = (laneNumber) => (Number.isFinite(Number(laneNumber)) ? `${t.lane} ${laneNumber}` : t.waitingForLane);
 
   return (
     <main style={pageStyle}>
@@ -376,7 +381,26 @@ export default function ScreenPage() {
                   <article key={match.id} style={{ background: '#10271e', border: match.winner ? '1px solid #46c37b' : '1px solid #355748', borderRadius: 18, padding: 18, boxShadow: match.winner ? '0 0 0 1px rgba(70,195,123,0.25), 0 10px 30px rgba(0,0,0,0.22)' : 'none' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center', marginBottom: 16 }}>
                       <strong>{t.round} {screenState.currentRound} - #{match.id}</strong>
-                      {winner ? <span style={{ color: '#93e0a9', fontWeight: 700 }}>{t.winner}: {winner}</span> : null}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8, flexWrap: 'wrap' }}>
+                        <span
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            minHeight: 30,
+                            padding: '6px 10px',
+                            borderRadius: 999,
+                            border: Number.isFinite(Number(match.laneNumber)) ? '1px solid rgba(242, 209, 76, 0.35)' : '1px solid rgba(255,255,255,0.1)',
+                            background: Number.isFinite(Number(match.laneNumber)) ? 'rgba(70, 56, 17, 0.24)' : 'rgba(18, 39, 31, 0.8)',
+                            color: Number.isFinite(Number(match.laneNumber)) ? '#f2d14c' : '#d9ece2',
+                            fontWeight: 800,
+                            letterSpacing: '0.06em'
+                          }}
+                        >
+                          {getLaneLabel(match.laneNumber)}
+                        </span>
+                        {winner ? <span style={{ color: '#93e0a9', fontWeight: 700 }}>{t.winner}: {winner}</span> : null}
+                      </div>
                     </div>
 
                     <div style={{ display: 'grid', gap: 12 }}>
