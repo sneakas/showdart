@@ -700,6 +700,66 @@
             letter-spacing: 0.07em;
         }
 
+        .history-section {
+            margin-top: 1.25rem;
+            padding-top: 1.1rem;
+            border-top: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .history-round-card {
+            background: rgba(12, 30, 23, 0.72);
+            border: 1px solid var(--club-border);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 0.9rem;
+        }
+
+        .history-round-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.8rem;
+            flex-wrap: wrap;
+            margin-bottom: 0.8rem;
+        }
+
+        .history-round-title {
+            margin: 0;
+            font-size: 1rem;
+            color: var(--club-gold);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+
+        .history-match-list {
+            display: grid;
+            gap: 0.55rem;
+        }
+
+        .history-match-row,
+        .history-sitout-row {
+            display: grid;
+            gap: 0.25rem;
+            padding: 0.8rem 0.9rem;
+            border-radius: 10px;
+            background: rgba(8, 20, 15, 0.72);
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+
+        .history-match-meta,
+        .history-sitout-meta {
+            color: var(--club-text-muted);
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+
+        .history-match-main,
+        .history-sitout-main {
+            color: var(--club-text-soft);
+            font-weight: 700;
+        }
+
         .bye-strip {
             margin-bottom: 1rem;
             padding: 0.95rem 1rem;
@@ -982,6 +1042,16 @@
                     <div id="matchesContainer">
                         <!-- Matches will be added here dynamically -->
                     </div>
+
+                    <div class="history-section" id="historySection">
+                        <div class="round-board-headline mb-3">
+                            <div>
+                                <div class="section-helper-text" data-translate="matchHistoryTitle">Match History</div>
+                                <h5 class="mb-0" data-translate="matchHistorySubtitle">Previous Rounds</h5>
+                            </div>
+                        </div>
+                        <div id="historyContainer"></div>
+                    </div>
                 </div>
             </div>
         </section>
@@ -1055,6 +1125,7 @@
                 this.started = false;
                 this.pendingTagChanges = false;
                 this.finalResults = null;
+                this.roundHistory = [];
                 this.spectatorOverride = null;
                 this.fairnessHistory = {
                     partners: {},
@@ -1121,6 +1192,45 @@
 
             clearSpectatorOverride() {
                 this.spectatorOverride = null;
+            }
+
+            getMatchHistoryLabel(match, side) {
+                if (match.mode === 'fixed') {
+                    return side === 1 ? match.team1Label : match.team2Label;
+                }
+
+                const team = side === 1 ? match.team1 : match.team2;
+                return Array.isArray(team) ? team.map(player => player.name).join(', ') : '';
+            }
+
+            recordRoundHistory() {
+                if (this.finalResults || (!this.matches.length && !(this.skippedPlayers || []).length)) {
+                    return;
+                }
+
+                this.roundHistory.push({
+                    round: this.currentRound,
+                    mode: this.teammateMode,
+                    matches: this.matches.map(match => {
+                        const team1Label = this.getMatchHistoryLabel(match, 1);
+                        const team2Label = this.getMatchHistoryLabel(match, 2);
+                        const winnerLabel = match.winner === 1
+                            ? team1Label
+                            : match.winner === 2
+                                ? team2Label
+                                : '';
+
+                        return {
+                            id: match.id,
+                            laneNumber: Number.isInteger(match.laneNumber) ? match.laneNumber : null,
+                            team1Label,
+                            team2Label,
+                            winner: match.winner,
+                            winnerLabel
+                        };
+                    }),
+                    sitOuts: (this.skippedPlayers || []).map(entry => entry.name)
+                });
             }
 
             showStandingsOnSpectator(durationMs = 30000) {
@@ -1236,6 +1346,43 @@
                 });
 
                 return penalty;
+            }
+
+            getChangingRolePenalty(teams, skippedPlayers, activePlayers) {
+                const activePlayersWithoutS = activePlayers.filter(player => !player.tags.includes('S'));
+                const activePlayersWithoutO = activePlayers.filter(player => !player.tags.includes('O'));
+                const playersReceivingS = teams
+                    .flatMap(([team1, team2]) => (team1.length === 1 && team2.length === 1 ? [...team1, ...team2] : []))
+                    .filter(player => !player.tags.includes('S'));
+                const playersReceivingO = skippedPlayers.filter(player => !player.tags.includes('O'));
+
+                const sOpportunity = Math.min(2, activePlayersWithoutS.length);
+                const oOpportunity = Math.min(1, activePlayersWithoutO.length);
+                const missedSAssignments = Math.max(0, sOpportunity - playersReceivingS.length);
+                const missedOAssignments = Math.max(0, oOpportunity - playersReceivingO.length);
+                const taggedPlayersInSingles = teams
+                    .flatMap(([team1, team2]) => (team1.length === 1 && team2.length === 1 ? [...team1, ...team2] : []))
+                    .filter(player => player.tags.includes('S')).length;
+                const alreadyTaggedPlayersSkipped = skippedPlayers.filter(player => player.tags.includes('O')).length;
+
+                return (missedSAssignments * 5000)
+                    + (missedOAssignments * 4000)
+                    + (taggedPlayersInSingles * 250)
+                    + (alreadyTaggedPlayersSkipped * 250);
+            }
+
+            buildThreePlayerRemainderAssignments(remainingPlayers) {
+                if (!Array.isArray(remainingPlayers) || remainingPlayers.length !== 3) {
+                    return [];
+                }
+
+                return remainingPlayers.map((skippedPlayer, index) => {
+                    const pairPlayers = remainingPlayers.filter((_, pairIndex) => pairIndex !== index);
+                    return {
+                        teams: [[[pairPlayers[0]], [pairPlayers[1]]]],
+                        skippedPlayers: [skippedPlayer]
+                    };
+                });
             }
 
             getFixedRoundFairnessPenalty(matchups) {
@@ -1401,10 +1548,6 @@
                 while (shuffleAttempts < maxShuffleAttempts) {
                     shuffleAttempts++;
 
-                    // Track how many players with S tag we're putting into 1v1 matches this round
-                    let sTaggedPlayersIn1v1 = 0;
-                    const totalSTaggedPlayers = activePlayers.filter(p => p.tags.includes('S')).length;
-
                     // Shuffle players for random matching
                     const shuffledPlayers = [...activePlayers].sort(() => Math.random() - 0.5);
 
@@ -1419,68 +1562,24 @@
                         teams.push([team1, team2]);
                     }
 
-                    // Check if we're about to form 1v1 matches with players that have S tags unnecessarily
-                    if (
-                        shuffledPlayers.length === 2 &&
-                        shuffledPlayers.every(p => p.tags.includes('S')) &&
-                        activePlayers.length > 2 &&
-                        activePlayers.some(p => !p.tags.includes('S'))
-                    ) {
-                        continue;
-                    }
-
                     // Handle remaining players according to rules
                     if (shuffledPlayers.length === 3) {
-                        // Check if we can form a 1v1 match (need at least 2 players without S tag)
-                        const nonSTagPlayers = shuffledPlayers.filter(p => !p.tags.includes('S'));
+                        const assignmentOptions = this.buildThreePlayerRemainderAssignments(shuffledPlayers)
+                            .filter(option => option.skippedPlayers[0].lastSkippedRound !== this.currentRound - 1)
+                            .map(option => ({
+                                ...option,
+                                rolePenalty: this.getChangingRolePenalty(option.teams, option.skippedPlayers, activePlayers)
+                            }))
+                            .sort((left, right) => left.rolePenalty - right.rolePenalty);
 
-                        if (nonSTagPlayers.length < 2) {
+                        if (assignmentOptions.length === 0) {
                             continue;
                         }
 
-                        // Find player to skip - should be one without O tag if possible
-                        const player1 = nonSTagPlayers[0];
-                        const player2 = nonSTagPlayers[1];
-                        const remainingPlayer = shuffledPlayers.find(p => p !== player1 && p !== player2);
-
-                        // Never allow the same player to skip two rounds in a row.
-                        if (remainingPlayer.lastSkippedRound === this.currentRound - 1) {
-                            continue;
-                        }
-
-                        // Check if the remaining player already has an O tag
-                        if (remainingPlayer.tags.includes('O')) {
-                            const nonOTagPlayers = shuffledPlayers.filter(p => !p.tags.includes('O'));
-                            if (nonOTagPlayers.length > 0 && nonOTagPlayers.length < 3) {
-                                continue;
-                            }
-
-                            const allHaveOTag = shuffledPlayers.every(p => p.tags.includes('O'));
-                            if (!allHaveOTag) {
-                                continue;
-                            }
-                        }
-
-                        teams.push([[player1], [player2]]);
-                        skippedPlayers.push(remainingPlayer);
+                        const bestAssignment = assignmentOptions[0];
+                        teams.push(...bestAssignment.teams);
+                        skippedPlayers.push(...bestAssignment.skippedPlayers);
                     } else if (shuffledPlayers.length === 2) {
-                        // Two players play 1v1
-                        const bothHaveSTag = shuffledPlayers.every(p => p.tags.includes('S'));
-                        const someHaveSTag = shuffledPlayers.some(p => p.tags.includes('S'));
-
-                        // Update counter for S-tagged players in 1v1 matches
-                        sTaggedPlayersIn1v1 += shuffledPlayers.filter(p => p.tags.includes('S')).length;
-
-                        // If some but not all have S tag, and we have more than 2 active players, try reshuffling
-                        if (someHaveSTag && !bothHaveSTag && activePlayers.length > 2) {
-                            continue;
-                        }
-
-                        // If both have S tag and there are more active players, this is not optimal - try reshuffling
-                        if (bothHaveSTag && activePlayers.length > 2) {
-                            continue;
-                        }
-
                         teams.push([[shuffledPlayers[0]], [shuffledPlayers[1]]]);
                     } else if (shuffledPlayers.length === 1) {
                         // One player skips
@@ -1491,33 +1590,14 @@
                             continue;
                         }
 
-                        // Check if player already has O tag and if they are the only one
-                        if (player.tags.includes('O')) {
-                            const nonOTagPlayers = activePlayers.filter(p => !p.tags.includes('O'));
-                            if (nonOTagPlayers.length > 0) {
-                                continue;
-                            }
-                        }
-
                         skippedPlayers.push(player);
                     }
 
-                    // If we reached here without continuing, we have a valid candidate
-                    // If we have an even number of players and we're forcing S-tagged players into 1v1 matches
-                    if (
-                        activePlayers.length % 2 === 0 &&
-                        sTaggedPlayersIn1v1 > 0 &&
-                        sTaggedPlayersIn1v1 < totalSTaggedPlayers &&
-                        activePlayers.some(p => !p.tags.includes('S'))
-                    ) {
-                        if (shuffleAttempts < maxShuffleAttempts - 1) {
-                            continue;
-                        }
-                    }
-
                     const fairnessPenalty = this.getChangingRoundFairnessPenalty(teams);
-                    if (fairnessPenalty < bestFairnessPenalty) {
-                        bestFairnessPenalty = fairnessPenalty;
+                    const rolePenalty = this.getChangingRolePenalty(teams, skippedPlayers, activePlayers);
+                    const totalPenalty = fairnessPenalty + rolePenalty;
+                    if (totalPenalty < bestFairnessPenalty) {
+                        bestFairnessPenalty = totalPenalty;
                         bestCandidate = { teams, skippedPlayers };
                     }
 
@@ -1705,6 +1785,7 @@
                 }
                 
                 this.recordFairnessRound();
+                this.recordRoundHistory();
                 this.matches = [];
                 this.skippedPlayers = [];
                 this.clearSpectatorOverride();
@@ -1823,6 +1904,8 @@
         const laneConfigPanel = document.getElementById('laneConfigPanel');
         const laneSelectionMeta = document.getElementById('laneSelectionMeta');
         const laneToggleRow = document.getElementById('laneToggleRow');
+        const historySection = document.getElementById('historySection');
+        const historyContainer = document.getElementById('historyContainer');
 
         // Core runtime state lives in:
         // - tournament.players: roster and per-player lifecycle state
@@ -1852,6 +1935,45 @@
 
         function getActiveCountLabel() {
             return isFixedTeammatesMode() ? translate('activeTeamsHeader') : translate('activePlayersHeader');
+        }
+
+        function hasRoundAssignments() {
+            return tournament.matches.length > 0 || ((tournament.skippedPlayers || []).length > 0);
+        }
+
+        function canManageEntriesBetweenRounds() {
+            return tournament.started && !hasRoundAssignments() && !tournament.finalResults;
+        }
+
+        function getManualEliminationRound() {
+            return Math.max(1, (tournament.currentRound || 1) - (hasRoundAssignments() ? 0 : 1));
+        }
+
+        function updateRegistrationFormAvailability() {
+            if (!registrationForm) {
+                return;
+            }
+
+            const editable = !tournament.started || canManageEntriesBetweenRounds();
+            registrationForm.querySelectorAll('input, button').forEach(el => {
+                el.disabled = !editable;
+            });
+        }
+
+        function applyEntryLosses(entry, nextLosses) {
+            const normalizedLosses = Math.max(0, Math.min(tournament.maxLosses, parseInt(nextLosses, 10) || 0));
+            entry.losses = normalizedLosses;
+
+            if (normalizedLosses >= tournament.maxLosses) {
+                entry.active = false;
+                entry.eliminationRound = getManualEliminationRound();
+            } else {
+                entry.active = true;
+                entry.eliminationRound = null;
+                if (entry.losses === 0 && entry.lastSkippedRound === null) {
+                    entry.lastSkippedRound = null;
+                }
+            }
         }
 
         function clearRegistrationInputs() {
@@ -1942,6 +2064,7 @@
             if (setupToolbar) {
                 setupToolbar.style.display = tournament.started ? 'none' : 'grid';
             }
+            updateRegistrationFormAvailability();
 
             renderRulesModal();
         }
@@ -2196,6 +2319,64 @@
             return;
         }
 
+        function renderMatchHistory() {
+            if (!historySection || !historyContainer) {
+                return;
+            }
+
+            const history = Array.isArray(tournament.roundHistory) ? tournament.roundHistory : [];
+            historySection.style.display = history.length > 0 ? '' : 'none';
+            historyContainer.innerHTML = '';
+
+            if (history.length === 0) {
+                return;
+            }
+
+            [...history].sort((left, right) => (right.round || 0) - (left.round || 0)).forEach(roundEntry => {
+                const roundCard = document.createElement('div');
+                roundCard.className = 'history-round-card';
+
+                const modeKey = roundEntry.mode === 'fixed' ? 'fixedTeammates' : 'changingTeammates';
+                roundCard.innerHTML = `
+                    <div class="history-round-head">
+                        <h6 class="history-round-title">${translate('round')} ${roundEntry.round}</h6>
+                        <span class="badge ${roundEntry.mode === 'fixed' ? 'bg-secondary' : 'bg-success'}">${translate(modeKey)}</span>
+                    </div>
+                `;
+
+                const list = document.createElement('div');
+                list.className = 'history-match-list';
+
+                (roundEntry.matches || []).forEach(match => {
+                    const row = document.createElement('div');
+                    row.className = 'history-match-row';
+                    const laneLabel = Number.isInteger(match.laneNumber)
+                        ? translateWithParams('laneLabel', { lane: match.laneNumber })
+                        : translate('waitingForLane');
+                    const winnerLabel = match.winnerLabel || translate('historyWinnerUnknown');
+                    row.innerHTML = `
+                        <div class="history-match-meta">${translate('match')} #${match.id} · ${laneLabel}</div>
+                        <div class="history-match-main">${match.team1Label} ${translate('vs')} ${match.team2Label}</div>
+                        <div class="history-match-meta">${translate('winner')}: ${winnerLabel}</div>
+                    `;
+                    list.appendChild(row);
+                });
+
+                if (Array.isArray(roundEntry.sitOuts) && roundEntry.sitOuts.length > 0) {
+                    const sitOutRow = document.createElement('div');
+                    sitOutRow.className = 'history-sitout-row';
+                    sitOutRow.innerHTML = `
+                        <div class="history-sitout-meta">${translate('historySitOuts')}</div>
+                        <div class="history-sitout-main">${roundEntry.sitOuts.join(', ')}</div>
+                    `;
+                    list.appendChild(sitOutRow);
+                }
+
+                roundCard.appendChild(list);
+                historyContainer.appendChild(roundCard);
+            });
+        }
+
         function insertAlertBeforeMatches(id, className, html, autoDismissMs = 0) {
             let alertNode = document.getElementById(id);
             if (!alertNode) {
@@ -2343,6 +2524,19 @@
                 currentRound: tournament.currentRound,
                 started: tournament.started,
                 pendingTagChanges: tournament.pendingTagChanges,
+                roundHistory: Array.isArray(tournament.roundHistory) ? tournament.roundHistory.map(roundEntry => ({
+                    round: roundEntry.round,
+                    mode: roundEntry.mode,
+                    matches: Array.isArray(roundEntry.matches) ? roundEntry.matches.map(match => ({
+                        id: match.id,
+                        laneNumber: Number.isInteger(match.laneNumber) ? match.laneNumber : null,
+                        team1Label: match.team1Label,
+                        team2Label: match.team2Label,
+                        winner: match.winner,
+                        winnerLabel: match.winnerLabel
+                    })) : [],
+                    sitOuts: Array.isArray(roundEntry.sitOuts) ? [...roundEntry.sitOuts] : []
+                })) : [],
                 spectatorOverride: tournament.spectatorOverride
                     ? {
                         mode: tournament.spectatorOverride.mode,
@@ -2445,6 +2639,21 @@
             tournament.currentRound = Number.isInteger(state.currentRound) ? state.currentRound : 0;
             tournament.started = !!state.started;
             tournament.pendingTagChanges = teammateMode === 'fixed' ? false : !!state.pendingTagChanges;
+            tournament.roundHistory = Array.isArray(state.roundHistory)
+                ? state.roundHistory.map(roundEntry => ({
+                    round: Number.isInteger(roundEntry.round) ? roundEntry.round : 0,
+                    mode: roundEntry.mode === 'fixed' ? 'fixed' : 'changing',
+                    matches: Array.isArray(roundEntry.matches) ? roundEntry.matches.map(match => ({
+                        id: Number.isInteger(match.id) ? match.id : 0,
+                        laneNumber: Number.isInteger(match.laneNumber) ? match.laneNumber : null,
+                        team1Label: typeof match.team1Label === 'string' ? match.team1Label : '',
+                        team2Label: typeof match.team2Label === 'string' ? match.team2Label : '',
+                        winner: match.winner === 1 || match.winner === 2 ? match.winner : null,
+                        winnerLabel: typeof match.winnerLabel === 'string' ? match.winnerLabel : ''
+                    })) : [],
+                    sitOuts: Array.isArray(roundEntry.sitOuts) ? roundEntry.sitOuts.filter(name => typeof name === 'string') : []
+                }))
+                : [];
             tournament.spectatorOverride = state.spectatorOverride && typeof state.spectatorOverride === 'object'
                 ? {
                     mode: state.spectatorOverride.mode,
@@ -2500,14 +2709,12 @@
             updateTournamentUI();
 
             if (tournament.started) {
-                registrationForm.querySelectorAll('input, button').forEach(el => el.disabled = true);
                 if (tournamentFormSelect) {
                     tournamentFormSelect.disabled = true;
                 }
                 startTournamentBtn.disabled = true;
                 setRegistrationPanelVisibility(false);
             } else {
-                registrationForm.querySelectorAll('input, button').forEach(el => el.disabled = false);
                 if (tournamentFormSelect) {
                     tournamentFormSelect.disabled = false;
                 }
@@ -2696,6 +2903,7 @@
             tournament.started = false;
             tournament.pendingTagChanges = false;
             tournament.finalResults = null;
+            tournament.roundHistory = [];
             tournament.clearSpectatorOverride();
             tournament.fairnessHistory = { partners: {}, opponents: {} };
             tournament.lastRoundPartnerKeys = [];
@@ -2711,7 +2919,6 @@
                 }
             });
 
-            registrationForm.querySelectorAll('input, button').forEach(el => el.disabled = false);
             if (tournamentFormSelect) {
                 tournamentFormSelect.disabled = false;
             }
@@ -2746,6 +2953,10 @@
         // Event listeners
         registrationForm.addEventListener('submit', function(e) {
             e.preventDefault();
+            if (tournament.started && !canManageEntriesBetweenRounds()) {
+                alert(translate('editBetweenRoundsOnly'));
+                return;
+            }
             if (isFixedTeammatesMode()) {
                 const memberOne = teamMemberOneInput.value.trim();
                 const memberTwo = teamMemberTwoInput.value.trim();
@@ -2865,7 +3076,6 @@
             updateTournamentUI();
             scheduleCloudSave();
             
-            registrationForm.querySelectorAll('input, button').forEach(el => el.disabled = true);
             tournamentFormSelect.disabled = true;
             if (tournamentNameInput) {
                 tournamentNameInput.disabled = true;
@@ -3069,14 +3279,24 @@
                         ${recentlyEliminated ? '<strong>' : ''}${team.name}${recentlyEliminated ? '</strong>' : ''}
                         <div class="text-muted small mt-1">${team.memberOne} / ${team.memberTwo}</div>
                     `;
+                    const canEditLosses = started && canManageEntriesBetweenRounds();
+                    const lossesCell = canEditLosses
+                        ? `
+                            <div class="d-flex align-items-center gap-2 flex-wrap">
+                                <input type="number" class="form-control form-control-sm entry-loss-input" data-kind="team" data-id="${team.id}" value="${team.losses}" min="0" max="${tournament.maxLosses}" style="max-width: 88px;">
+                                <span class="small text-muted">/ ${tournament.maxLosses}</span>
+                                <button type="button" class="btn btn-sm btn-outline-success apply-entry-losses" data-kind="team" data-id="${team.id}">${translate('updateLosses')}</button>
+                            </div>
+                        `
+                        : `${team.losses}/${tournament.maxLosses}`;
                     row.innerHTML = started
                         ? `
                             <td>${team.id}</td>
                             <td>${nameCell}</td>
                             <td>${getEntryStatusText(team)}</td>
-                            <td>${team.losses}/${tournament.maxLosses}</td>
+                            <td>${lossesCell}</td>
                             <td>
-                                <button class="btn btn-sm btn-danger remove-entry" data-kind="team" data-id="${team.id}" ${tournament.started && !team.active ? 'disabled' : ''}>
+                                <button class="btn btn-sm btn-danger remove-entry" data-kind="team" data-id="${team.id}" ${tournament.started && !team.active && !canManageEntriesBetweenRounds() ? 'disabled' : ''}>
                                     ${tournament.started && team.active ? translate('eliminate') : translate('remove')}
                                 </button>
                             </td>
@@ -3121,22 +3341,33 @@
                         const isModified = player.modifiedTags.includes(tag);
                         return `<span class="player-tag tag-${tag.toLowerCase()} ${isModified ? 'pending-tag-change' : ''}">${tag}${isModified ? '<span class="tag-change-indicator">*</span>' : ''}</span>`;
                     }).join('');
+                    const canEditLosses = started && canManageEntriesBetweenRounds();
+                    const lossesCell = canEditLosses
+                        ? `
+                            <div class="d-flex align-items-center gap-2 flex-wrap">
+                                <input type="number" class="form-control form-control-sm entry-loss-input" data-kind="player" data-id="${player.id}" value="${player.losses}" min="0" max="${tournament.maxLosses}" style="max-width: 88px;">
+                                <span class="small text-muted">/ ${tournament.maxLosses}</span>
+                                <button type="button" class="btn btn-sm btn-outline-success apply-entry-losses" data-kind="player" data-id="${player.id}">${translate('updateLosses')}</button>
+                            </div>
+                        `
+                        : `${player.losses}/${tournament.maxLosses}`;
+                    const tagButtonsDisabled = !canManageEntriesBetweenRounds() ? 'disabled' : '';
 
                     row.innerHTML = started
                         ? `
                             <td>${player.id}</td>
                             <td>${recentlyEliminated ? '<strong>' : ''}${player.name}${recentlyEliminated ? '</strong>' : ''}</td>
                             <td>${getEntryStatusText(player)}</td>
-                            <td>${player.losses}/${tournament.maxLosses}</td>
+                            <td>${lossesCell}</td>
                             <td>
                                 ${tagsHTML}
                                 <div class="btn-group btn-group-sm ms-2">
-                                    <button class="btn btn-sm ${player.tags.includes('S') ? (player.modifiedTags.includes('S') ? 'btn-primary pending-tag-change' : 'btn-primary') : 'btn-outline-primary'} toggle-tag" data-id="${player.id}" data-tag="S">S</button>
-                                    <button class="btn btn-sm ${player.tags.includes('O') ? (player.modifiedTags.includes('O') ? 'btn-danger pending-tag-change' : 'btn-danger') : 'btn-outline-danger'} toggle-tag" data-id="${player.id}" data-tag="O">O</button>
+                                    <button class="btn btn-sm ${player.tags.includes('S') ? (player.modifiedTags.includes('S') ? 'btn-primary pending-tag-change' : 'btn-primary') : 'btn-outline-primary'} toggle-tag" data-id="${player.id}" data-tag="S" ${tagButtonsDisabled}>S</button>
+                                    <button class="btn btn-sm ${player.tags.includes('O') ? (player.modifiedTags.includes('O') ? 'btn-danger pending-tag-change' : 'btn-danger') : 'btn-outline-danger'} toggle-tag" data-id="${player.id}" data-tag="O" ${tagButtonsDisabled}>O</button>
                                 </div>
                             </td>
                             <td>
-                                <button class="btn btn-sm btn-danger remove-entry" data-kind="player" data-id="${player.id}" ${tournament.started && !player.active ? 'disabled' : ''}>
+                                <button class="btn btn-sm btn-danger remove-entry" data-kind="player" data-id="${player.id}" ${tournament.started && !player.active && !canManageEntriesBetweenRounds() ? 'disabled' : ''}>
                                     ${tournament.started && player.active ? translate('eliminate') : translate('remove')}
                                 </button>
                             </td>
@@ -3176,6 +3407,11 @@
                         return;
                     }
 
+                    if (tournament.started && !canManageEntriesBetweenRounds()) {
+                        alert(translate('editBetweenRoundsOnly'));
+                        return;
+                    }
+
                     if (kind === 'team') {
                         tournament.removeFixedTeam(id);
                     } else {
@@ -3189,12 +3425,37 @@
             });
 
             if (isFixedTeammatesMode()) {
+                document.querySelectorAll('.apply-entry-losses').forEach(button => {
+                    button.addEventListener('click', function() {
+                        if (!canManageEntriesBetweenRounds()) {
+                            alert(translate('editBetweenRoundsOnly'));
+                            return;
+                        }
+
+                        const id = parseInt(this.getAttribute('data-id'), 10);
+                        const team = getFixedTeamById(id);
+                        const input = document.querySelector(`.entry-loss-input[data-kind="team"][data-id="${id}"]`);
+                        if (!team || !input) {
+                            return;
+                        }
+
+                        applyEntryLosses(team, input.value);
+                        updatePlayersTable();
+                        updateTournamentUI();
+                        scheduleCloudSave();
+                    });
+                });
                 updateRegistrationMeta();
                 return;
             }
 
             document.querySelectorAll('.toggle-tag').forEach(button => {
                 button.addEventListener('click', function() {
+                    if (!canManageEntriesBetweenRounds()) {
+                        alert(translate('editBetweenRoundsOnly'));
+                        return;
+                    }
+
                     const id = parseInt(this.getAttribute('data-id'), 10);
                     const tag = this.getAttribute('data-tag');
                     const player = getPlayerById(id);
@@ -3245,6 +3506,27 @@
                 });
             });
 
+            document.querySelectorAll('.apply-entry-losses').forEach(button => {
+                button.addEventListener('click', function() {
+                    if (!canManageEntriesBetweenRounds()) {
+                        alert(translate('editBetweenRoundsOnly'));
+                        return;
+                    }
+
+                    const id = parseInt(this.getAttribute('data-id'), 10);
+                    const player = getPlayerById(id);
+                    const input = document.querySelector(`.entry-loss-input[data-kind="player"][data-id="${id}"]`);
+                    if (!player || !input) {
+                        return;
+                    }
+
+                    applyEntryLosses(player, input.value);
+                    updatePlayersTable();
+                    updateTournamentUI();
+                    scheduleCloudSave();
+                });
+            });
+
             updateRegistrationMeta();
         }
 
@@ -3281,6 +3563,7 @@
             updateTournamentSummary();
             renderLaneConfigurationPanel();
             renderStandingsSummary();
+            renderMatchHistory();
             tagReminder.style.display = 'none';
 
             generateMatchesBtn.style.display = canGenerateMatches ? '' : 'none';
@@ -3790,6 +4073,12 @@
                 "inactiveLane": "inaktiv",
                 "waitingMatchesNotice": "{count} kampe venter på bane",
                 "selectAtLeastOneLane": "Vælg mindst én aktiv bane, før du genererer runden.",
+                "matchHistoryTitle": "Kamphistorik",
+                "matchHistorySubtitle": "Tidligere Runder",
+                "historySitOuts": "Sidder Over",
+                "historyWinnerUnknown": "Ikke Registreret",
+                "updateLosses": "Opdater",
+                "editBetweenRoundsOnly": "Du kan kun redigere deltagere og tilføje nye mellem runderne.",
                 "betweenRoundsTitle": "Mellem Runder",
                 "standingsPreviewTitle": "Aktuel Stilling",
                 "betweenRoundsReady": "Gennemg\u00e5 stillingen, og generer n\u00e6ste runde n\u00e5r du er klar.",
@@ -4116,6 +4405,12 @@
                 "inactiveLane": "inactive",
                 "waitingMatchesNotice": "{count} matches are waiting for a lane",
                 "selectAtLeastOneLane": "Select at least one active lane before you generate the round.",
+                "matchHistoryTitle": "Match History",
+                "matchHistorySubtitle": "Previous Rounds",
+                "historySitOuts": "Sit Outs",
+                "historyWinnerUnknown": "Not Recorded",
+                "updateLosses": "Update",
+                "editBetweenRoundsOnly": "You can only edit entries and add new ones between rounds.",
                 "betweenRoundsTitle": "Between Rounds",
                 "standingsPreviewTitle": "Current Standings",
                 "betweenRoundsReady": "Review the standings, then generate the next round when you are ready.",
