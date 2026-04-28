@@ -701,61 +701,60 @@
         }
 
         .history-section {
-            margin-top: 1.25rem;
-            padding-top: 1.1rem;
+            margin-top: 1.1rem;
+            padding-top: 1rem;
             border-top: 1px solid rgba(255,255,255,0.08);
         }
 
-        .history-round-card {
-            background: rgba(12, 30, 23, 0.72);
+        .history-table-wrap {
             border: 1px solid var(--club-border);
             border-radius: 12px;
-            padding: 1rem;
-            margin-bottom: 0.9rem;
+            overflow: hidden;
+            background: rgba(8, 20, 15, 0.72);
         }
 
-        .history-round-head {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 0.8rem;
-            flex-wrap: wrap;
-            margin-bottom: 0.8rem;
+        .history-table {
+            margin-bottom: 0;
+            font-size: 0.93rem;
         }
 
-        .history-round-title {
-            margin: 0;
-            font-size: 1rem;
+        .history-table thead th {
+            background: rgba(12, 30, 23, 0.9);
             color: var(--club-gold);
             text-transform: uppercase;
             letter-spacing: 0.06em;
+            font-size: 0.75rem;
+            border-bottom-color: rgba(255,255,255,0.08);
         }
 
-        .history-match-list {
-            display: grid;
-            gap: 0.55rem;
+        .history-table td {
+            vertical-align: middle;
+            border-color: rgba(255,255,255,0.06);
         }
 
-        .history-match-row,
-        .history-sitout-row {
-            display: grid;
-            gap: 0.25rem;
-            padding: 0.8rem 0.9rem;
-            border-radius: 10px;
-            background: rgba(8, 20, 15, 0.72);
-            border: 1px solid rgba(255,255,255,0.06);
+        .history-row-round {
+            width: 92px;
+            font-weight: 800;
+            color: var(--club-gold);
+            white-space: nowrap;
         }
 
-        .history-match-meta,
-        .history-sitout-meta {
+        .history-row-type {
+            width: 118px;
             color: var(--club-text-muted);
-            font-size: 0.78rem;
             text-transform: uppercase;
-            letter-spacing: 0.06em;
+            letter-spacing: 0.05em;
+            font-size: 0.77rem;
+            white-space: nowrap;
         }
 
-        .history-match-main,
-        .history-sitout-main {
+        .history-row-lane {
+            width: 120px;
+            color: var(--club-text-muted);
+            white-space: nowrap;
+        }
+
+        .history-row-winner {
             color: var(--club-text-soft);
             font-weight: 700;
         }
@@ -1012,6 +1011,7 @@
                         </div>
                         <div class="tournament-action-group">
                             <button id="toggleRegistrationPanel" class="btn btn-outline-success" style="display: none;" data-translate="openRegistrationPanel">Open Registration</button>
+                            <button id="toggleHistoryPanel" class="btn btn-outline-secondary" style="display: none;" data-translate="showHistory">Show History</button>
                             <button id="approveTagChanges" class="btn btn-outline-success" disabled data-translate="approveTagChanges">Approve Tag Changes</button>
                             <button id="generateMatches" class="btn btn-primary" disabled data-translate="generateMatches">Generate Matches</button>
                             <button id="showStandingsOnScreen" class="btn btn-outline-info" style="display: none;" data-translate="showStandingsOnScreen">Show Standings For 30 Seconds</button>
@@ -1043,14 +1043,23 @@
                         <!-- Matches will be added here dynamically -->
                     </div>
 
-                    <div class="history-section" id="historySection">
-                        <div class="round-board-headline mb-3">
-                            <div>
-                                <div class="section-helper-text" data-translate="matchHistoryTitle">Match History</div>
-                                <h5 class="mb-0" data-translate="matchHistorySubtitle">Previous Rounds</h5>
+                    <div class="history-section" id="historySection" style="display: none;">
+                        <div class="history-table-wrap">
+                            <div class="table-responsive">
+                                <table class="table table-dark table-sm history-table">
+                                    <thead>
+                                        <tr>
+                                            <th data-translate="round">Round</th>
+                                            <th data-translate="historyType">Type</th>
+                                            <th data-translate="historyMatchup">Match / Sit Out</th>
+                                            <th data-translate="laneAssignment">Lane</th>
+                                            <th data-translate="winner">Winner</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="historyContainer"></tbody>
+                                </table>
                             </div>
                         </div>
-                        <div id="historyContainer"></div>
                     </div>
                 </div>
             </div>
@@ -1192,6 +1201,20 @@
 
             clearSpectatorOverride() {
                 this.spectatorOverride = null;
+            }
+
+            resetActivePlayerTag(tag, preserveIds = []) {
+                const preserveSet = new Set((preserveIds || []).map(value => String(value)));
+                this.getActivePlayers().forEach(player => {
+                    if (preserveSet.has(String(player.id))) {
+                        return;
+                    }
+
+                    const tagIndex = player.tags.indexOf(tag);
+                    if (tagIndex !== -1) {
+                        player.tags.splice(tagIndex, 1);
+                    }
+                });
             }
 
             getMatchHistoryLabel(match, side) {
@@ -1708,8 +1731,14 @@
                     return;
                 }
 
+                const activePlayersBeforeAssignment = this.getActivePlayers();
+                const playersMissingSBefore = activePlayersBeforeAssignment.filter(player => !player.tags.includes('S'));
+                const singleMatchParticipants = [];
+                let shouldResetSAfterAssignment = false;
+
                 this.matches.forEach(match => {
                     if (match.team1.length === 1 && match.team2.length === 1) {
+                        singleMatchParticipants.push(match.team1[0], match.team2[0]);
                         if (!match.team1[0].tags.includes('S')) {
                             match.team1[0].tags.push('S');
                         }
@@ -1742,6 +1771,28 @@
                 }
                 
                 this.pendingTagChanges = false;
+
+                if (playersMissingSBefore.length === 1 && singleMatchParticipants.length >= 2) {
+                    const lastMissingPlayerId = playersMissingSBefore[0].id;
+                    const decidingMatch = this.matches.find(match => (
+                        match.team1.length === 1
+                        && match.team2.length === 1
+                        && [match.team1[0].id, match.team2[0].id].includes(lastMissingPlayerId)
+                    ));
+
+                    if (decidingMatch) {
+                        const preserveIds = [decidingMatch.team1[0].id, decidingMatch.team2[0].id];
+                        this.resetActivePlayerTag('S', preserveIds);
+                        shouldResetSAfterAssignment = true;
+                    }
+                }
+
+                if (!shouldResetSAfterAssignment) {
+                    const allActivePlayersHaveS = this.getActivePlayers().length > 0 && this.getActivePlayers().every(player => player.tags.includes('S'));
+                    if (allActivePlayersHaveS) {
+                        this.resetActivePlayerTag('S');
+                    }
+                }
             }
 
             completeRound() {
@@ -1892,6 +1943,7 @@
         const tagReminder = document.getElementById('tagReminder');
         const approveTagChangesBtn = document.getElementById('approveTagChanges');
         const toggleRegistrationPanelBtn = document.getElementById('toggleRegistrationPanel');
+        const toggleHistoryPanelBtn = document.getElementById('toggleHistoryPanel');
         const resetTournamentBtn = document.getElementById('resetTournament');
         const cloudStatusIndicator = document.getElementById('cloudStatusIndicator');
         const summaryTournamentName = document.getElementById('summaryTournamentName');
@@ -1906,6 +1958,7 @@
         const laneToggleRow = document.getElementById('laneToggleRow');
         const historySection = document.getElementById('historySection');
         const historyContainer = document.getElementById('historyContainer');
+        let historyPanelVisible = false;
 
         // Core runtime state lives in:
         // - tournament.players: roster and per-player lifecycle state
@@ -2908,6 +2961,7 @@
             tournament.fairnessHistory = { partners: {}, opponents: {} };
             tournament.lastRoundPartnerKeys = [];
             tournament.lastRoundOpponentKeys = [];
+            historyPanelVisible = false;
 
             matchesContainer.innerHTML = '';
             tagReminder.style.display = 'none';
@@ -3044,6 +3098,12 @@
                 resetTournamentState();
             }
         });
+        if (toggleHistoryPanelBtn) {
+            toggleHistoryPanelBtn.addEventListener('click', function() {
+                historyPanelVisible = !historyPanelVisible;
+                renderMatchHistory();
+            });
+        }
         toggleRegistrationPanelBtn.addEventListener('click', function() {
             if (!tournament.started) {
                 return;
@@ -3100,7 +3160,21 @@
 
             if (!isFixedTeammatesMode()) {
                 const activePlayers = tournament.getActivePlayers();
+                const allHaveSTag = activePlayers.length > 0 && activePlayers.every(player => player.tags.includes('S'));
                 const allHaveOTag = activePlayers.length > 0 && activePlayers.every(player => player.tags.includes('O'));
+
+                if (allHaveSTag) {
+                    tournament.resetActivePlayerTag('S');
+
+                    insertAlertBeforeMatches(
+                        'resetSTagsAlert',
+                        'alert-info',
+                        `<strong>${translate('info')}:</strong> ${translate('allHaveSTagReset')}`,
+                        3000
+                    );
+
+                    updatePlayersTable();
+                }
 
                 if (allHaveOTag) {
                     activePlayers.forEach(player => {
@@ -3220,6 +3294,7 @@
             
             // Update players table to show approved tags
             updatePlayersTable();
+            updateTournamentUI();
             scheduleCloudSave();
             
             // Remove success message after 3 seconds
@@ -3502,6 +3577,7 @@
                     }
 
                     updatePlayersTable();
+                    updateTournamentUI();
                     scheduleCloudSave();
                 });
             });
@@ -4077,6 +4153,10 @@
                 "matchHistorySubtitle": "Tidligere Runder",
                 "historySitOuts": "Sidder Over",
                 "historyWinnerUnknown": "Ikke Registreret",
+                "historyType": "Type",
+                "historyMatchup": "Kamp / Sidder Over",
+                "showHistory": "Vis Historik",
+                "hideHistory": "Skjul Historik",
                 "updateLosses": "Opdater",
                 "editBetweenRoundsOnly": "Du kan kun redigere deltagere og tilføje nye mellem runderne.",
                 "betweenRoundsTitle": "Mellem Runder",
@@ -4153,6 +4233,7 @@
                 "hasSTag": "Har \"S\" tag",
                 "oneVOneMatch": "1v1 Kamp",
                 "noMatches": "Ingen kampe at vise for denne runde",
+                "allHaveSTagReset": "Alle aktive spillere havde \"S\" tags, så de er blevet nulstillet.",
                 "allHaveOTagReset": "Alle aktive spillere havde \"O\" tags, så de er blevet nulstillet.",
                 "round": "Runde",
                 "players": "Spillere",
@@ -4409,6 +4490,10 @@
                 "matchHistorySubtitle": "Previous Rounds",
                 "historySitOuts": "Sit Outs",
                 "historyWinnerUnknown": "Not Recorded",
+                "historyType": "Type",
+                "historyMatchup": "Match / Sit Out",
+                "showHistory": "Show History",
+                "hideHistory": "Hide History",
                 "updateLosses": "Update",
                 "editBetweenRoundsOnly": "You can only edit entries and add new ones between rounds.",
                 "betweenRoundsTitle": "Between Rounds",
@@ -4485,6 +4570,7 @@
                 "hasSTag": "Has \"S\" tag",
                 "oneVOneMatch": "1v1 Match",
                 "noMatches": "No matches to display for this round",
+                "allHaveSTagReset": "All active players had \"S\" tags, so they have been reset.",
                 "allHaveOTagReset": "All active players had \"O\" tags, so they have been reset.",
                 "need": "need",
                 "skipping": "skipping",
