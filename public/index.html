@@ -2372,61 +2372,65 @@
             return;
         }
 
+        function updateHistoryToggleButton() {
+            if (!toggleHistoryPanelBtn) {
+                return;
+            }
+
+            const history = Array.isArray(tournament.roundHistory) ? tournament.roundHistory : [];
+            const hasHistory = history.length > 0;
+
+            toggleHistoryPanelBtn.style.display = hasHistory ? '' : 'none';
+            toggleHistoryPanelBtn.setAttribute('data-translate', historyPanelVisible ? 'hideHistory' : 'showHistory');
+            toggleHistoryPanelBtn.textContent = translate(historyPanelVisible ? 'hideHistory' : 'showHistory');
+
+            if (!hasHistory) {
+                historyPanelVisible = false;
+            }
+        }
+
         function renderMatchHistory() {
             if (!historySection || !historyContainer) {
                 return;
             }
 
             const history = Array.isArray(tournament.roundHistory) ? tournament.roundHistory : [];
-            historySection.style.display = history.length > 0 ? '' : 'none';
             historyContainer.innerHTML = '';
+            updateHistoryToggleButton();
 
-            if (history.length === 0) {
+            const shouldShowHistory = history.length > 0 && historyPanelVisible;
+            historySection.style.display = shouldShowHistory ? '' : 'none';
+
+            if (!shouldShowHistory) {
                 return;
             }
 
             [...history].sort((left, right) => (right.round || 0) - (left.round || 0)).forEach(roundEntry => {
-                const roundCard = document.createElement('div');
-                roundCard.className = 'history-round-card';
-
                 const modeKey = roundEntry.mode === 'fixed' ? 'fixedTeammates' : 'changingTeammates';
-                roundCard.innerHTML = `
-                    <div class="history-round-head">
-                        <h6 class="history-round-title">${translate('round')} ${roundEntry.round}</h6>
-                        <span class="badge ${roundEntry.mode === 'fixed' ? 'bg-secondary' : 'bg-success'}">${translate(modeKey)}</span>
-                    </div>
-                `;
-
-                const list = document.createElement('div');
-                list.className = 'history-match-list';
 
                 (roundEntry.matches || []).forEach(match => {
-                    const row = document.createElement('div');
-                    row.className = 'history-match-row';
+                    const row = document.createElement('tr');
                     const laneLabel = Number.isInteger(match.laneNumber)
                         ? translateWithParams('laneLabel', { lane: match.laneNumber })
                         : translate('waitingForLane');
                     const winnerLabel = match.winnerLabel || translate('historyWinnerUnknown');
-                    row.innerHTML = `
-                        <div class="history-match-meta">${translate('match')} #${match.id} · ${laneLabel}</div>
-                        <div class="history-match-main">${match.team1Label} ${translate('vs')} ${match.team2Label}</div>
-                        <div class="history-match-meta">${translate('winner')}: ${winnerLabel}</div>
-                    `;
-                    list.appendChild(row);
+                    row.innerHTML =                         '<td class="history-row-round">' + translate('round') + ' ' + roundEntry.round + '</td>' +
+                        '<td class="history-row-type"><span class="badge ' + (roundEntry.mode === 'fixed' ? 'bg-secondary' : 'bg-success') + '">' + translate(modeKey) + '</span></td>' +
+                        '<td><div class="history-match-main">' + translate('match') + ' #' + match.id + ': ' + match.team1Label + ' ' + translate('vs') + ' ' + match.team2Label + '</div></td>' +
+                        '<td class="history-row-lane">' + laneLabel + '</td>' +
+                        '<td class="history-row-winner">' + winnerLabel + '</td>';
+                    historyContainer.appendChild(row);
                 });
 
                 if (Array.isArray(roundEntry.sitOuts) && roundEntry.sitOuts.length > 0) {
-                    const sitOutRow = document.createElement('div');
-                    sitOutRow.className = 'history-sitout-row';
-                    sitOutRow.innerHTML = `
-                        <div class="history-sitout-meta">${translate('historySitOuts')}</div>
-                        <div class="history-sitout-main">${roundEntry.sitOuts.join(', ')}</div>
-                    `;
-                    list.appendChild(sitOutRow);
+                    const sitOutRow = document.createElement('tr');
+                    sitOutRow.innerHTML =                         '<td class="history-row-round">' + translate('round') + ' ' + roundEntry.round + '</td>' +
+                        '<td class="history-row-type"><span class="badge bg-warning text-dark">' + translate('historySitOuts') + '</span></td>' +
+                        '<td class="history-sitout-main">' + roundEntry.sitOuts.join(', ') + '</td>' +
+                        '<td class="history-row-lane">-</td>' +
+                        '<td class="history-row-winner">-</td>';
+                    historyContainer.appendChild(sitOutRow);
                 }
-
-                roundCard.appendChild(list);
-                historyContainer.appendChild(roundCard);
             });
         }
 
