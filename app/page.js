@@ -500,8 +500,18 @@ export default function Page() {
         onNavigate={handleNavigate}
       />
 
-      <section style={{ maxWidth: 1200, margin: '0 auto', padding: '0 16px 16px' }}>
-        <div style={{ background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: 8, padding: '18px 20px', color: theme.text, display: 'flex', gap: 14, alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', boxShadow: '0 20px 38px rgba(0,0,0,0.38)' }}>
+      <section style={{ maxWidth: 1520, margin: '-176px auto 18px', padding: '0 28px', minHeight: 158, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 18, position: 'relative', zIndex: 2, pointerEvents: 'none' }}>
+        <div style={{ width: 340, minHeight: 150, background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: 8, padding: '22px 22px', color: theme.text, boxShadow: '0 20px 38px rgba(0,0,0,0.38)', pointerEvents: 'auto' }}>
+          <h2 style={{ margin: 0, fontSize: 26, lineHeight: 1.05, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            {t.tournamentTitle}
+          </h2>
+          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 18, color: theme.textSoft, fontSize: 14 }}>
+            <span>{profileRole === 'admin' ? 'Admin' : 'User'}</span>
+            <span>{t.screenLive}</span>
+          </div>
+        </div>
+
+        <div style={{ width: 310, background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: 8, padding: '18px 20px', color: theme.text, display: 'grid', gap: 12, boxShadow: '0 20px 38px rgba(0,0,0,0.38)', pointerEvents: 'auto' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', minWidth: 260 }}>
             <div>
               <div style={{ fontSize: 12, letterSpacing: '0.08em', textTransform: 'uppercase', color: theme.textMuted, marginBottom: 4 }}>
@@ -516,7 +526,7 @@ export default function Page() {
             {screenError ? <div style={{ color: '#f3a7a7', fontSize: 14 }}>{t.screenError}</div> : null}
           </div>
 
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <div style={{ display: 'grid', gap: 10 }}>
             <button
               type="button"
               disabled={!screenInfo?.screenUrl}

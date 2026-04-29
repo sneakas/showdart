@@ -1,5 +1,7 @@
 'use client';
 
+import { ClipboardList, ShieldCheck, Trophy, UsersRound } from 'lucide-react';
+
 const headerTexts = {
   da: {
     loggedInAs: 'Logget ind som',
@@ -49,6 +51,12 @@ export function SharedTopNavigation({
 }) {
   const t = headerTexts[lang] || headerTexts.da;
   const isAdmin = role === 'admin';
+  const navIcons = {
+    registration: ClipboardList,
+    tournament: Trophy,
+    admin: UsersRound,
+    rules: ShieldCheck
+  };
 
   const navButtonStyle = isActive => ({
     color: isActive ? theme.goldSoft : theme.textSoft,
@@ -67,16 +75,22 @@ export function SharedTopNavigation({
     whiteSpace: 'nowrap'
   });
 
-  const navItem = (key, label) => (
+  const navItem = (key, label) => {
+    const Icon = navIcons[key];
+    return (
     <button
       key={key}
       type="button"
       onClick={() => onNavigate?.(key)}
       style={navButtonStyle(activePage === key)}
     >
-      {label}
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
+        {Icon ? <Icon size={20} strokeWidth={1.8} /> : null}
+        {label}
+      </span>
     </button>
-  );
+    );
+  };
 
   return (
     <>

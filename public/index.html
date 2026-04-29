@@ -742,6 +742,52 @@
             box-shadow: 0 0 0 1px rgba(25, 135, 84, 0.28);
         }
 
+        .lane-card-list {
+            display: grid;
+            gap: 10px;
+        }
+
+        .lane-match-card {
+            display: grid;
+            grid-template-columns: 44px minmax(0, 1fr);
+            gap: 12px;
+            align-items: center;
+            padding: 12px;
+            border: 1px solid var(--club-border);
+            border-radius: 8px;
+            background: rgba(2, 8, 5, 0.32);
+        }
+
+        .lane-match-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            border: 2px solid var(--club-gold);
+            background:
+                radial-gradient(circle, transparent 0 24%, var(--club-gold) 25% 29%, transparent 30%),
+                conic-gradient(var(--club-gold) 0 12deg, #07120d 12deg 24deg, var(--club-gold) 24deg 36deg, #07120d 36deg 48deg, var(--club-gold) 48deg 60deg, #07120d 60deg 72deg, var(--club-gold) 72deg 84deg, #07120d 84deg 96deg, var(--club-gold) 96deg 108deg, #07120d 108deg 120deg, var(--club-gold) 120deg 132deg, #07120d 132deg 144deg, var(--club-gold) 144deg 156deg, #07120d 156deg 168deg, var(--club-gold) 168deg 180deg, #07120d 180deg 192deg, var(--club-gold) 192deg 204deg, #07120d 204deg 216deg, var(--club-gold) 216deg 228deg, #07120d 228deg 240deg, var(--club-gold) 240deg 252deg, #07120d 252deg 264deg, var(--club-gold) 264deg 276deg, #07120d 276deg 288deg, var(--club-gold) 288deg 300deg, #07120d 300deg 312deg, var(--club-gold) 312deg 324deg, #07120d 324deg 336deg, var(--club-gold) 336deg 348deg, #07120d 348deg 360deg);
+        }
+
+        .lane-match-title {
+            color: var(--club-text);
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .lane-match-meta {
+            color: var(--club-text-soft);
+            font-size: 0.88rem;
+            margin-top: 2px;
+        }
+
+        .lane-match-status {
+            color: #4bd17d;
+            font-size: 0.8rem;
+            font-weight: 800;
+            margin-top: 3px;
+        }
+
         .lane-assignment-row {
             display: grid;
             gap: 0.45rem;
@@ -1260,12 +1306,18 @@
             color: var(--club-gold-soft);
         }
 
+        .lane-match-card {
+            background: rgba(2, 8, 5, 0.32);
+            border-color: var(--club-border);
+        }
+
         @media (min-width: 1200px) {
             body > .container {
                 display: grid;
-                grid-template-columns: minmax(360px, 0.85fr) minmax(720px, 1.65fr);
+                grid-template-columns: 300px minmax(360px, 0.95fr) 300px minmax(430px, 1.45fr);
                 gap: 18px;
                 align-items: start;
+                padding-bottom: 92px;
             }
 
             #registration,
@@ -1274,11 +1326,170 @@
             }
 
             #registration {
-                grid-column: 1;
+                grid-column: 1 / span 2;
             }
 
             #tournament {
+                grid-column: 3 / span 2;
+            }
+
+            .registration-section-card .card-body {
+                display: grid;
+                grid-template-columns: 300px minmax(0, 1fr);
+                gap: 12px;
+                align-items: stretch;
+            }
+
+            .setup-toolbar {
+                grid-column: 1;
+                grid-template-columns: 1fr;
+                align-content: start;
+                margin-bottom: 0;
+                min-height: 312px;
+            }
+
+            #registrationPanelContent {
                 grid-column: 2;
+                min-width: 0;
+            }
+
+            .compact-entry-form {
+                margin-bottom: 0.85rem;
+            }
+
+            .compact-entry-form .row {
+                display: grid;
+                grid-template-columns: minmax(0, 1fr);
+                gap: 0.7rem;
+            }
+
+            .compact-entry-form [class*="col-"] {
+                width: 100%;
+                max-width: none;
+                padding-left: 0;
+                padding-right: 0;
+            }
+
+            .tournament-section-card .card-body {
+                display: grid;
+                grid-template-columns: 300px minmax(0, 1fr);
+                gap: 12px;
+                align-items: start;
+            }
+
+            .tournament-summary-strip {
+                position: fixed;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                z-index: 40;
+                display: grid;
+                grid-template-columns: repeat(6, minmax(0, 1fr));
+                gap: 0;
+                margin: 0;
+                padding: 14px 34px;
+                background: linear-gradient(90deg, rgba(8, 28, 19, 0.98), rgba(11, 42, 29, 0.98), rgba(6, 18, 13, 0.98));
+                border-top: 1px solid var(--club-border);
+                box-shadow: 0 -18px 40px rgba(0, 0, 0, 0.4);
+            }
+
+            .summary-chip {
+                min-height: 56px;
+                padding: 0.1rem 1.2rem;
+                border: 0;
+                border-left: 1px solid rgba(255,255,255,0.14);
+                border-radius: 0;
+                background: transparent;
+                box-shadow: none;
+            }
+
+            .summary-chip:first-child {
+                border-left: 0;
+            }
+
+            .summary-chip strong {
+                font-size: 1.1rem;
+                margin-top: 0.24rem;
+            }
+
+            .tournament-action-row {
+                grid-column: 2;
+                grid-row: 1;
+                justify-content: flex-end;
+                margin-bottom: 0;
+                min-height: 48px;
+            }
+
+            .tournament-action-row > div:first-child {
+                display: none;
+            }
+
+            .tournament-action-group {
+                justify-content: flex-end;
+            }
+
+            .lane-config-panel {
+                grid-column: 1;
+                grid-row: 1 / span 4;
+                margin-bottom: 0;
+                min-height: 474px;
+            }
+
+            #tagReminder,
+            #matchesContainer,
+            .history-section {
+                grid-column: 2;
+            }
+
+            #matchesContainer {
+                min-width: 0;
+            }
+
+            .round-board-grid {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+
+            .round-match-card .card-body {
+                display: block;
+                padding: 1rem;
+            }
+
+            .round-match-head {
+                margin-bottom: 0.65rem;
+            }
+
+            .round-versus-stack {
+                grid-template-columns: minmax(0, 1fr) 48px minmax(0, 1fr);
+                align-items: center;
+                gap: 10px;
+            }
+
+            .round-team-panel {
+                min-height: 74px;
+                display: grid;
+                align-content: center;
+                text-align: left;
+            }
+
+            .round-versus-label {
+                align-self: center;
+                font-size: 1rem;
+                color: var(--club-text);
+            }
+
+            .winner-choice-label {
+                display: none;
+            }
+
+            .winner-choice-group {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                max-width: 360px;
+                margin: 0.7rem auto 0;
+            }
+
+            .winner-choice-btn {
+                min-height: 38px;
             }
         }
 
@@ -2821,7 +3032,7 @@
             const activeEntries = tournament.getActiveEntries();
             const tournamentIsOver = tournament.started && !tournament.finalResults && activeEntries.length <= 1;
             const hasRoundAssignments = tournament.matches.length > 0 || ((tournament.skippedPlayers || []).length > 0);
-            const shouldShow = tournament.started && !tournament.finalResults && !tournamentIsOver && !hasRoundAssignments;
+            const shouldShow = tournament.started && !tournament.finalResults && !tournamentIsOver;
 
             laneConfigPanel.style.display = shouldShow ? '' : 'none';
             if (!shouldShow) {
@@ -2833,6 +3044,36 @@
                 active: activeLanes.length,
                 total: tournament.laneCount
             });
+
+            if (hasRoundAssignments) {
+                const sortedMatches = getSortedDisplayMatches(tournament.matches || []);
+                laneToggleRow.innerHTML = `
+                    <div class="lane-card-list">
+                        ${sortedMatches.map(match => {
+                            const laneTitle = Number.isInteger(match.laneNumber)
+                                ? translateWithParams('laneLabel', { lane: match.laneNumber })
+                                : translate('waitingForLane');
+                            const matchTitle = `${translate('match')} #${match.id} - ${translate('round')} ${tournament.currentRound}`;
+                            const winnerLabel = match.winner === 1
+                                ? (match.team1Label || (Array.isArray(match.team1) ? match.team1.map(player => player.name).join(', ') : ''))
+                                : match.winner === 2
+                                    ? (match.team2Label || (Array.isArray(match.team2) ? match.team2.map(player => player.name).join(', ') : ''))
+                                    : translate('readyToScore');
+                            return `
+                                <div class="lane-match-card">
+                                    <div class="lane-match-icon" aria-hidden="true"></div>
+                                    <div>
+                                        <div class="lane-match-title">${laneTitle}</div>
+                                        <div class="lane-match-meta">${matchTitle}</div>
+                                        <div class="lane-match-status">${winnerLabel}</div>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+                return;
+            }
 
             laneToggleRow.innerHTML = tournament.getAllLaneNumbers().map(laneNumber => {
                 const isActive = activeLanes.includes(laneNumber);
