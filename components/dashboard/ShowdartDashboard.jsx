@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { CalendarDays, ClipboardList, Copy, ExternalLink, GitBranch, MoreVertical, Plus, RefreshCw, ShieldCheck, Trophy, Upload, UsersRound } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -241,7 +241,7 @@ export function ShowdartDashboard({
 
   function navButton(key, label, Icon, onClick) {
     return (
-      <button type="button" className={key === 'tournament' ? 'is-active' : ''} onClick={onClick}>
+      <button type="button" className={key === 'tournament' ? 'is-active' : ''} onClick={onClick} aria-current={key === 'tournament' ? 'page' : undefined}>
         <Icon size={20} strokeWidth={1.8} />
         {label}
       </button>
@@ -274,7 +274,7 @@ export function ShowdartDashboard({
 
   function handleComplete() {
     if (state.matches.some(match => !match.winner)) {
-      setNotice('Markér vinder i alle kampe først.');
+      setNotice('Marker vinder i alle kampe forst.');
       return;
     }
     commit(previous => completeRound(previous));
@@ -302,8 +302,8 @@ export function ShowdartDashboard({
         </nav>
         <div className="sd-userbar">
           <span>{email} ({role})</span>
-          <button type="button" className={`sd-flag ${lang === 'da' ? 'is-active' : ''}`} style={{ backgroundImage: "url('https://flagcdn.com/w40/dk.png')" }} onClick={() => onLanguageChange('da')} />
-          <button type="button" className={`sd-flag ${lang === 'en' ? 'is-active' : ''}`} style={{ backgroundImage: "url('https://flagcdn.com/w40/gb.png')" }} onClick={() => onLanguageChange('en')} />
+          <button type="button" aria-label="Dansk" className={`sd-flag ${lang === 'da' ? 'is-active' : ''}`} style={{ backgroundImage: "url('https://flagcdn.com/w40/dk.png')" }} onClick={() => onLanguageChange('da')} />
+          <button type="button" aria-label="English" className={`sd-flag ${lang === 'en' ? 'is-active' : ''}`} style={{ backgroundImage: "url('https://flagcdn.com/w40/gb.png')" }} onClick={() => onLanguageChange('en')} />
           <button type="button" className="sd-logout" onClick={onLogout}>{t.logout}</button>
         </div>
       </header>
@@ -313,7 +313,7 @@ export function ShowdartDashboard({
           <div className="sd-card sd-hero-card">
             <h1 className="sd-title">{tournamentTitle}</h1>
             <div className="sd-meta-row">
-              <span><UsersRound size={16} /> {entries.length} deltagere</span>
+              <span><UsersRound size={16} /> {entries.length} {lang === 'da' ? 'deltagere' : 'participants'}</span>
               <span>{state.teammateMode === 'fixed' ? t.fixed : t.changing}</span>
               <span><RefreshCw size={16} /> {state.maxLosses} {t.losses}</span>
               <span><CalendarDays size={16} /> {new Date().toLocaleDateString(lang === 'da' ? 'da-DK' : 'en-US')}</span>
@@ -376,6 +376,7 @@ export function ShowdartDashboard({
             <input className="sd-input" placeholder={t.search} value={search} onChange={event => setSearch(event.target.value)} />
             <select className="sd-select" value="all" readOnly><option>{t.all}</option></select>
           </div>
+          <div className="sd-table-wrap">
           <table className="sd-table">
             <thead><tr><th></th><th>{t.name}</th><th>{t.roleStatus}</th><th>{t.seed}</th><th></th></tr></thead>
             <tbody>
@@ -390,6 +391,7 @@ export function ShowdartDashboard({
               ))}
             </tbody>
           </table>
+          </div>
         </Panel>
 
         <Panel title={t.lanes}>
@@ -501,3 +503,4 @@ function getWinnerLine(state, match, t) {
   if (!match.winner) return t.ready;
   return `${t.winner}: ${getMatchLabel(state, match, match.winner)}`;
 }
+

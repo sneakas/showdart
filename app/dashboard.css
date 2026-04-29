@@ -3,16 +3,16 @@
 :root {
   --sd-bg: #030806;
   --sd-bg-2: #07120d;
-  --sd-panel: rgba(7, 32, 21, 0.9);
-  --sd-panel-2: rgba(5, 20, 13, 0.94);
-  --sd-panel-3: rgba(13, 49, 32, 0.72);
-  --sd-border: #244438;
-  --sd-border-2: #3b6a55;
-  --sd-gold: #d8a928;
-  --sd-gold-2: #f0c24b;
+  --sd-panel: rgba(5, 34, 22, 0.92);
+  --sd-panel-2: rgba(3, 18, 12, 0.96);
+  --sd-panel-3: rgba(9, 46, 30, 0.75);
+  --sd-border: #1d4d3a;
+  --sd-border-2: #577c68;
+  --sd-gold: #d69b23;
+  --sd-gold-2: #efbd3e;
   --sd-text: #f6f6ed;
   --sd-soft: #dfe8de;
-  --sd-muted: #9fb2a6;
+  --sd-muted: #aab9ae;
   --sd-green: #4bd17d;
   --sd-red: #a34444;
 }
@@ -24,17 +24,17 @@
     linear-gradient(180deg, var(--sd-bg) 0%, var(--sd-bg-2) 46%, #020504 100%);
   color: var(--sd-text);
   font-family: Manrope, system-ui, sans-serif;
-  padding-bottom: 86px;
+  padding-bottom: 94px;
 }
 
 .sd-topbar {
-  height: 90px;
+  height: 88px;
   border-bottom: 1px solid var(--sd-gold);
-  background: linear-gradient(90deg, #020604, #06150f 42%, #03100b);
+  background: linear-gradient(90deg, #020604, #04120c 44%, #02100a);
   display: grid;
-  grid-template-columns: 300px 1fr 300px;
+  grid-template-columns: 300px 1fr 360px;
   align-items: center;
-  padding: 0 48px;
+  padding: 0 46px;
   gap: 20px;
 }
 
@@ -45,8 +45,8 @@
 }
 
 .sd-logo-mark {
-  width: 58px;
-  height: 58px;
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
   border: 2px solid var(--sd-gold-2);
   background:
@@ -56,14 +56,14 @@
 }
 
 .sd-brand-title {
-  font-size: 30px;
+  font-size: 29px;
   font-weight: 900;
   line-height: .92;
 }
 
 .sd-brand-subtitle {
   color: var(--sd-gold-2);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 900;
   letter-spacing: .34em;
   text-transform: uppercase;
@@ -71,10 +71,10 @@
 }
 
 .sd-nav {
-  height: 90px;
+  height: 88px;
   display: flex;
   justify-content: center;
-  gap: 42px;
+  gap: 38px;
 }
 
 .sd-nav button {
@@ -88,7 +88,12 @@
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  padding: 0 4px;
+  padding: 0 5px;
+  height: 88px;
+}
+
+.sd-nav button:not(.is-active) {
+  opacity: .92;
 }
 
 .sd-nav button.is-active {
@@ -100,7 +105,7 @@
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  gap: 10px;
+  gap: 9px;
   font-size: 12px;
   color: var(--sd-soft);
 }
@@ -125,24 +130,24 @@
   color: #fff;
   font-weight: 900;
   text-transform: uppercase;
-  padding: 8px 11px;
+  padding: 8px 13px;
 }
 
 .sd-hero {
-  min-height: 206px;
+  min-height: 210px;
   background:
-    linear-gradient(90deg, rgba(3, 8, 6, .82), rgba(3, 8, 6, .32) 44%, rgba(3, 8, 6, .88)),
+    linear-gradient(90deg, rgba(3, 8, 6, .72), rgba(3, 8, 6, .18) 45%, rgba(3, 8, 6, .72)),
     url('/assets/dart-venue-banner.svg');
   background-size: cover;
-  background-position: center;
+  background-position: center 43%;
   border-bottom: 1px solid var(--sd-border);
 }
 
 .sd-hero-inner {
-  max-width: 1568px;
-  min-height: 206px;
+  max-width: 1640px;
+  min-height: 210px;
   margin: 0 auto;
-  padding: 22px 32px;
+  padding: 22px 34px;
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
@@ -150,14 +155,16 @@
 }
 
 .sd-card {
-  background: linear-gradient(145deg, rgba(10, 42, 28, .9), rgba(4, 18, 12, .96));
-  border: 1px solid var(--sd-border);
+  background:
+    radial-gradient(circle at 100% 0%, rgba(28, 87, 55, .18), transparent 14rem),
+    linear-gradient(145deg, rgba(5, 37, 24, .94), rgba(3, 18, 12, .97));
+  border: 1px solid rgba(43, 91, 70, .85);
   border-radius: 8px;
-  box-shadow: 0 20px 38px rgba(0, 0, 0, .38);
+  box-shadow: 0 18px 34px rgba(0, 0, 0, .42);
 }
 
 .sd-hero-card {
-  width: 370px;
+  width: 374px;
   min-height: 168px;
   padding: 24px;
 }
@@ -168,7 +175,7 @@
 }
 
 .sd-title {
-  font-size: 29px;
+  font-size: 30px;
   margin: 0;
   line-height: 1.05;
   text-transform: uppercase;
@@ -211,14 +218,19 @@
 
 .sd-button {
   border-radius: 6px;
-  min-height: 42px;
+  min-height: 40px;
   font-weight: 900;
   letter-spacing: .04em;
   text-transform: uppercase;
   border: 1px solid var(--sd-border-2);
   background: rgba(2, 8, 5, .28);
   color: var(--sd-text);
-  padding: 9px 14px;
+  padding: 8px 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  white-space: nowrap;
 }
 
 .sd-button.gold {
@@ -237,17 +249,27 @@
   width: 100%;
 }
 
+.sd-button:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+.sd-spectator-card .sd-button {
+  min-height: 41px;
+}
+
 .sd-dashboard {
-  max-width: 1568px;
-  margin: 18px auto 0;
-  padding: 0 32px;
+  max-width: 1640px;
+  margin: 17px auto 0;
+  padding: 0 34px;
   display: grid;
-  grid-template-columns: 300px minmax(390px, 1fr) 300px minmax(510px, 1.35fr);
+  grid-template-columns: 305px minmax(390px, 1fr) 300px minmax(520px, 1.36fr);
   gap: 8px;
+  align-items: start;
 }
 
 .sd-panel {
-  padding: 18px;
+  padding: 18px 18px 16px;
   min-height: 0;
 }
 
@@ -262,6 +284,7 @@
 .sd-stack {
   display: grid;
   gap: 8px;
+  align-content: start;
 }
 
 .sd-form-grid {
@@ -271,7 +294,7 @@
 
 .sd-field {
   display: grid;
-  grid-template-columns: 110px minmax(0, 1fr);
+  grid-template-columns: 112px minmax(0, 1fr);
   gap: 12px;
   align-items: center;
   font-size: 14px;
@@ -285,23 +308,51 @@
 .sd-select {
   width: 100%;
   color: var(--sd-text);
-  background: rgba(2, 8, 5, .52);
-  border: 1px solid var(--sd-border);
+  background: rgba(2, 8, 5, .62);
+  border: 1px solid rgba(64, 109, 87, .82);
   border-radius: 6px;
   padding: 9px 11px;
 }
 
+.sd-input:focus,
+.sd-select:focus {
+  outline: none;
+  border-color: var(--sd-gold-2);
+  box-shadow: 0 0 0 2px rgba(239, 189, 62, .14);
+}
+
 .sd-participant-tools {
   display: grid;
-  grid-template-columns: 1fr 90px;
+  grid-template-columns: 1fr 88px;
   gap: 10px;
   margin-bottom: 14px;
+}
+
+.sd-table-wrap {
+  max-height: calc(100vh - 438px);
+  overflow: auto;
 }
 
 .sd-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 14px;
+  table-layout: fixed;
+}
+
+.sd-table th:first-child,
+.sd-table td:first-child {
+  width: 44px;
+}
+
+.sd-table th:last-child,
+.sd-table td:last-child {
+  width: 44px;
+}
+
+.sd-table th:nth-child(4),
+.sd-table td:nth-child(4) {
+  width: 84px;
 }
 
 .sd-table th {
@@ -315,7 +366,7 @@
 .sd-table th,
 .sd-table td {
   border-bottom: 1px solid rgba(255,255,255,.08);
-  padding: 9px 10px;
+  padding: 8px 10px;
 }
 
 .sd-seed {
@@ -337,9 +388,9 @@
 
 .sd-lane-card,
 .sd-match-card {
-  border: 1px solid var(--sd-border);
+  border: 1px solid rgba(43, 91, 70, .85);
   border-radius: 8px;
-  background: linear-gradient(145deg, rgba(12, 44, 30, .68), rgba(4, 18, 12, .82));
+  background: linear-gradient(145deg, rgba(7, 38, 25, .78), rgba(3, 16, 11, .86));
   padding: 14px;
 }
 
@@ -367,6 +418,33 @@
   letter-spacing: .04em;
 }
 
+.sd-lane-card > div:last-child,
+.sd-match-side,
+.sd-table td {
+  min-width: 0;
+}
+
+.sd-lane-card {
+  min-height: 96px;
+}
+
+.sd-match-list {
+  max-height: calc(100vh - 390px);
+  overflow: auto;
+  padding-right: 2px;
+}
+
+.sd-match-list::-webkit-scrollbar,
+.sd-table-wrap::-webkit-scrollbar {
+  width: 8px;
+}
+
+.sd-match-list::-webkit-scrollbar-thumb,
+.sd-table-wrap::-webkit-scrollbar-thumb {
+  background: rgba(87, 124, 104, .55);
+  border-radius: 999px;
+}
+
 .sd-green-text {
   color: var(--sd-green);
 }
@@ -376,7 +454,7 @@
   justify-content: space-between;
   gap: 12px;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: 13px;
 }
 
 .sd-pill {
@@ -390,7 +468,7 @@
 
 .sd-score-row {
   display: grid;
-  grid-template-columns: minmax(120px, 1fr) 58px 34px 58px minmax(120px, 1fr);
+  grid-template-columns: minmax(120px, 1fr) 56px 34px 56px minmax(120px, 1fr);
   align-items: center;
   gap: 14px;
 }
@@ -428,14 +506,15 @@
   left: 0;
   right: 0;
   bottom: 0;
-  height: 70px;
+  height: 74px;
   z-index: 20;
   display: grid;
   grid-template-columns: repeat(6, 1fr);
-  background: linear-gradient(90deg, rgba(8, 28, 19, .98), rgba(11, 42, 29, .98), rgba(6, 18, 13, .98));
+  background: linear-gradient(90deg, rgba(5, 28, 18, .96), rgba(9, 42, 28, .96), rgba(4, 18, 12, .96));
   border-top: 1px solid var(--sd-border);
   box-shadow: 0 -18px 40px rgba(0,0,0,.4);
-  padding: 12px 46px;
+  padding: 13px 54px;
+  backdrop-filter: blur(8px);
 }
 
 .sd-bottom-item {
