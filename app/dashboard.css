@@ -517,6 +517,8 @@
 .sd-match-list {
   display: grid;
   gap: 10px;
+  align-content: start;
+  grid-auto-rows: max-content;
 }
 
 .sd-match-card {
@@ -562,16 +564,16 @@
 
 .sd-lane-toggle {
   width: 100%;
-  min-height: 74px;
+  min-height: 40px;
   display: grid;
-  grid-template-columns: 44px minmax(0, 1fr);
-  gap: 12px;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 10px;
   align-items: center;
   border: 1px solid rgba(43, 91, 70, .85);
   border-radius: 8px;
   background: linear-gradient(145deg, rgba(7, 45, 28, .82), rgba(3, 17, 11, .9));
   color: var(--sd-text);
-  padding: 13px 14px;
+  padding: 8px 12px;
   text-align: left;
   transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease, background-color .18s ease, filter .18s ease;
 }
@@ -584,13 +586,20 @@
 }
 
 .sd-lane-toggle small {
-  display: block;
-  margin-top: 3px;
+  display: inline-block;
+  margin-top: 0;
+  margin-left: 8px;
   color: var(--sd-muted);
   font-size: 12px;
   font-weight: 900;
   letter-spacing: .08em;
   text-transform: uppercase;
+}
+
+.sd-lane-toggle .sd-mini-board {
+  width: 24px;
+  height: 24px;
+  border-width: 1px;
 }
 
 .sd-lane-toggle.is-active {
