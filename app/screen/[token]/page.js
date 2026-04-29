@@ -134,14 +134,17 @@ const pageStyle = {
 function Brand() {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-      <div style={{
+      <img
+        src="/assets/small-logo.png"
+        alt="Showdart"
+        style={{
         width: 56,
         height: 56,
         borderRadius: '50%',
-        border: `2px solid ${colors.gold2}`,
-        background: `radial-gradient(circle, ${colors.bg2} 0 22%, transparent 23%), conic-gradient(${colors.gold2} 0 12deg, #111 12deg 24deg, ${colors.gold2} 24deg 36deg, #111 36deg 48deg, ${colors.gold2} 48deg 60deg, #111 60deg 72deg, ${colors.gold2} 72deg 84deg, #111 84deg 96deg, ${colors.gold2} 96deg 108deg, #111 108deg 120deg, ${colors.gold2} 120deg 132deg, #111 132deg 144deg, ${colors.gold2} 144deg 156deg, #111 156deg 168deg, ${colors.gold2} 168deg 180deg, #111 180deg 192deg, ${colors.gold2} 192deg 204deg, #111 204deg 216deg, ${colors.gold2} 216deg 228deg, #111 228deg 240deg, ${colors.gold2} 240deg 252deg, #111 252deg 264deg, ${colors.gold2} 264deg 276deg, #111 276deg 288deg, ${colors.gold2} 288deg 300deg, #111 300deg 312deg, ${colors.gold2} 312deg 324deg, #111 324deg 336deg, ${colors.gold2} 336deg 348deg, #111 348deg 360deg)`,
+        objectFit: 'cover',
         boxShadow: '0 0 26px rgba(216, 169, 40, 0.25)'
-      }} />
+      }}
+      />
       <div>
         <div style={{ fontSize: 29, fontWeight: 900, lineHeight: .92 }}>Showdart</div>
         <div style={{ color: colors.gold2, fontSize: 13, fontWeight: 900, letterSpacing: '.34em', marginTop: 7 }}>Turnering</div>

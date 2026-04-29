@@ -55,10 +55,7 @@
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  border: 2px solid var(--sd-gold-2);
-  background:
-    radial-gradient(circle, #07120d 0 22%, transparent 23%),
-    conic-gradient(var(--sd-gold-2) 0 12deg, #111 12deg 24deg, var(--sd-gold-2) 24deg 36deg, #111 36deg 48deg, var(--sd-gold-2) 48deg 60deg, #111 60deg 72deg, var(--sd-gold-2) 72deg 84deg, #111 84deg 96deg, var(--sd-gold-2) 96deg 108deg, #111 108deg 120deg, var(--sd-gold-2) 120deg 132deg, #111 132deg 144deg, var(--sd-gold-2) 144deg 156deg, #111 156deg 168deg, var(--sd-gold-2) 168deg 180deg, #111 180deg 192deg, var(--sd-gold-2) 192deg 204deg, #111 204deg 216deg, var(--sd-gold-2) 216deg 228deg, #111 228deg 240deg, var(--sd-gold-2) 240deg 252deg, #111 252deg 264deg, var(--sd-gold-2) 264deg 276deg, #111 276deg 288deg, var(--sd-gold-2) 288deg 300deg, #111 300deg 312deg, var(--sd-gold-2) 312deg 324deg, #111 324deg 336deg, var(--sd-gold-2) 336deg 348deg, #111 348deg 360deg);
+  background: url('/assets/small-logo.png') center / cover no-repeat;
   box-shadow: 0 0 26px rgba(216, 169, 40, 0.25);
   transition: transform .18s ease, box-shadow .18s ease;
 }
@@ -539,10 +536,8 @@
   width: 38px;
   height: 38px;
   border-radius: 50%;
-  border: 2px solid var(--sd-gold);
-  background:
-    radial-gradient(circle, transparent 0 24%, var(--sd-gold) 25% 29%, transparent 30%),
-    conic-gradient(var(--sd-gold) 0 12deg, #07120d 12deg 24deg, var(--sd-gold) 24deg 36deg, #07120d 36deg 48deg, var(--sd-gold) 48deg 60deg, #07120d 60deg 72deg, var(--sd-gold) 72deg 84deg, #07120d 84deg 96deg, var(--sd-gold) 96deg 108deg, #07120d 108deg 120deg, var(--sd-gold) 120deg 132deg, #07120d 132deg 144deg, var(--sd-gold) 144deg 156deg, #07120d 156deg 168deg, var(--sd-gold) 168deg 180deg, #07120d 180deg 192deg, var(--sd-gold) 192deg 204deg, #07120d 204deg 216deg, var(--sd-gold) 216deg 228deg, #07120d 228deg 240deg, var(--sd-gold) 240deg 252deg, #07120d 252deg 264deg, var(--sd-gold) 264deg 276deg, #07120d 276deg 288deg, var(--sd-gold) 288deg 300deg, #07120d 300deg 312deg, var(--sd-gold) 312deg 324deg, #07120d 324deg 336deg, var(--sd-gold) 336deg 348deg, #07120d 348deg 360deg);
+  background: url('/assets/board-icon.png') center / cover no-repeat;
+  box-shadow: 0 0 14px rgba(216, 157, 36, .16);
   transition: transform .2s ease, filter .2s ease;
 }
 
@@ -599,7 +594,6 @@
 .sd-lane-toggle .sd-mini-board {
   width: 24px;
   height: 24px;
-  border-width: 1px;
 }
 
 .sd-lane-toggle.is-active {
