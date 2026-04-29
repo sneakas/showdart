@@ -37,6 +37,27 @@ const texts = {
     tournament: 'Turnering',
     admin: 'Admin',
     rules: 'Regler',
+    rulesTitle: 'Turneringsregler',
+    rulesChangingTitle: 'Regler for skiftende makkere',
+    rulesFixedTitle: 'Regler for faste makkere',
+    rulesChanging: [
+      'Spillere registreres enkeltvis, og systemet danner nye makkerpar for hver runde.',
+      'Systemet forsøger at undgå gentagne makkere og modstandere på tværs af runder.',
+      'Ved ulige antal spillere kan nogle spille 1 mod 1, eller en spiller kan sidde over.',
+      'S-tag bruges til spillere, der har spillet 1 mod 1. O-tag bruges til spillere, der har siddet over.',
+      'Når alle aktive spillere har fået samme tag, nulstilles tag-cyklussen automatisk.',
+      'Tabere får 1 nederlag. Når en spiller når maks. nederlag, ryger spilleren ud.',
+      'Mellem runder kan turneringslederen rette nederlag, tilføje spillere, ændre tags og starte finale.'
+    ],
+    rulesFixed: [
+      'Spillere registreres som faste hold med 2 personer på hvert hold.',
+      'Holdene spiller som faste makkere gennem hele turneringen.',
+      'Systemet forsøger at undgå gentagne modstanderhold og samme hold, der sidder over flere gange i træk.',
+      'Faste makker-turneringer bruger ikke S- og O-tags.',
+      'Tabende hold får 1 nederlag. Når et hold når maks. nederlag, ryger holdet ud.',
+      'Mellem runder kan turneringslederen rette nederlag, tilføje hold, ændre baner og starte finale.',
+      'Finalen kan startes, når få aktive hold er tilbage, hvorefter holdene rangeres manuelt.'
+    ],
     logout: 'Log ud',
     brandSub: 'Turnering',
     setup: 'Turneringsopsætning',
@@ -118,6 +139,27 @@ const texts = {
     tournament: 'Tournament',
     admin: 'Admin',
     rules: 'Rules',
+    rulesTitle: 'Tournament rules',
+    rulesChangingTitle: 'Rules for changing teammates',
+    rulesFixedTitle: 'Rules for fixed teammates',
+    rulesChanging: [
+      'Players are registered individually, and the system creates new teams each round.',
+      'The system tries to avoid repeated partners and opponents across rounds.',
+      'With uneven player counts, some players may play 1v1 or one player may sit out.',
+      'S tags are used for players who played 1v1. O tags are used for players who sat out.',
+      'When all active players have received the same tag, that tag cycle resets automatically.',
+      'Losers receive 1 loss. When a player reaches the maximum losses, they are eliminated.',
+      'Between rounds the organizer can edit losses, add players, change tags and start the final.'
+    ],
+    rulesFixed: [
+      'Players are registered as fixed two-person teams.',
+      'Teams stay together for the full tournament.',
+      'The system tries to avoid repeated opponents and the same team sitting out repeatedly.',
+      'Fixed teammate tournaments do not use S and O tags.',
+      'The losing team receives 1 loss. When a team reaches the maximum losses, it is eliminated.',
+      'Between rounds the organizer can edit losses, add teams, change lanes and start the final.',
+      'The final can be started when few active teams remain, then teams are ranked manually.'
+    ],
     logout: 'Logout',
     brandSub: 'Tournament',
     setup: 'Tournament setup',
@@ -229,6 +271,7 @@ export function ShowdartDashboard({
   const [treeVisible, setTreeVisible] = useState(false);
   const [finalRankingIds, setFinalRankingIds] = useState([]);
   const [dialog, setDialog] = useState(null);
+  const [rulesOpen, setRulesOpen] = useState(false);
   const importInputRef = useRef(null);
 
   const token = session?.access_token;
@@ -474,7 +517,7 @@ export function ShowdartDashboard({
           {navButton('registration', t.registration, ClipboardList, () => {})}
           {navButton('tournament', t.tournament, Trophy, () => {})}
           {role === 'admin' ? navButton('admin', t.admin, UsersRound, onOpenAdmin) : null}
-          {navButton('rules', t.rules, ShieldCheck, onOpenRules)}
+          {navButton('rules', t.rules, ShieldCheck, () => setRulesOpen(true))}
         </nav>
         <div className="sd-userbar">
           <span>{email} ({role})</span>
@@ -661,6 +704,13 @@ export function ShowdartDashboard({
           onConfirm={confirmDialog}
         />
       ) : null}
+      {rulesOpen ? (
+        <RulesDialog
+          t={t}
+          mode={registrationMode}
+          onClose={() => setRulesOpen(false)}
+        />
+      ) : null}
     </main>
   );
 }
@@ -694,6 +744,30 @@ function ShowdartDialog({ dialog, onCancel, onConfirm }) {
           <button type="button" className={`sd-button ${isConfirm ? 'gold' : 'gold'}`} autoFocus onClick={isConfirm ? onConfirm : onCancel}>
             {dialog.confirmLabel}
           </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function RulesDialog({ t, mode, onClose }) {
+  const isFixed = mode === 'fixed';
+  const rules = isFixed ? t.rulesFixed : t.rulesChanging;
+  return (
+    <div className="sd-dialog-backdrop" role="presentation" onMouseDown={event => {
+      if (event.target === event.currentTarget) onClose();
+    }}>
+      <div className="sd-dialog sd-rules-dialog" role="dialog" aria-modal="true" aria-labelledby="sd-rules-title">
+        <div className="sd-dialog-mark">?</div>
+        <div>
+          <h2 id="sd-rules-title" className="sd-dialog-title">{t.rulesTitle}</h2>
+          <p className="sd-dialog-message">{isFixed ? t.rulesFixedTitle : t.rulesChangingTitle}</p>
+        </div>
+        <ol className="sd-rules-list">
+          {rules.map((rule, index) => <li key={index}>{rule}</li>)}
+        </ol>
+        <div className="sd-dialog-actions">
+          <button type="button" className="sd-button gold" autoFocus onClick={onClose}>{t.ok}</button>
         </div>
       </div>
     </div>

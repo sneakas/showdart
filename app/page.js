@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { getSupabaseBrowserClient } from '../lib/supabaseBrowser';
@@ -411,14 +411,11 @@ export default function Page() {
       screenError={screenError ? t.screenError : ''}
       onCopyScreenLink={handleCopyScreenLink}
       onOpenAdmin={() => { window.location.href = '/admin'; }}
-      onOpenRules={() => {
-        window.alert(lang === 'da'
-          ? 'Regler vises i den nye dashboard-version i næste poleringsrunde.'
-          : 'Rules will be shown in the new dashboard version in the next polish pass.');
-      }}
+      onOpenRules={() => {}}
       onLogout={handleLogout}
       onLanguageChange={changeLanguage}
       onStateSync={sendSpectatorPayload}
     />
   );
 }
+

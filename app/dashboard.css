@@ -847,6 +847,10 @@
   animation: sd-dialog-in .18s ease-out;
 }
 
+.sd-rules-dialog {
+  width: min(100%, 720px);
+}
+
 .sd-dialog-mark {
   width: 46px;
   height: 46px;
@@ -882,6 +886,20 @@
   justify-content: flex-end;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+.sd-rules-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding-left: 22px;
+  color: var(--sd-soft);
+  line-height: 1.5;
+}
+
+.sd-rules-list li::marker {
+  color: var(--sd-gold-2);
+  font-weight: 900;
 }
 
 @keyframes sd-dialog-in {

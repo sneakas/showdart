@@ -12,8 +12,6 @@ const texts = {
     loading: 'Indlæser tilskuerskærm...',
     invalidTitle: 'Ugyldigt skærmlink',
     invalidBody: 'Dette link er ikke gyldigt eller kunne ikke hentes.',
-    title: 'Showdart Live Skærm',
-    subtitle: 'Separat visning for deltagere og tilskuere',
     betweenRounds: 'Mellem runder',
     roundLive: 'Aktuelle kampe',
     registrationOpen: 'Registrerede deltagere',
@@ -42,14 +40,14 @@ const texts = {
     scanQrHint: 'Åbn skærmen på din telefon',
     tournamentNotStarted: 'Turneringen er ikke startet',
     fixedTeams: 'Faste makkere',
-    changingTeams: 'Skiftende makkere'
+    changingTeams: 'Skiftende makkere',
+    matches: 'Kampe',
+    participants: 'Deltagere'
   },
   en: {
     loading: 'Loading spectator screen...',
     invalidTitle: 'Invalid screen link',
     invalidBody: 'This link is not valid or could not be loaded.',
-    title: 'Showdart Live Screen',
-    subtitle: 'Separate display for players and spectators',
     betweenRounds: 'Between rounds',
     roundLive: 'Current matches',
     registrationOpen: 'Registered entries',
@@ -67,7 +65,7 @@ const texts = {
     place: 'Place',
     vs: 'VS',
     winner: 'Winner',
-    onBye: 'Bye',
+    onBye: 'Sitting out',
     lane: 'Lane',
     waitingForLane: 'Waiting for lane',
     temporaryStandings: 'Temporary standings',
@@ -78,8 +76,25 @@ const texts = {
     scanQrHint: 'Open this screen on your phone',
     tournamentNotStarted: 'Tournament not started',
     fixedTeams: 'Fixed teammates',
-    changingTeams: 'Changing teammates'
+    changingTeams: 'Changing teammates',
+    matches: 'Matches',
+    participants: 'Participants'
   }
+};
+
+const colors = {
+  bg: '#030806',
+  bg2: '#07120d',
+  panel: 'rgba(5, 43, 27, .95)',
+  panelDark: 'rgba(3, 18, 12, .98)',
+  border: 'rgba(43, 99, 73, .88)',
+  gold: '#d89d24',
+  gold2: '#f1bd35',
+  text: '#f6f6ed',
+  soft: '#dfe8de',
+  muted: '#aab9ae',
+  green: '#4bd17d',
+  orange: '#f2844c'
 };
 
 function getInitialLanguage() {
@@ -101,19 +116,184 @@ function formatUpdatedAt(value, lang) {
 }
 
 function getStatusText(entry, t) {
-  if (entry.active) {
-    return t.active;
-  }
-
-  if (entry.eliminationRound === 'final') {
-    return `${t.eliminated} Final`;
-  }
-
-  if (Number.isFinite(Number(entry.eliminationRound))) {
-    return `${t.eliminated} R${entry.eliminationRound}`;
-  }
-
+  if (entry.active) return t.active;
+  if (entry.eliminationRound === 'final') return `${t.eliminated} Final`;
+  if (Number.isFinite(Number(entry.eliminationRound))) return `${t.eliminated} R${entry.eliminationRound}`;
   return t.eliminated;
+}
+
+const pageStyle = {
+  minHeight: '100vh',
+  background: `radial-gradient(circle at 18% 0%, rgba(216, 169, 40, 0.11), transparent 26rem), linear-gradient(180deg, ${colors.bg} 0%, ${colors.bg2} 48%, #020504 100%)`,
+  color: colors.text,
+  fontFamily: 'Manrope, system-ui, sans-serif',
+  textTransform: 'uppercase',
+  overflowX: 'hidden'
+};
+
+function Brand() {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+      <div style={{
+        width: 56,
+        height: 56,
+        borderRadius: '50%',
+        border: `2px solid ${colors.gold2}`,
+        background: `radial-gradient(circle, ${colors.bg2} 0 22%, transparent 23%), conic-gradient(${colors.gold2} 0 12deg, #111 12deg 24deg, ${colors.gold2} 24deg 36deg, #111 36deg 48deg, ${colors.gold2} 48deg 60deg, #111 60deg 72deg, ${colors.gold2} 72deg 84deg, #111 84deg 96deg, ${colors.gold2} 96deg 108deg, #111 108deg 120deg, ${colors.gold2} 120deg 132deg, #111 132deg 144deg, ${colors.gold2} 144deg 156deg, #111 156deg 168deg, ${colors.gold2} 168deg 180deg, #111 180deg 192deg, ${colors.gold2} 192deg 204deg, #111 204deg 216deg, ${colors.gold2} 216deg 228deg, #111 228deg 240deg, ${colors.gold2} 240deg 252deg, #111 252deg 264deg, ${colors.gold2} 264deg 276deg, #111 276deg 288deg, ${colors.gold2} 288deg 300deg, #111 300deg 312deg, ${colors.gold2} 312deg 324deg, #111 324deg 336deg, ${colors.gold2} 336deg 348deg, #111 348deg 360deg)`,
+        boxShadow: '0 0 26px rgba(216, 169, 40, 0.25)'
+      }} />
+      <div>
+        <div style={{ fontSize: 29, fontWeight: 900, lineHeight: .92 }}>Showdart</div>
+        <div style={{ color: colors.gold2, fontSize: 13, fontWeight: 900, letterSpacing: '.34em', marginTop: 7 }}>Turnering</div>
+      </div>
+    </div>
+  );
+}
+
+function FlagButton({ active, label, src, onClick }) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      onClick={onClick}
+      style={{
+        width: 34,
+        height: 24,
+        borderRadius: 3,
+        border: active ? `2px solid ${colors.gold2}` : '1px solid #63806d',
+        backgroundImage: `url('${src}')`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundColor: colors.panel,
+        padding: 0
+      }}
+    />
+  );
+}
+
+function Card({ children, style }) {
+  return (
+    <section style={{
+      border: `1px solid ${colors.border}`,
+      borderRadius: 10,
+      background: `radial-gradient(circle at 100% 0%, rgba(31, 100, 62, .22), transparent 14rem), linear-gradient(145deg, ${colors.panel}, ${colors.panelDark})`,
+      boxShadow: '0 18px 34px rgba(0, 0, 0, .42)',
+      ...style
+    }}>
+      {children}
+    </section>
+  );
+}
+
+function BottomItem({ label, value, green }) {
+  return (
+    <div style={{ borderLeft: '1px solid rgba(255,255,255,.14)', paddingLeft: 28 }}>
+      <div style={{ color: colors.muted, fontSize: 12, fontWeight: 900, letterSpacing: '.08em' }}>{label}</div>
+      <div style={{ color: green ? colors.green : colors.text, fontSize: 19, fontWeight: 900, marginTop: 3 }}>{value}</div>
+    </div>
+  );
+}
+
+function StatusBar({ t, screenState, updatedAt, lang }) {
+  return (
+    <footer style={{
+      position: 'fixed',
+      left: 0,
+      right: 0,
+      bottom: 0,
+      height: 72,
+      display: 'grid',
+      gridTemplateColumns: 'repeat(4, 1fr)',
+      background: 'linear-gradient(90deg, rgba(5, 28, 18, .96), rgba(9, 42, 28, .96), rgba(4, 18, 12, .96))',
+      borderTop: '1px solid #1c5a41',
+      boxShadow: '0 -18px 40px rgba(0,0,0,.4)',
+      padding: '12px 54px',
+      zIndex: 20
+    }}>
+      <BottomItem label={t.status} value={screenState.phase === 'round' ? t.roundLive : screenState.phase === 'final' ? t.finalResults : t.standings} green />
+      <BottomItem label={t.participants} value={String(screenState.entries.length)} />
+      <BottomItem label={t.round} value={String(screenState.currentRound || 0)} />
+      <BottomItem label={t.updated} value={formatUpdatedAt(updatedAt, lang)} />
+    </footer>
+  );
+}
+
+function StandingsTable({ entries, t, entryLabel, maxLosses, final }) {
+  return (
+    <div style={{ overflowX: 'auto' }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 18 }}>
+        <thead>
+          <tr>
+            <th style={tableHeadStyle}>{t.place}</th>
+            <th style={tableHeadStyle}>{entryLabel}</th>
+            {!final ? <th style={tableHeadStyle}>{t.losses}</th> : null}
+            {!final ? <th style={tableHeadStyle}>{t.status}</th> : null}
+          </tr>
+        </thead>
+        <tbody>
+          {entries.map((entry, index) => (
+            <tr key={`${entry.place || index}-${entry.id}`}>
+              <td style={tableCellStyle}>{entry.place || index + 1}</td>
+              <td style={tableCellStyle}>{entry.name}</td>
+              {!final ? <td style={tableCellStyle}>{entry.losses}/{maxLosses}</td> : null}
+              {!final ? <td style={{ ...tableCellStyle, color: entry.active ? colors.green : colors.orange }}>{getStatusText(entry, t)}</td> : null}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+const tableHeadStyle = {
+  color: colors.gold2,
+  textAlign: 'left',
+  fontSize: 13,
+  letterSpacing: '.08em',
+  padding: '12px 14px',
+  borderBottom: '1px solid rgba(255,255,255,.09)'
+};
+
+const tableCellStyle = {
+  padding: 14,
+  borderBottom: '1px solid rgba(255,255,255,.08)',
+  fontWeight: 800
+};
+
+function TeamBox({ active, label }) {
+  return (
+    <div style={{
+      padding: '18px 16px',
+      borderRadius: 10,
+      textAlign: 'center',
+      fontWeight: 900,
+      fontSize: 'clamp(1.1rem, 2.4vw, 1.6rem)',
+      background: active ? 'rgba(75, 209, 125, .18)' : 'rgba(2, 8, 5, .34)',
+      border: active ? `1px solid ${colors.green}` : '1px solid rgba(255,255,255,.08)'
+    }}>
+      {label}
+    </div>
+  );
+}
+
+function MatchCard({ match, t, round }) {
+  const winner = match.winner === 1 ? match.team1Label : match.winner === 2 ? match.team2Label : '';
+  const laneText = Number.isFinite(Number(match.laneNumber)) ? `${t.lane} ${match.laneNumber}` : t.waitingForLane;
+
+  return (
+    <Card style={{ padding: 18, borderColor: winner ? colors.green : colors.border }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center', marginBottom: 16 }}>
+        <strong>{t.round} {round} - #{match.id}</strong>
+        <span style={{ border: '1px solid rgba(241, 189, 53, .38)', color: colors.gold2, borderRadius: 999, padding: '7px 12px', fontWeight: 900 }}>{laneText}</span>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: 14, alignItems: 'center' }}>
+        <TeamBox active={match.winner === 1} label={match.team1Label} />
+        <div style={{ color: colors.muted, fontWeight: 900 }}>{t.vs}</div>
+        <TeamBox active={match.winner === 2} label={match.team2Label} />
+      </div>
+      {winner ? <div style={{ color: colors.green, marginTop: 14, fontWeight: 900 }}>{t.winner}: {winner}</div> : null}
+    </Card>
+  );
 }
 
 export default function ScreenPage() {
@@ -182,9 +362,8 @@ export default function ScreenPage() {
       }
     }
 
-    if (token) {
-      loadScreen();
-    } else {
+    if (token) loadScreen();
+    else {
       setError('Missing token');
       setLoading(false);
     }
@@ -195,21 +374,12 @@ export default function ScreenPage() {
   }, [token]);
 
   useEffect(() => {
-    if (!supabase || !screenMeta?.realtimeChannel) {
-      return undefined;
-    }
+    if (!supabase || !screenMeta?.realtimeChannel) return undefined;
 
     const channel = supabase
-      .channel(screenMeta.realtimeChannel, {
-        config: {
-          broadcast: { self: false }
-        }
-      })
+      .channel(screenMeta.realtimeChannel, { config: { broadcast: { self: false } } })
       .on('broadcast', { event: 'tournament-state' }, ({ payload }) => {
-        if (!payload?.state) {
-          return;
-        }
-
+        if (!payload?.state) return;
         setTournamentState(payload.state);
         setUpdatedAt(payload.updatedAt || new Date().toISOString());
       });
@@ -223,13 +393,9 @@ export default function ScreenPage() {
 
   useEffect(() => {
     const expiresAt = Number(tournamentState?.spectatorOverride?.expiresAt || 0);
-    if (!expiresAt || expiresAt <= Date.now()) {
-      return undefined;
-    }
+    if (!expiresAt || expiresAt <= Date.now()) return undefined;
 
-    const intervalId = window.setInterval(() => {
-      setClockTick(Date.now());
-    }, 250);
+    const intervalId = window.setInterval(() => setClockTick(Date.now()), 250);
     const timeoutId = window.setTimeout(() => {
       window.clearInterval(intervalId);
       setClockTick(Date.now());
@@ -241,268 +407,162 @@ export default function ScreenPage() {
     };
   }, [tournamentState?.spectatorOverride?.expiresAt]);
 
-  const pageStyle = {
-    minHeight: '100vh',
-    background: 'radial-gradient(circle at top, #17382c 0%, #0b1e16 45%, #07140f 100%)',
-    color: '#ecf8f2',
-    padding: '24px'
-  };
-
   if (loading) {
-    return <main style={pageStyle}>{t.loading}</main>;
+    return <main style={{ ...pageStyle, display: 'grid', placeItems: 'center', padding: 24 }}>{t.loading}</main>;
   }
 
   if (error) {
     return (
-      <main style={pageStyle}>
-        <section style={{ maxWidth: 860, margin: '0 auto', background: '#10271e', border: '1px solid #355748', borderRadius: 18, padding: 24 }}>
-          <h1 style={{ marginTop: 0 }}>{t.invalidTitle}</h1>
-          <p>{t.invalidBody}</p>
-          <p style={{ color: '#cfe4d8', marginBottom: 0 }}>{error}</p>
-        </section>
+      <main style={{ ...pageStyle, display: 'grid', placeItems: 'center', padding: 24 }}>
+        <Card style={{ width: 'min(100%, 760px)', padding: 28 }}>
+          <Brand />
+          <h1 style={{ margin: '28px 0 8px', fontSize: 38 }}>{t.invalidTitle}</h1>
+          <p style={{ color: colors.soft, textTransform: 'none' }}>{t.invalidBody}</p>
+          <p style={{ color: colors.gold2, marginBottom: 0, textTransform: 'none' }}>{error}</p>
+        </Card>
       </main>
     );
   }
 
   const entryLabel = screenState.isFixedTeams ? t.team : t.player;
   const modeLabel = screenState.isFixedTeams ? t.fixedTeams : t.changingTeams;
-  const displayTitle = screenState.tournamentName || t.title;
-  const qrSrc = shareUrl
-    ? `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=0&data=${encodeURIComponent(shareUrl)}`
-    : '';
+  const displayTitle = screenState.tournamentName || 'Showdart Live';
+  const qrSrc = shareUrl ? `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=0&data=${encodeURIComponent(shareUrl)}` : '';
   const showQrCode = Boolean(qrSrc) && (screenState.phase === 'waiting' || screenState.phase === 'registration');
-  const getLaneLabel = (laneNumber) => (Number.isFinite(Number(laneNumber)) ? `${t.lane} ${laneNumber}` : t.waitingForLane);
 
   return (
     <main style={pageStyle}>
-      <section style={{ maxWidth: 1280, margin: '0 auto', textTransform: 'uppercase' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'flex-start', marginBottom: 24, flexWrap: 'wrap' }}>
-          <div>
-            <div style={{ color: '#9db9ab', letterSpacing: '0.08em', textTransform: 'uppercase', fontSize: 12, marginBottom: 8 }}>{modeLabel}</div>
-            <h1 style={{ margin: 0, fontSize: 'clamp(2.4rem, 6vw, 4.6rem)', lineHeight: 1, letterSpacing: '0.08em' }}>{displayTitle}</h1>
+      <header style={{
+        height: 88,
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        gap: 24,
+        padding: '0 44px',
+        borderBottom: `1px solid ${colors.gold}`,
+        background: 'linear-gradient(90deg, #020604, #04120c 44%, #02100a)'
+      }}>
+        <Brand />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 9, border: `1px solid ${colors.border}`, borderRadius: 999, background: 'rgba(5, 43, 27, .82)', padding: '9px 14px', color: colors.soft, fontSize: 13, fontWeight: 900 }}>
+            <span style={{ width: 10, height: 10, borderRadius: '50%', background: colors.green, boxShadow: '0 0 16px rgba(75, 209, 125, .65)' }} />
+            {t.live} · {t.updated}: {formatUpdatedAt(updatedAt, lang)}
           </div>
-
-          <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 10 }}>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <button
-                  type="button"
-                  onClick={() => setLang('da')}
-                  style={{ width: 40, height: 30, borderRadius: 6, border: lang === 'da' ? '2px solid #f2d14c' : '1px solid #3e6353', backgroundImage: "url('https://flagcdn.com/w40/dk.png')", backgroundSize: 'cover', backgroundPosition: 'center', backgroundColor: '#10271e', padding: 0 }}
-                  aria-label="Skift sprog til dansk"
-                />
-                <button
-                  type="button"
-                  onClick={() => setLang('en')}
-                  style={{ width: 40, height: 30, borderRadius: 6, border: lang === 'en' ? '2px solid #f2d14c' : '1px solid #3e6353', backgroundImage: "url('https://flagcdn.com/w40/gb.png')", backgroundSize: 'cover', backgroundPosition: 'center', backgroundColor: '#10271e', padding: 0 }}
-                  aria-label="Switch language to English"
-                />
-              </div>
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#10271e', border: '1px solid #355748', borderRadius: 999, padding: '8px 12px' }}>
-                <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#46c37b', boxShadow: '0 0 12px rgba(70,195,123,0.6)' }} />
-                <strong>{t.live}</strong>
-                <span style={{ color: '#cfe4d8' }}>{t.updated}: {formatUpdatedAt(updatedAt, lang)}</span>
-              </div>
-            </div>
-          </div>
+          <FlagButton active={lang === 'da'} label="Dansk" src="https://flagcdn.com/w40/dk.png" onClick={() => setLang('da')} />
+          <FlagButton active={lang === 'en'} label="English" src="https://flagcdn.com/w40/gb.png" onClick={() => setLang('en')} />
         </div>
+      </header>
 
+      <section style={{
+        minHeight: 238,
+        display: 'grid',
+        gridTemplateColumns: 'minmax(0, 1fr) 350px',
+        gap: 28,
+        alignItems: 'start',
+        padding: '28px 34px 34px',
+        borderBottom: '1px solid #1c5a41',
+        background: 'linear-gradient(90deg, rgba(3, 8, 6, .64), rgba(3, 8, 6, .08) 45%, rgba(3, 8, 6, .7)), url(/assets/dart-venue-banner.svg)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center 43%'
+      }}>
+        <Card style={{ padding: 28, maxWidth: 680, minHeight: 174 }}>
+          <div style={{ color: colors.muted, fontSize: 12, fontWeight: 900, letterSpacing: '.09em' }}>{modeLabel}</div>
+          <h1 style={{ margin: 0, fontSize: 'clamp(2.7rem, 6vw, 5.8rem)', lineHeight: .92, letterSpacing: '.07em' }}>{displayTitle}</h1>
+          <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', marginTop: 22, color: colors.soft, fontSize: 15, fontWeight: 800 }}>
+            <span>{screenState.entries.length} {t.participants}</span>
+            <span>{t.round} {screenState.currentRound || 0}</span>
+            <span>{screenState.maxLosses} {t.losses}</span>
+          </div>
+        </Card>
+
+        {showQrCode ? (
+          <Card style={{ padding: 18, textAlign: 'center' }}>
+            <div style={{ color: colors.muted, fontSize: 12, fontWeight: 900, letterSpacing: '.09em' }}>{t.scanQr}</div>
+            <img src={qrSrc} alt={t.scanQr} style={{ width: 180, maxWidth: '100%', height: 'auto', background: '#fff', borderRadius: 8, padding: 8, margin: '12px auto', display: 'block' }} />
+            <div style={{ color: colors.soft, fontSize: 13 }}>{t.scanQrHint}</div>
+          </Card>
+        ) : (
+          <Card style={{ padding: 22 }}>
+            <div style={{ color: colors.muted, fontSize: 12, fontWeight: 900, letterSpacing: '.09em' }}>{t.status}</div>
+            <h2 style={{ margin: '7px 0 0', fontSize: 26, letterSpacing: '.04em' }}>
+              {screenState.phase === 'round' ? t.roundLive : screenState.phase === 'final' ? t.finalResults : t.standings}
+            </h2>
+          </Card>
+        )}
+      </section>
+
+      <section style={{ padding: '18px 34px 110px' }}>
         {screenState.phase === 'waiting' ? (
-          <section style={{ background: '#10271e', border: '1px solid #355748', borderRadius: 18, padding: 28 }}>
-            <h2 style={{ marginTop: 0 }}>{t.waitingTitle}</h2>
-            <p style={{ marginBottom: 0, color: '#d9ece2' }}>{t.waitingBody}</p>
-          </section>
+          <Card style={{ padding: 22, maxWidth: 980 }}>
+            <div style={{ color: colors.muted, fontSize: 12, fontWeight: 900, letterSpacing: '.09em' }}>{t.tournamentNotStarted}</div>
+            <h2 style={{ margin: '7px 0 0', fontSize: 26, letterSpacing: '.04em' }}>{t.waitingTitle}</h2>
+            <p style={{ color: colors.soft, textTransform: 'none', lineHeight: 1.55 }}>{t.waitingBody}</p>
+          </Card>
         ) : null}
 
         {screenState.phase === 'registration' ? (
-          <section style={{ background: '#10271e', border: '1px solid #355748', borderRadius: 18, padding: 24 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center', marginBottom: 18, flexWrap: 'wrap' }}>
-              <h2 style={{ margin: 0 }}>{t.registrationOpen}</h2>
-              <div style={{ color: '#9db9ab' }}>{t.tournamentNotStarted}</div>
-            </div>
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr style={{ color: '#9db9ab', textAlign: 'left' }}>
-                    <th style={{ padding: '10px 12px' }}>#</th>
-                    <th style={{ padding: '10px 12px' }}>{entryLabel}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {screenState.standings.map(entry => (
-                    <tr key={entry.id} style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-                      <td style={{ padding: '12px' }}>{entry.id}</td>
-                      <td style={{ padding: '12px', fontWeight: 700 }}>{entry.name}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </section>
+          <Card style={{ padding: 22 }}>
+            <div style={{ color: colors.muted, fontSize: 12, fontWeight: 900, letterSpacing: '.09em' }}>{t.tournamentNotStarted}</div>
+            <h2 style={{ margin: '7px 0 18px', fontSize: 26, letterSpacing: '.04em' }}>{t.registrationOpen}</h2>
+            <StandingsTable entries={screenState.standings} t={t} entryLabel={entryLabel} maxLosses={screenState.maxLosses} />
+          </Card>
         ) : null}
 
         {screenState.phase === 'standings' ? (
-          <section style={{ background: '#10271e', border: '1px solid #355748', borderRadius: 18, padding: 24 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center', marginBottom: 18, flexWrap: 'wrap' }}>
+          <Card style={{ padding: 22 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'center', marginBottom: 16, flexWrap: 'wrap' }}>
               <div>
-                <div style={{ color: '#9db9ab', textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: 12 }}>
-                  {screenState.spectatorOverride?.active ? t.temporaryStandings : t.betweenRounds}
-                </div>
-                <h2 style={{ margin: '6px 0 0' }}>{t.standings}</h2>
+                <div style={{ color: colors.muted, fontSize: 12, fontWeight: 900, letterSpacing: '.09em' }}>{screenState.spectatorOverride?.active ? t.temporaryStandings : t.betweenRounds}</div>
+                <h2 style={{ margin: '7px 0 0', fontSize: 26, letterSpacing: '.04em' }}>{t.standings}</h2>
               </div>
-              <div style={{ fontSize: 22, fontWeight: 700 }}>{t.round} {screenState.currentRound}</div>
+              <strong style={{ fontSize: 22 }}>{t.round} {screenState.currentRound}</strong>
             </div>
             {screenState.spectatorOverride?.active ? (
               <div style={{ marginBottom: 18 }}>
-                <div style={{ color: '#cfe4d8', marginBottom: 8, fontSize: 13 }}>{t.temporaryStandingsHint}</div>
+                <div style={{ color: colors.soft, marginBottom: 8, fontSize: 13 }}>{t.temporaryStandingsHint}</div>
                 <div style={{ height: 8, borderRadius: 999, background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
-                  <div
-                    style={{
-                      width: `${Math.max(0, Math.min(100, screenState.spectatorOverride.progress * 100))}%`,
-                      height: '100%',
-                      borderRadius: 999,
-                      background: 'linear-gradient(90deg, #f2d14c 0%, #93e0a9 100%)',
-                      transition: 'width 240ms linear'
-                    }}
-                  />
+                  <div style={{ width: `${Math.max(0, Math.min(100, screenState.spectatorOverride.progress * 100))}%`, height: '100%', borderRadius: 999, background: `linear-gradient(90deg, ${colors.gold2} 0%, ${colors.green} 100%)`, transition: 'width 240ms linear' }} />
                 </div>
               </div>
             ) : null}
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr style={{ color: '#9db9ab', textAlign: 'left' }}>
-                    <th style={{ padding: '10px 12px' }}>{t.place}</th>
-                    <th style={{ padding: '10px 12px' }}>{entryLabel}</th>
-                    <th style={{ padding: '10px 12px' }}>{t.losses}</th>
-                    <th style={{ padding: '10px 12px' }}>{t.status}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {screenState.standings.map((entry, index) => (
-                    <tr key={entry.id} style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-                      <td style={{ padding: '12px', fontWeight: 700 }}>{index + 1}</td>
-                      <td style={{ padding: '12px', fontWeight: 700 }}>{entry.name}</td>
-                      <td style={{ padding: '12px' }}>{entry.losses}/{screenState.maxLosses}</td>
-                      <td style={{ padding: '12px', color: entry.active ? '#93e0a9' : '#f2b0b0' }}>{getStatusText(entry, t)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </section>
+            <StandingsTable entries={screenState.standings} t={t} entryLabel={entryLabel} maxLosses={screenState.maxLosses} />
+          </Card>
         ) : null}
 
         {screenState.phase === 'round' ? (
-          <section style={{ display: 'grid', gap: 18 }}>
-            <div style={{ background: '#10271e', border: '1px solid #355748', borderRadius: 18, padding: 22, display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
-              <div>
-                <div style={{ color: '#9db9ab', textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: 12 }}>{t.roundLive}</div>
-                <h2 style={{ margin: '6px 0 0' }}>{t.round} {screenState.currentRound}</h2>
-              </div>
-              <div style={{ color: '#cfe4d8' }}>{screenState.matches.length} {screenState.matches.length === 1 ? 'match' : 'matches'}</div>
-            </div>
+          <div style={{ display: 'grid', gap: 14 }}>
+            <Card style={{ padding: 22 }}>
+              <div style={{ color: colors.muted, fontSize: 12, fontWeight: 900, letterSpacing: '.09em' }}>{t.roundLive}</div>
+              <h2 style={{ margin: '7px 0 0', fontSize: 26, letterSpacing: '.04em' }}>{t.round} {screenState.currentRound} · {screenState.matches.length} {t.matches}</h2>
+            </Card>
 
             {screenState.skippedEntries.length > 0 ? (
-              <div style={{ background: '#10271e', border: '1px solid #7b6a2a', borderRadius: 18, padding: 18 }}>
-                <div style={{ color: '#f2d14c', fontWeight: 700, marginBottom: 10 }}>{t.onBye}</div>
-                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              <Card style={{ padding: 22, borderColor: 'rgba(241, 189, 53, .45)' }}>
+                <div style={{ color: colors.gold2, fontSize: 12, fontWeight: 900, letterSpacing: '.09em' }}>{t.onBye}</div>
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 12 }}>
                   {screenState.skippedEntries.map(entry => (
-                    <div key={entry.id} style={{ padding: '10px 14px', borderRadius: 999, background: '#1b3428', border: '1px solid #355748', fontWeight: 700 }}>
-                      {entry.name}
-                    </div>
+                    <span key={entry.id} style={{ border: `1px solid ${colors.border}`, borderRadius: 999, padding: '10px 14px', fontWeight: 900 }}>{entry.name}</span>
                   ))}
                 </div>
-              </div>
+              </Card>
             ) : null}
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 18 }}>
-              {screenState.matches.map(match => {
-                const winner = match.winner === 1 ? match.team1Label : match.winner === 2 ? match.team2Label : '';
-
-                return (
-                  <article key={match.id} style={{ background: '#10271e', border: match.winner ? '1px solid #46c37b' : '1px solid #355748', borderRadius: 18, padding: 18, boxShadow: match.winner ? '0 0 0 1px rgba(70,195,123,0.25), 0 10px 30px rgba(0,0,0,0.22)' : 'none' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center', marginBottom: 16 }}>
-                      <strong>{t.round} {screenState.currentRound} - #{match.id}</strong>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8, flexWrap: 'wrap' }}>
-                        <span
-                          style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            minHeight: 30,
-                            padding: '6px 10px',
-                            borderRadius: 999,
-                            border: Number.isFinite(Number(match.laneNumber)) ? '1px solid rgba(242, 209, 76, 0.35)' : '1px solid rgba(255,255,255,0.1)',
-                            background: Number.isFinite(Number(match.laneNumber)) ? 'rgba(70, 56, 17, 0.24)' : 'rgba(18, 39, 31, 0.8)',
-                            color: Number.isFinite(Number(match.laneNumber)) ? '#f2d14c' : '#d9ece2',
-                            fontWeight: 800,
-                            letterSpacing: '0.06em'
-                          }}
-                        >
-                          {getLaneLabel(match.laneNumber)}
-                        </span>
-                        {winner ? <span style={{ color: '#93e0a9', fontWeight: 700 }}>{t.winner}: {winner}</span> : null}
-                      </div>
-                    </div>
-
-                    <div style={{ display: 'grid', gap: 12 }}>
-                      <div style={{ padding: '14px 16px', borderRadius: 14, background: match.winner === 1 ? '#214735' : '#142a20', border: match.winner === 1 ? '1px solid #46c37b' : '1px solid rgba(255,255,255,0.06)', fontWeight: 800, textAlign: 'center' }}>
-                        {match.team1Label}
-                      </div>
-                      <div style={{ textAlign: 'center', color: '#9db9ab', fontWeight: 700 }}>{t.vs}</div>
-                      <div style={{ padding: '14px 16px', borderRadius: 14, background: match.winner === 2 ? '#214735' : '#142a20', border: match.winner === 2 ? '1px solid #46c37b' : '1px solid rgba(255,255,255,0.06)', fontWeight: 800, textAlign: 'center' }}>
-                        {match.team2Label}
-                      </div>
-                    </div>
-                  </article>
-                );
-              })}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(310px, 1fr))', gap: 14 }}>
+              {screenState.matches.map(match => <MatchCard key={match.id} match={match} t={t} round={screenState.currentRound} />)}
             </div>
-          </section>
+          </div>
         ) : null}
 
         {screenState.phase === 'final' ? (
-          <section style={{ background: '#10271e', border: '1px solid #355748', borderRadius: 18, padding: 24 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center', marginBottom: 18, flexWrap: 'wrap' }}>
-              <h2 style={{ margin: 0 }}>{t.finalResults}</h2>
-              <div style={{ color: '#9db9ab' }}>{t.round} {screenState.currentRound}</div>
-            </div>
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr style={{ color: '#9db9ab', textAlign: 'left' }}>
-                    <th style={{ padding: '10px 12px' }}>{t.place}</th>
-                    <th style={{ padding: '10px 12px' }}>{entryLabel}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {screenState.finalPlacements.map(entry => (
-                    <tr key={entry.id} style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-                      <td style={{ padding: '12px', fontWeight: 700 }}>{entry.place}</td>
-                      <td style={{ padding: '12px', fontWeight: 700 }}>{entry.name}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </section>
-        ) : null}
-
-        {showQrCode ? (
-          <section style={{ display: 'flex', justifyContent: 'center', marginTop: 24, paddingInline: 12 }}>
-            <div style={{ background: '#10271e', border: '1px solid #355748', borderRadius: 18, padding: 14, textAlign: 'center', width: 190, maxWidth: '100%', textTransform: 'none' }}>
-              <div style={{ color: '#9db9ab', fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10 }}>{t.scanQr}</div>
-              <img
-                src={qrSrc}
-                alt={t.scanQr}
-                style={{ width: '100%', maxWidth: '100%', height: 'auto', borderRadius: 10, background: '#fff', padding: 8, display: 'block', boxSizing: 'border-box', margin: '0 auto' }}
-              />
-              <div style={{ marginTop: 10, color: '#cfe4d8', fontSize: 12, lineHeight: 1.35 }}>{t.scanQrHint}</div>
-            </div>
-          </section>
+          <Card style={{ padding: 22 }}>
+            <div style={{ color: colors.muted, fontSize: 12, fontWeight: 900, letterSpacing: '.09em' }}>{t.finalResults}</div>
+            <h2 style={{ margin: '7px 0 18px', fontSize: 26, letterSpacing: '.04em' }}>{displayTitle}</h2>
+            <StandingsTable entries={screenState.finalPlacements} t={t} entryLabel={entryLabel} maxLosses={screenState.maxLosses} final />
+          </Card>
         ) : null}
       </section>
+
+      <StatusBar t={t} screenState={screenState} updatedAt={updatedAt} lang={lang} />
     </main>
   );
 }
