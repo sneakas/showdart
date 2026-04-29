@@ -674,18 +674,21 @@ export function ShowdartDashboard({
         <Panel title={t.lanes}>
           <div className="sd-lane-list">
             {Array.from({ length: state.laneCount }, (_, index) => index + 1).map(lane => {
-              const match = state.matches.find(item => item.laneNumber === lane);
               const active = state.activeLanes.includes(lane);
               return (
-                <div className="sd-lane-card" key={lane}>
-                  <div className="sd-mini-board" />
-                  <div>
-                    <div className="sd-lane-title">Bane {lane}</div>
-                    <div>{match ? `${t.match} #${match.id} - ${t.round} ${state.currentRound}` : active ? t.ready : 'Inaktiv'}</div>
-                    <div className="sd-green-text">{match ? getWinnerLine(state, match, t) : active ? t.ready : ''}</div>
-                    {!isRoundActive ? <button type="button" className={`sd-button ${active ? 'gold' : ''}`} style={{ minHeight: 32, marginTop: 8 }} onClick={() => commit(previous => setActiveLane(previous, lane, !active))}>Bane {lane}</button> : null}
-                  </div>
-                </div>
+                <button
+                  type="button"
+                  className={`sd-lane-toggle ${active ? 'is-active' : 'is-inactive'}`}
+                  key={lane}
+                  aria-pressed={active}
+                  onClick={() => commit(previous => setActiveLane(previous, lane, !active))}
+                >
+                  <span className="sd-mini-board" />
+                  <span>
+                    <strong>Bane {lane}</strong>
+                    <small>{active ? 'Aktiv' : 'Inaktiv'}</small>
+                  </span>
+                </button>
               );
             })}
           </div>
@@ -709,7 +712,7 @@ export function ShowdartDashboard({
                     onLane={lane => commit(previous => assignMatchLane(previous, match.id, lane))}
                   />
                 ))}
-                {skippedEntries.length ? <div className="sd-lane-card"><div className="sd-mini-board" /><div><div className="sd-lane-title">{t.sitOver}</div><div>{skippedEntries.map(entry => entry.name).join(', ')}</div></div></div> : null}
+                {skippedEntries.length ? <div className="sd-match-card"><div className="sd-match-title">{t.sitOver}</div><div>{skippedEntries.map(entry => entry.name).join(', ')}</div></div> : null}
                 <button type="button" className="sd-button gold" onClick={handleComplete}>{t.complete}</button>
               </>
             ) : (
@@ -936,11 +939,6 @@ function FinalResults({ placements, t }) {
 
 function BottomItem({ label, value, green }) {
   return <div className="sd-bottom-item"><div className="sd-bottom-label">{label}</div><div className={`sd-bottom-value ${green ? 'sd-green-text' : ''}`}>{value}</div></div>;
-}
-
-function getWinnerLine(state, match, t) {
-  if (!match.winner) return t.ready;
-  return `${t.winner}: ${getMatchLabel(state, match, match.winner)}`;
 }
 
 function buildFinalPlacements(entries, state) {
