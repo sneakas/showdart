@@ -1,25 +1,33 @@
 ﻿'use client';
 
-import { CalendarDays, ClipboardList, Copy, ExternalLink, GitBranch, MoreVertical, Plus, RefreshCw, ShieldCheck, Trophy, Upload, UsersRound } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { ArrowDown, ArrowUp, CalendarDays, Check, ClipboardList, Copy, ExternalLink, GitBranch, History, MoreVertical, Plus, QrCode, RefreshCw, ShieldCheck, Trophy, Upload, UsersRound } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   addFixedTeam,
   addPlayer,
   assignMatchLane,
+  approveTagChanges,
+  canManageEntriesBetweenRounds,
   completeRound,
+  completeFinal,
   configureTournament,
+  eliminateEntry,
   generateMatches,
   getActiveEntries,
   getEntries,
   getMatchLabel,
   getSkippedEntries,
+  getSortedStandings,
+  importEntries,
   normalizeTournamentState,
   removeEntry,
   resetTournament,
   selectWinner,
   setActiveLane,
   showStandingsOverride,
+  startFinalMatch,
   startTournament,
+  togglePlayerTag,
   updateEntryLosses
 } from '../../lib/tournament/reactEngine';
 
@@ -59,6 +67,21 @@ const texts = {
     complete: 'Afslut runde',
     reset: 'Nulstil turnering',
     showStandings: 'Vis stilling 30 sek.',
+    approveTags: 'Godkend tag ændringer',
+    history: 'Vis historik',
+    hideHistory: 'Skjul historik',
+    standingsTree: 'Se turneringstræ',
+    hideStandingsTree: 'Skjul turneringstræ',
+    startFinal: 'Start finale',
+    confirmFinal: 'Bekræft finaleresultat',
+    finalRanking: 'Finalerangering',
+    finalResults: 'Slutresultat',
+    tags: 'Tags',
+    place: 'Placering',
+    eliminated: 'Ude',
+    remove: 'Fjern',
+    eliminate: 'Eliminér',
+    editBetweenRoundsOnly: 'Ændringer kan kun laves mellem runder.',
     changing: 'Skiftende makkere',
     fixed: 'Faste makkere',
     name: 'Navn',
@@ -118,6 +141,21 @@ const texts = {
     complete: 'Complete round',
     reset: 'Reset tournament',
     showStandings: 'Show standings 30 sec.',
+    approveTags: 'Approve tag changes',
+    history: 'Show history',
+    hideHistory: 'Hide history',
+    standingsTree: 'View tournament tree',
+    hideStandingsTree: 'Hide tournament tree',
+    startFinal: 'Start final',
+    confirmFinal: 'Confirm final results',
+    finalRanking: 'Final ranking',
+    finalResults: 'Final results',
+    tags: 'Tags',
+    place: 'Place',
+    eliminated: 'Out',
+    remove: 'Remove',
+    eliminate: 'Eliminate',
+    editBetweenRoundsOnly: 'Edits can only be made between rounds.',
     changing: 'Changing teammates',
     fixed: 'Fixed teammates',
     name: 'Name',
@@ -173,12 +211,24 @@ export function ShowdartDashboard({
   const [memberOne, setMemberOne] = useState('');
   const [memberTwo, setMemberTwo] = useState('');
   const [search, setSearch] = useState('');
+  const [historyVisible, setHistoryVisible] = useState(false);
+  const [treeVisible, setTreeVisible] = useState(false);
+  const [finalRankingIds, setFinalRankingIds] = useState([]);
+  const importInputRef = useRef(null);
 
   const token = session?.access_token;
   const entries = useMemo(() => getEntries(state), [state]);
   const activeEntries = useMemo(() => getActiveEntries(state), [state]);
+  const standings = useMemo(() => getSortedStandings(state), [state]);
   const skippedEntries = useMemo(() => getSkippedEntries(state), [state]);
   const isRoundActive = state.matches.length > 0 || skippedEntries.length > 0;
+  const canManageEntries = canManageEntriesBetweenRounds(state);
+  const canEditEntries = !state.started || canManageEntries;
+  const canAddEntries = !state.started || canManageEntries;
+  const canApproveTags = state.teammateMode !== 'fixed' && state.pendingTagChanges && canManageEntries;
+  const tournamentFinished = Boolean(state.finalResults || state.finalResultPlayerIds || state.finalResultTeamIds);
+  const canStartFinal = state.started && !tournamentFinished && !isRoundActive && activeEntries.length > 1 && activeEntries.length <= 5;
+  const finalPlacements = useMemo(() => buildFinalPlacements(entries, state), [entries, state]);
   const matchesPlayed = state.roundHistory?.reduce((total, round) => total + (round.matches?.length || 0), 0) || 0;
 
   const persist = useCallback(async nextState => {
@@ -250,6 +300,10 @@ export function ShowdartDashboard({
 
   function handleAddEntry(event) {
     event.preventDefault();
+    if (!canAddEntries) {
+      setNotice(t.editBetweenRoundsOnly);
+      return;
+    }
     commit(previous => previous.teammateMode === 'fixed'
       ? addFixedTeam(previous, memberOne, memberTwo)
       : addPlayer(previous, playerName));
@@ -270,7 +324,12 @@ export function ShowdartDashboard({
   }
 
   function handleGenerate() {
-    commit(previous => generateMatches(previous));
+    setState(previous => {
+      const next = normalizeTournamentState(generateMatches(previous));
+      if (next.lastGenerationError) setNotice(next.lastGenerationError);
+      persist(next).catch(error => setNotice(error instanceof Error ? error.message : 'Save failed'));
+      return next;
+    });
   }
 
   function handleComplete() {
@@ -280,6 +339,54 @@ export function ShowdartDashboard({
     }
     commit(previous => completeRound(previous));
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function handleImportFile(event) {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    if (!canAddEntries) {
+      setNotice(t.editBetweenRoundsOnly);
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      commit(previous => importEntries(previous, String(reader.result || '')));
+    };
+    reader.readAsText(file);
+  }
+
+  function handleEntryAction(entry) {
+    if (state.started && !canManageEntries) {
+      setNotice(t.editBetweenRoundsOnly);
+      return;
+    }
+    if (state.started && entry.active !== false) {
+      commit(previous => eliminateEntry(previous, entry.id));
+      return;
+    }
+    commit(previous => removeEntry(previous, entry.id));
+  }
+
+  function handleStartFinal() {
+    setFinalRankingIds(activeEntries.map(entry => entry.id));
+    commit(previous => startFinalMatch(previous));
+  }
+
+  function moveFinalist(id, direction) {
+    setFinalRankingIds(previous => {
+      const next = [...previous];
+      const index = next.indexOf(id);
+      const target = index + direction;
+      if (index < 0 || target < 0 || target >= next.length) return previous;
+      [next[index], next[target]] = [next[target], next[index]];
+      return next;
+    });
+  }
+
+  function handleCompleteFinal() {
+    commit(previous => completeFinal(previous, finalRankingIds));
+    setFinalRankingIds([]);
   }
 
   const visibleEntries = entries.filter(entry => entry.name.toLowerCase().includes(search.toLowerCase()));
@@ -325,6 +432,12 @@ export function ShowdartDashboard({
             <div className="sd-live"><span className="sd-dot" /> {screenInfo?.screenUrl ? t.liveActive : '...'}</div>
             {screenNotice || screenError || notice ? <div className="sd-small-label" style={{ marginTop: 8 }}>{screenNotice || screenError || notice}</div> : null}
             <div style={{ display: 'grid', gap: 10, marginTop: 14 }}>
+              {screenInfo?.screenUrl && !state.started ? (
+                <div className="sd-qr-box">
+                  <QrCode size={16} />
+                  <img alt="QR kode til publikumsskærm" src={`https://api.qrserver.com/v1/create-qr-code/?size=112x112&data=${encodeURIComponent(screenInfo.screenUrl)}`} />
+                </div>
+              ) : null}
               <button type="button" className="sd-button gold full" disabled={!screenInfo?.screenUrl} onClick={() => screenInfo?.screenUrl && window.open(screenInfo.screenUrl, '_blank', 'noopener,noreferrer')}>
                 {t.openSpectator} <ExternalLink size={15} />
               </button>
@@ -358,16 +471,18 @@ export function ShowdartDashboard({
               <form onSubmit={handleAddEntry} className="sd-stack">
                 {state.teammateMode === 'fixed' ? (
                   <>
-                    <input className="sd-input" placeholder={t.memberOne} value={memberOne} onChange={event => setMemberOne(event.target.value)} />
-                    <input className="sd-input" placeholder={t.memberTwo} value={memberTwo} onChange={event => setMemberTwo(event.target.value)} />
+                    <input className="sd-input" placeholder={t.memberOne} value={memberOne} disabled={!canAddEntries} onChange={event => setMemberOne(event.target.value)} />
+                    <input className="sd-input" placeholder={t.memberTwo} value={memberTwo} disabled={!canAddEntries} onChange={event => setMemberTwo(event.target.value)} />
                   </>
                 ) : (
-                  <input className="sd-input" placeholder={t.playerName} value={playerName} onChange={event => setPlayerName(event.target.value)} />
+                  <input className="sd-input" placeholder={t.playerName} value={playerName} disabled={!canAddEntries} onChange={event => setPlayerName(event.target.value)} />
                 )}
-                <button type="submit" className="sd-button gold full"><Plus size={17} /> {t.addParticipant}</button>
+                <button type="submit" className="sd-button gold full" disabled={!canAddEntries}><Plus size={17} /> {t.addParticipant}</button>
               </form>
-              <button type="button" className="sd-button full"><Upload size={17} /> {t.importParticipants}</button>
-              <button type="button" className="sd-button full"><GitBranch size={17} /> {t.bracket}</button>
+              <input ref={importInputRef} type="file" accept=".txt,.csv" style={{ display: 'none' }} onChange={handleImportFile} />
+              <button type="button" className="sd-button full" disabled={!canAddEntries} onClick={() => importInputRef.current?.click()}><Upload size={17} /> {t.importParticipants}</button>
+              <button type="button" className="sd-button full" onClick={() => setTreeVisible(value => !value)}><GitBranch size={17} /> {treeVisible ? t.hideStandingsTree : t.standingsTree}</button>
+              <button type="button" className="sd-button full" disabled={!state.roundHistory?.length} onClick={() => setHistoryVisible(value => !value)}><History size={17} /> {historyVisible ? t.hideHistory : t.history}</button>
             </div>
           </Panel>
         </div>
@@ -379,15 +494,26 @@ export function ShowdartDashboard({
           </div>
           <div className="sd-table-wrap">
           <table className="sd-table">
-            <thead><tr><th></th><th>{t.name}</th><th>{t.roleStatus}</th><th>{t.seed}</th><th></th></tr></thead>
+            <thead><tr><th></th><th>{t.name}</th><th>{t.roleStatus}</th><th>{t.losses}</th>{state.teammateMode !== 'fixed' ? <th>{t.tags}</th> : null}<th></th></tr></thead>
             <tbody>
-              {visibleEntries.slice(0, 10).map((entry, index) => (
+              {visibleEntries.map((entry, index) => (
                 <tr key={entry.id}>
                   <td><span className="sd-seed">{index + 1}</span></td>
                   <td>{entry.name}</td>
-                  <td>{entry.active ? t.active : 'Ude'}</td>
-                  <td><input className="sd-input" style={{ width: 58, padding: 5 }} type="number" min="0" value={entry.losses || 0} onChange={event => commit(previous => updateEntryLosses(previous, entry.id, Number(event.target.value)))} /></td>
-                  <td><button type="button" className="sd-button" style={{ minHeight: 32, padding: 5 }} onClick={() => commit(previous => removeEntry(previous, entry.id))}><MoreVertical size={16} /></button></td>
+                  <td>{entry.active ? t.active : t.eliminated}{entry.eliminationRound ? ` R${entry.eliminationRound}` : ''}</td>
+                  <td><input className="sd-input" style={{ width: 58, padding: 5 }} type="number" min="0" value={entry.losses || 0} disabled={!canEditEntries} onChange={event => commit(previous => updateEntryLosses(previous, entry.id, Number(event.target.value)))} /></td>
+                  {state.teammateMode !== 'fixed' ? (
+                    <td>
+                      <div className="sd-tag-actions">
+                        {['S', 'O'].map(tag => (
+                          <button key={tag} type="button" className={`sd-tag ${entry.tags?.includes(tag) ? 'is-on' : ''} ${entry.modifiedTags?.includes(tag) ? 'is-pending' : ''}`} disabled={!state.started || !canManageEntries} onClick={() => commit(previous => togglePlayerTag(previous, entry.id, tag))}>
+                            {tag}
+                          </button>
+                        ))}
+                      </div>
+                    </td>
+                  ) : null}
+                  <td><button type="button" className="sd-button" title={entry.active ? t.eliminate : t.remove} disabled={state.started && !canManageEntries} style={{ minHeight: 32, padding: 5 }} onClick={() => handleEntryAction(entry)}><MoreVertical size={16} /></button></td>
                 </tr>
               ))}
             </tbody>
@@ -415,9 +541,13 @@ export function ShowdartDashboard({
           </div>
         </Panel>
 
-        <Panel title={t.currentRound} action={!isRoundActive && state.started ? <button type="button" className="sd-button gold" onClick={handleGenerate}>{t.nextRound}</button> : null}>
+        <Panel title={t.currentRound} action={!isRoundActive && state.started && !tournamentFinished ? <button type="button" className="sd-button gold" disabled={canApproveTags} onClick={handleGenerate}>{t.nextRound}</button> : null}>
           <div className="sd-match-list">
-            {isRoundActive ? (
+            {finalPlacements.length ? (
+              <FinalResults placements={finalPlacements} t={t} />
+            ) : finalRankingIds.length ? (
+              <FinalRanking ids={finalRankingIds} entries={entries} t={t} onMove={moveFinalist} onConfirm={handleCompleteFinal} />
+            ) : isRoundActive ? (
               <>
                 {state.matches.map(match => (
                   <MatchCard
@@ -436,12 +566,16 @@ export function ShowdartDashboard({
             ) : (
               <>
                 <div className="sd-small-label">{state.started ? t.ready : t.noMatches}</div>
-                {state.started ? <button type="button" className="sd-button gold" onClick={handleGenerate}>{t.generate}</button> : null}
+                {canApproveTags ? <button type="button" className="sd-button gold" onClick={() => commit(previous => approveTagChanges(previous))}><Check size={16} /> {t.approveTags}</button> : null}
+                {state.started && !tournamentFinished ? <button type="button" className="sd-button gold" disabled={canApproveTags} onClick={handleGenerate}>{t.generate}</button> : null}
+                {canStartFinal ? <button type="button" className="sd-button" onClick={handleStartFinal}><Trophy size={16} /> {t.startFinal}</button> : null}
               </>
             )}
             <button type="button" className="sd-button danger" onClick={() => commit(resetTournament())}>{t.reset}</button>
           </div>
         </Panel>
+        {historyVisible ? <HistoryPanel history={state.roundHistory || []} t={t} /> : null}
+        {treeVisible ? <StandingsPanel standings={standings} t={t} maxLosses={state.maxLosses} /> : null}
       </section>
 
       <footer className="sd-bottom">
@@ -496,6 +630,101 @@ function MatchCard({ state, match, t, onWinner, onLane }) {
   );
 }
 
+function HistoryPanel({ history, t }) {
+  return (
+    <div className="sd-card sd-panel sd-wide-panel">
+      <h2 className="sd-panel-title">{t.history}</h2>
+      <div className="sd-history-wrap">
+        <table className="sd-table sd-history-table">
+          <thead><tr><th>{t.round}</th><th>{t.format}</th><th>{t.match} / {t.sitOver}</th><th>Bane</th><th>{t.winner}</th></tr></thead>
+          <tbody>
+            {[...history].sort((left, right) => (right.round || 0) - (left.round || 0)).flatMap(roundEntry => {
+              const rows = (roundEntry.matches || []).map(match => (
+                <tr key={`${roundEntry.round}-${match.id}`}>
+                  <td>{t.round} {roundEntry.round}</td>
+                  <td><span className="sd-pill">{roundEntry.mode === 'fixed' ? t.fixed : t.changing}</span></td>
+                  <td>{t.match} #{match.id}: {match.team1Label} VS {match.team2Label}</td>
+                  <td>{Number.isInteger(match.laneNumber) ? `Bane ${match.laneNumber}` : '-'}</td>
+                  <td>{match.winnerLabel || '-'}</td>
+                </tr>
+              ));
+              if (roundEntry.sitOuts?.length) {
+                rows.push(
+                  <tr key={`${roundEntry.round}-sit`}>
+                    <td>{t.round} {roundEntry.round}</td>
+                    <td><span className="sd-pill">{t.sitOver}</span></td>
+                    <td>{roundEntry.sitOuts.join(', ')}</td>
+                    <td>-</td>
+                    <td>-</td>
+                  </tr>
+                );
+              }
+              return rows;
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function StandingsPanel({ standings, t, maxLosses }) {
+  return (
+    <div className="sd-card sd-panel sd-wide-panel">
+      <h2 className="sd-panel-title">{t.standingsTree}</h2>
+      <div className="sd-standings-grid">
+        {standings.map((entry, index) => (
+          <div className={`sd-standing-card ${entry.active === false ? 'is-out' : ''}`} key={entry.id}>
+            <span className="sd-seed">{index + 1}</span>
+            <strong>{entry.name}</strong>
+            <span>{entry.losses || 0}/{maxLosses} {t.losses}</span>
+            <span>{entry.active === false ? `${t.eliminated}${entry.eliminationRound ? ` R${entry.eliminationRound}` : ''}` : t.active}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function FinalRanking({ ids, entries, t, onMove, onConfirm }) {
+  return (
+    <div className="sd-match-card">
+      <div className="sd-match-title">{t.finalRanking}</div>
+      <div className="sd-final-list">
+        {ids.map((id, index) => {
+          const entry = entries.find(item => item.id === id);
+          return (
+            <div className="sd-final-row" key={id}>
+              <span className="sd-seed">{index + 1}</span>
+              <strong>{entry?.name || id}</strong>
+              <button type="button" className="sd-button" disabled={index === 0} onClick={() => onMove(id, -1)}><ArrowUp size={14} /></button>
+              <button type="button" className="sd-button" disabled={index === ids.length - 1} onClick={() => onMove(id, 1)}><ArrowDown size={14} /></button>
+            </div>
+          );
+        })}
+      </div>
+      <button type="button" className="sd-button gold full" onClick={onConfirm}>{t.confirmFinal}</button>
+    </div>
+  );
+}
+
+function FinalResults({ placements, t }) {
+  return (
+    <div className="sd-match-card">
+      <div className="sd-match-title">{t.finalResults}</div>
+      <div className="sd-final-list">
+        {placements.map(entry => (
+          <div className="sd-final-row" key={`${entry.place}-${entry.id}`}>
+            <span className="sd-seed">{entry.place}</span>
+            <strong>{entry.name}</strong>
+            <span>{entry.active === false ? t.eliminated : t.winner}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function BottomItem({ label, value, green }) {
   return <div className="sd-bottom-item"><div className="sd-bottom-label">{label}</div><div className={`sd-bottom-value ${green ? 'sd-green-text' : ''}`}>{value}</div></div>;
 }
@@ -503,5 +732,36 @@ function BottomItem({ label, value, green }) {
 function getWinnerLine(state, match, t) {
   if (!match.winner) return t.ready;
   return `${t.winner}: ${getMatchLabel(state, match, match.winner)}`;
+}
+
+function buildFinalPlacements(entries, state) {
+  const finalIds = state.teammateMode === 'fixed' ? state.finalResultTeamIds : state.finalResultPlayerIds;
+  const orderedIds = state.finalResults?.map(entry => entry.id) || finalIds || [];
+  if (!orderedIds.length) return [];
+  const finalistIds = new Set(orderedIds);
+  const placements = orderedIds.map((id, index) => {
+    const entry = entries.find(item => item.id === id);
+    return entry ? { ...entry, place: index + 1 } : null;
+  }).filter(Boolean);
+  const eliminatedGroups = new Map();
+  entries.filter(entry => !finalistIds.has(entry.id)).forEach(entry => {
+    const key = entry.eliminationRound ?? 'unknown';
+    const group = eliminatedGroups.get(key) || [];
+    group.push(entry);
+    eliminatedGroups.set(key, group);
+  });
+  let nextPlace = placements.length + 1;
+  [...eliminatedGroups.entries()]
+    .sort(([left], [right]) => eliminationValue(right) - eliminationValue(left))
+    .forEach(([, group]) => {
+      group.sort((left, right) => left.id - right.id).forEach(entry => placements.push({ ...entry, place: nextPlace }));
+      nextPlace += group.length;
+    });
+  return placements;
+}
+
+function eliminationValue(value) {
+  if (value === 'final') return Number.MAX_SAFE_INTEGER;
+  return Number.isFinite(Number(value)) ? Number(value) : 0;
 }
 
