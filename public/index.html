@@ -839,6 +839,449 @@
             font-weight: 700;
         }
 
+        /* Premium concept refresh: dark sports shell with crisp control panels. */
+        :root {
+            --club-panel: #f7f1e4;
+            --club-panel-2: #fffaf0;
+            --club-panel-3: #eee2ca;
+            --club-ink: #121c16;
+            --club-ink-soft: #2c3d32;
+            --club-ink-muted: #68786d;
+            --club-panel-border: #d5c5a7;
+        }
+
+        body {
+            background:
+                radial-gradient(circle at 8% 5%, rgba(214, 184, 77, 0.16), transparent 26rem),
+                radial-gradient(circle at 90% 12%, rgba(201, 106, 50, 0.12), transparent 24rem),
+                linear-gradient(180deg, #07120d 0%, #101a15 42%, #07120d 100%);
+        }
+
+        .card {
+            background: linear-gradient(180deg, var(--club-panel-2), var(--club-panel));
+            border: 1px solid var(--club-panel-border);
+            box-shadow: 0 22px 42px rgba(0, 0, 0, 0.24);
+        }
+
+        .card-header {
+            background:
+                linear-gradient(90deg, rgba(7, 18, 13, 0.98), rgba(20, 39, 31, 0.98));
+            color: var(--club-gold-soft);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+        }
+
+        .card-body,
+        #rules .card-body,
+        #rules ol,
+        #rules ul,
+        #rules li,
+        #rules p,
+        #rulesModal .modal-body,
+        #rulesModal ol,
+        #rulesModal ul,
+        #rulesModal li,
+        #rulesModal p {
+            color: var(--club-ink) !important;
+        }
+
+        .modal-content {
+            background: var(--club-panel-2) !important;
+            border-color: var(--club-panel-border) !important;
+            color: var(--club-ink);
+        }
+
+        .modal-header {
+            background: #091610;
+            color: var(--club-gold-soft);
+        }
+
+        .form-label,
+        .winner-choice-label,
+        .lane-assignment-label {
+            color: var(--club-ink-soft);
+        }
+
+        .form-control,
+        .form-select {
+            background-color: #fffdf6;
+            border-color: #cdbb99;
+            color: var(--club-ink);
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            background-color: #fffdf6;
+            color: var(--club-ink);
+            border-color: var(--club-gold);
+            box-shadow: 0 0 0 0.2rem rgba(214, 184, 77, 0.24);
+        }
+
+        .table {
+            color: var(--club-ink);
+            --bs-table-color: var(--club-ink);
+            --bs-table-bg: transparent;
+            --bs-table-striped-bg: rgba(238, 226, 202, 0.72);
+            --bs-table-border-color: #d8c9ad;
+        }
+
+        #playersTable thead th,
+        .history-table thead th {
+            background: #08120d;
+            color: var(--club-gold-soft) !important;
+            border-color: #1d3329 !important;
+        }
+
+        #playersTable tbody td,
+        .history-table td {
+            color: var(--club-ink);
+            border-color: #d8c9ad;
+        }
+
+        .setup-toolbar,
+        .registration-collapsed-copy,
+        .summary-chip,
+        .round-board-intro,
+        .lane-config-panel,
+        .history-table-wrap,
+        .round-team-panel,
+        .bye-pill {
+            background: linear-gradient(180deg, #fffaf0, #f3ead7);
+            border-color: var(--club-panel-border);
+            color: var(--club-ink);
+        }
+
+        .section-helper-text,
+        .registration-summary-meta,
+        .summary-label,
+        .round-match-tag,
+        .round-team-meta,
+        .round-versus-label,
+        .history-row-type,
+        .history-row-lane,
+        .text-muted {
+            color: var(--club-ink-muted) !important;
+        }
+
+        .summary-chip strong,
+        .round-team-name,
+        .lane-config-meta,
+        .history-row-winner,
+        .history-match-main,
+        #cloudStatusIndicator {
+            color: var(--club-ink);
+        }
+
+        .round-match-card {
+            border-color: var(--club-panel-border);
+        }
+
+        .round-match-lane {
+            background: rgba(214, 184, 77, 0.18);
+            border-color: rgba(148, 112, 30, 0.34);
+            color: #735718;
+        }
+
+        .round-match-lane.is-waiting {
+            background: #efe4cf;
+            border-color: #d5c5a7;
+            color: var(--club-ink-muted);
+        }
+
+        .round-team-panel.is-winner {
+            background: linear-gradient(180deg, #fff1b8, #f6df7d);
+            border-color: #b99022;
+            color: var(--club-ink);
+            box-shadow: 0 0 0 1px rgba(185, 144, 34, 0.2), 0 14px 26px rgba(185, 144, 34, 0.18);
+        }
+
+        .history-section {
+            border-top-color: #d8c9ad;
+        }
+
+        .btn-outline-success,
+        .btn-outline-secondary,
+        .btn-outline-info {
+            border-color: #9a8560;
+            color: var(--club-ink);
+            background: rgba(255, 250, 240, 0.72);
+        }
+
+        .btn-outline-danger {
+            color: #8d3838;
+            background: rgba(255, 250, 240, 0.72);
+        }
+
+        .alert-info,
+        .alert-primary {
+            background: #efe4cf;
+            border-color: var(--club-panel-border);
+            color: var(--club-ink-soft);
+        }
+
+        .alert-warning {
+            background: #fff1b8;
+            border-color: #d6b84d;
+            color: #554013;
+        }
+
+        .bye-strip {
+            background: #fff1b8;
+            border-color: #d6b84d;
+            color: var(--club-ink);
+        }
+
+        /* Concept 1 implementation: dark event control room, matching the selected mockup. */
+        :root {
+            --club-bg: #030806;
+            --club-surface: #07140f;
+            --club-surface-2: #0b2117;
+            --club-surface-3: #102f22;
+            --club-border: #244438;
+            --club-border-strong: #3b6a55;
+            --club-text: #f6f6ed;
+            --club-text-soft: #dfe8de;
+            --club-text-muted: #a7b7ad;
+            --club-gold: #d8a928;
+            --club-gold-soft: #f0c24b;
+            --club-accent: #d47731;
+            --club-accent-hover: #e5843b;
+            --club-danger: #9b3f3f;
+            --club-shadow: 0 20px 38px rgba(0, 0, 0, 0.38);
+        }
+
+        body {
+            background:
+                radial-gradient(circle at 18% 0%, rgba(216, 169, 40, 0.08), transparent 25rem),
+                linear-gradient(180deg, #030806 0%, #07120d 48%, #020504 100%);
+            color: var(--club-text);
+        }
+
+        body > .container {
+            max-width: 1520px;
+            padding-left: 28px;
+            padding-right: 28px;
+        }
+
+        .card {
+            background:
+                linear-gradient(145deg, rgba(12, 44, 30, 0.88), rgba(5, 18, 12, 0.96));
+            border: 1px solid var(--club-border);
+            border-radius: 8px;
+            box-shadow: var(--club-shadow);
+        }
+
+        .card-header {
+            background: linear-gradient(90deg, rgba(8, 26, 18, 0.96), rgba(12, 44, 30, 0.82));
+            color: var(--club-text);
+            border-bottom: 1px solid var(--club-border);
+            min-height: 50px;
+        }
+
+        .card-header > span:first-child {
+            color: var(--club-text);
+            font-size: 1.08rem;
+        }
+
+        .card-body,
+        #rules .card-body,
+        #rules ol,
+        #rules ul,
+        #rules li,
+        #rules p,
+        #rulesModal .modal-body,
+        #rulesModal ol,
+        #rulesModal ul,
+        #rulesModal li,
+        #rulesModal p {
+            color: var(--club-text) !important;
+        }
+
+        .modal-content {
+            background: var(--club-surface) !important;
+            border-color: var(--club-border) !important;
+            color: var(--club-text);
+        }
+
+        .modal-header {
+            background: #06110c;
+            color: var(--club-gold-soft);
+        }
+
+        .setup-toolbar,
+        .registration-collapsed-copy,
+        .summary-chip,
+        .round-board-intro,
+        .lane-config-panel,
+        .history-table-wrap,
+        .round-team-panel,
+        .bye-pill {
+            background:
+                linear-gradient(145deg, rgba(12, 44, 30, 0.82), rgba(5, 18, 12, 0.92));
+            border-color: var(--club-border);
+            color: var(--club-text);
+        }
+
+        .form-label,
+        .winner-choice-label,
+        .lane-assignment-label,
+        .summary-chip strong,
+        .round-team-name,
+        .lane-config-meta,
+        .history-row-winner,
+        .history-match-main,
+        #cloudStatusIndicator {
+            color: var(--club-text);
+        }
+
+        .form-control,
+        .form-select {
+            background: rgba(2, 8, 5, 0.72);
+            border-color: var(--club-border);
+            color: var(--club-text);
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            background: rgba(2, 8, 5, 0.86);
+            color: var(--club-text);
+            border-color: var(--club-gold-soft);
+            box-shadow: 0 0 0 0.2rem rgba(216, 169, 40, 0.18);
+        }
+
+        .table {
+            color: var(--club-text);
+            --bs-table-color: var(--club-text);
+            --bs-table-bg: transparent;
+            --bs-table-striped-bg: rgba(13, 49, 34, 0.45);
+            --bs-table-border-color: var(--club-border);
+        }
+
+        #playersTable thead th,
+        .history-table thead th {
+            background: rgba(4, 13, 9, 0.88);
+            color: var(--club-text-muted) !important;
+            border-color: var(--club-border) !important;
+        }
+
+        #playersTable tbody td,
+        .history-table td {
+            color: var(--club-text);
+            border-color: var(--club-border);
+        }
+
+        .section-helper-text,
+        .registration-summary-meta,
+        .summary-label,
+        .round-match-tag,
+        .round-team-meta,
+        .round-versus-label,
+        .history-row-type,
+        .history-row-lane,
+        .text-muted {
+            color: var(--club-text-muted) !important;
+        }
+
+        .btn-primary,
+        .btn-success {
+            background: linear-gradient(180deg, var(--club-gold-soft), var(--club-gold));
+            border-color: #b88a1f;
+            color: #10150f;
+            box-shadow: 0 12px 22px rgba(216, 169, 40, 0.2);
+        }
+
+        .btn-primary:hover,
+        .btn-primary:focus,
+        .btn-success:hover,
+        .btn-success:focus {
+            background: linear-gradient(180deg, #ffcf56, #d8a928);
+            border-color: var(--club-gold-soft);
+            color: #10150f;
+        }
+
+        .btn-outline-success,
+        .btn-outline-secondary,
+        .btn-outline-info {
+            border-color: var(--club-border-strong);
+            color: var(--club-text);
+            background: rgba(2, 8, 5, 0.28);
+        }
+
+        .btn-outline-success:hover,
+        .btn-outline-secondary:hover,
+        .btn-outline-info:hover {
+            border-color: var(--club-gold);
+            color: #10150f;
+            background: var(--club-gold-soft);
+        }
+
+        .summary-chip {
+            min-height: 96px;
+        }
+
+        .summary-chip strong {
+            font-size: 1.35rem;
+        }
+
+        .round-team-panel {
+            background: rgba(2, 8, 5, 0.46);
+            border-color: rgba(255,255,255,0.08);
+        }
+
+        .round-team-panel.is-winner {
+            background: linear-gradient(145deg, rgba(31, 93, 57, 0.9), rgba(8, 32, 21, 0.95));
+            border-color: var(--club-gold);
+            color: var(--club-text);
+            box-shadow: 0 0 0 1px rgba(216, 169, 40, 0.18), 0 0 28px rgba(216, 169, 40, 0.14);
+        }
+
+        .round-match-lane {
+            background: rgba(216, 169, 40, 0.12);
+            border-color: rgba(216, 169, 40, 0.42);
+            color: var(--club-gold-soft);
+        }
+
+        .round-match-lane.is-waiting {
+            background: rgba(2, 8, 5, 0.4);
+            border-color: var(--club-border);
+            color: var(--club-text-muted);
+        }
+
+        .alert-info,
+        .alert-primary {
+            background: rgba(12, 44, 30, 0.72);
+            border-color: var(--club-border);
+            color: var(--club-text-soft);
+        }
+
+        .alert-warning,
+        .bye-strip {
+            background: rgba(216, 169, 40, 0.14);
+            border-color: rgba(216, 169, 40, 0.42);
+            color: var(--club-gold-soft);
+        }
+
+        @media (min-width: 1200px) {
+            body > .container {
+                display: grid;
+                grid-template-columns: minmax(360px, 0.85fr) minmax(720px, 1.65fr);
+                gap: 18px;
+                align-items: start;
+            }
+
+            #registration,
+            #tournament {
+                margin-bottom: 0 !important;
+            }
+
+            #registration {
+                grid-column: 1;
+            }
+
+            #tournament {
+                grid-column: 2;
+            }
+        }
+
         @media (min-width: 768px) {
             .card-body {
                 padding: 1.35rem 1.35rem;

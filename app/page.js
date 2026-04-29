@@ -59,16 +59,16 @@ const texts = {
 };
 
 const theme = {
-  page: 'radial-gradient(circle at 14% 0%, rgba(214, 184, 77, 0.1), transparent 28rem), radial-gradient(circle at 86% 12%, rgba(79, 117, 95, 0.16), transparent 24rem), linear-gradient(180deg, #0a1711 0%, #07120d 50%, #050b08 100%)',
-  surface: 'linear-gradient(180deg, rgba(20, 39, 31, 0.98), rgba(12, 24, 19, 0.98))',
-  input: '#091610',
-  border: '#29463a',
-  borderStrong: '#4f755f',
-  text: '#f1f7f0',
-  textSoft: '#d6e6dc',
-  textMuted: '#94ad9e',
-  gold: '#d6b84d',
-  goldSoft: '#f1d56d',
+  page: 'radial-gradient(circle at 18% 0%, rgba(216, 169, 40, 0.08), transparent 25rem), linear-gradient(180deg, #030806 0%, #07120d 48%, #020504 100%)',
+  surface: 'linear-gradient(145deg, rgba(12, 44, 30, 0.88), rgba(5, 18, 12, 0.96))',
+  input: 'rgba(2, 8, 5, 0.72)',
+  border: '#244438',
+  borderStrong: '#3b6a55',
+  text: '#f6f6ed',
+  textSoft: '#dfe8de',
+  textMuted: '#a7b7ad',
+  gold: '#d8a928',
+  goldSoft: '#f0c24b',
   danger: '#9b3f3f'
 };
 
@@ -501,7 +501,7 @@ export default function Page() {
       />
 
       <section style={{ maxWidth: 1200, margin: '0 auto', padding: '0 16px 16px' }}>
-        <div style={{ background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: 8, padding: '13px 15px', color: theme.text, display: 'flex', gap: 14, alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', boxShadow: '0 14px 32px rgba(0,0,0,0.22)' }}>
+        <div style={{ background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: 8, padding: '18px 20px', color: theme.text, display: 'flex', gap: 14, alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', boxShadow: '0 20px 38px rgba(0,0,0,0.38)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', minWidth: 260 }}>
             <div>
               <div style={{ fontSize: 12, letterSpacing: '0.08em', textTransform: 'uppercase', color: theme.textMuted, marginBottom: 4 }}>
@@ -521,7 +521,7 @@ export default function Page() {
               type="button"
               disabled={!screenInfo?.screenUrl}
               onClick={() => screenInfo?.screenUrl && window.open(screenInfo.screenUrl, '_blank', 'noopener,noreferrer')}
-              style={{ padding: '10px 14px', borderRadius: 7, border: `1px solid ${theme.goldSoft}`, background: `linear-gradient(135deg, ${theme.gold}, ${theme.goldSoft})`, color: '#11170f', fontWeight: 800, cursor: screenInfo?.screenUrl ? 'pointer' : 'default', opacity: screenInfo?.screenUrl ? 1 : 0.65 }}
+              style={{ padding: '10px 16px', borderRadius: 6, border: `1px solid ${theme.gold}`, background: `linear-gradient(180deg, ${theme.goldSoft}, ${theme.gold})`, color: '#10150f', fontWeight: 900, cursor: screenInfo?.screenUrl ? 'pointer' : 'default', opacity: screenInfo?.screenUrl ? 1 : 0.65, textTransform: 'uppercase', letterSpacing: '0.04em' }}
             >
               {screenInfo?.screenUrl ? t.screenOpen : t.screenLoading}
             </button>
@@ -529,7 +529,7 @@ export default function Page() {
               type="button"
               disabled={!screenInfo?.screenUrl}
               onClick={handleCopyScreenLink}
-              style={{ padding: '10px 14px', borderRadius: 7, border: `1px solid ${theme.border}`, background: 'rgba(12,24,19,0.35)', color: theme.textSoft, fontWeight: 800, cursor: screenInfo?.screenUrl ? 'pointer' : 'default', opacity: screenInfo?.screenUrl ? 1 : 0.65 }}
+              style={{ padding: '10px 16px', borderRadius: 6, border: `1px solid ${theme.borderStrong}`, background: 'rgba(2,8,5,0.3)', color: theme.textSoft, fontWeight: 900, cursor: screenInfo?.screenUrl ? 'pointer' : 'default', opacity: screenInfo?.screenUrl ? 1 : 0.65, textTransform: 'uppercase', letterSpacing: '0.04em' }}
             >
               {t.screenCopy}
             </button>

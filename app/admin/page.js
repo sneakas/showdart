@@ -60,17 +60,17 @@ const texts = {
 };
 
 const theme = {
-  page: 'radial-gradient(circle at 14% 0%, rgba(214, 184, 77, 0.1), transparent 28rem), radial-gradient(circle at 86% 12%, rgba(79, 117, 95, 0.16), transparent 24rem), linear-gradient(180deg, #0a1711 0%, #07120d 50%, #050b08 100%)',
-  surface: 'linear-gradient(180deg, rgba(20, 39, 31, 0.98), rgba(12, 24, 19, 0.98))',
-  input: '#091610',
-  border: '#29463a',
-  borderStrong: '#4f755f',
-  rowBorder: '#20382d',
-  text: '#f1f7f0',
-  textSoft: '#d6e6dc',
-  textMuted: '#94ad9e',
-  gold: '#d6b84d',
-  goldSoft: '#f1d56d',
+  page: 'radial-gradient(circle at 18% 0%, rgba(216, 169, 40, 0.08), transparent 25rem), linear-gradient(180deg, #030806 0%, #07120d 48%, #020504 100%)',
+  surface: 'linear-gradient(145deg, rgba(12, 44, 30, 0.88), rgba(5, 18, 12, 0.96))',
+  input: 'rgba(2, 8, 5, 0.72)',
+  border: '#244438',
+  borderStrong: '#3b6a55',
+  rowBorder: '#244438',
+  text: '#f6f6ed',
+  textSoft: '#dfe8de',
+  textMuted: '#a7b7ad',
+  gold: '#d8a928',
+  goldSoft: '#f0c24b',
   danger: '#9b3f3f'
 };
 
