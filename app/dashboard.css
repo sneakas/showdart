@@ -998,20 +998,18 @@
 
 @media (min-width: 1201px) {
   .sd-dashboard {
-    height: max(860px, calc((100vh - 88px - 210px - 104px) * 2));
-    overflow: hidden;
+    height: auto;
+    overflow: visible;
     align-items: stretch;
   }
 
   .sd-dashboard > .sd-stack,
   .sd-dashboard > .sd-card {
     min-height: 0;
-    max-height: 100%;
   }
 
   .sd-dashboard > .sd-stack {
-    overflow: auto;
-    padding-right: 2px;
+    overflow: visible;
   }
 
   .sd-dashboard > .sd-card.sd-panel {
@@ -1035,7 +1033,7 @@
   .sd-table-wrap,
   .sd-lane-list,
   .sd-match-list {
-    flex: 1 1 auto;
+    flex: 1 1 0;
   }
 }
 
