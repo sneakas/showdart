@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1800 420" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="wall" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0" stop-color="#1b130c"/>
+      <stop offset="0.45" stop-color="#2a1d13"/>
+      <stop offset="1" stop-color="#111a16"/>
+    </linearGradient>
+    <radialGradient id="lamp" cx="50%" cy="0%" r="70%">
+      <stop offset="0" stop-color="#f5c96a" stop-opacity=".72"/>
+      <stop offset=".35" stop-color="#bd7d2d" stop-opacity=".18"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="brick" width="58" height="32" patternUnits="userSpaceOnUse">
+      <path d="M0 31.5H58M0 0H58M0 0V32M29 0V16M58 16H0M14 16V32M44 16V32" fill="none" stroke="#6e573d" stroke-opacity=".2" stroke-width="1"/>
+    </pattern>
+    <filter id="softShadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#000" flood-opacity=".5"/>
+    </filter>
+  </defs>
+  <rect width="1800" height="420" fill="#070b08"/>
+  <rect width="1800" height="420" fill="url(#wall)"/>
+  <rect width="1800" height="420" fill="url(#brick)"/>
+  <g opacity=".9">
+    <rect x="0" y="0" width="1800" height="130" fill="#080a07" opacity=".52"/>
+    <rect x="0" y="280" width="1800" height="140" fill="#030705" opacity=".72"/>
+  </g>
+  <g fill="url(#lamp)">
+    <ellipse cx="390" cy="70" rx="210" ry="140"/>
+    <ellipse cx="750" cy="65" rx="210" ry="135"/>
+    <ellipse cx="1110" cy="70" rx="210" ry="140"/>
+    <ellipse cx="1470" cy="65" rx="210" ry="135"/>
+  </g>
+  <g stroke="#d8a928" stroke-width="3" fill="none" filter="url(#softShadow)">
+    <g transform="translate(390 184)">
+      <circle r="58" fill="#0d1912"/>
+      <circle r="48" stroke="#cbb05a"/>
+      <circle r="30" stroke="#275e3f"/>
+      <circle r="12" fill="#d8a928"/>
+      <path d="M0-58V58M-58 0H58M-41-41l82 82M41-41l-82 82"/>
+    </g>
+    <g transform="translate(750 184) scale(.86)">
+      <circle r="58" fill="#0d1912"/>
+      <circle r="48" stroke="#cbb05a"/>
+      <circle r="30" stroke="#275e3f"/>
+      <circle r="12" fill="#d8a928"/>
+      <path d="M0-58V58M-58 0H58M-41-41l82 82M41-41l-82 82"/>
+    </g>
+    <g transform="translate(1110 184) scale(.8)">
+      <circle r="58" fill="#0d1912"/>
+      <circle r="48" stroke="#cbb05a"/>
+      <circle r="30" stroke="#275e3f"/>
+      <circle r="12" fill="#d8a928"/>
+      <path d="M0-58V58M-58 0H58M-41-41l82 82M41-41l-82 82"/>
+    </g>
+  </g>
+  <g fill="#0a0e0b" opacity=".85">
+    <rect x="300" y="285" width="210" height="18" rx="9"/>
+    <rect x="670" y="285" width="210" height="18" rx="9"/>
+    <rect x="1030" y="285" width="210" height="18" rx="9"/>
+  </g>
+  <g transform="translate(1300 170)" opacity=".75">
+    <circle cx="0" cy="30" r="28" fill="#16110d"/>
+    <circle cx="52" cy="46" r="24" fill="#15100c"/>
+    <circle cx="101" cy="36" r="27" fill="#16110d"/>
+    <circle cx="154" cy="54" r="22" fill="#15100c"/>
+    <rect x="-40" y="62" width="250" height="100" rx="35" fill="#100c09"/>
+  </g>
+  <rect width="1800" height="420" fill="#000" opacity=".18"/>
+</svg>

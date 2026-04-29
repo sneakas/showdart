@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { getSupabaseBrowserClient } from '../lib/supabaseBrowser';
-import { SharedTopNavigation } from '../components/SharedTopNavigation';
+import { ShowdartDashboard } from '../components/dashboard/ShowdartDashboard';
+import './dashboard.css';
 
 const TOKEN_STORAGE_KEY = 'supabase_access_token';
 const LANGUAGE_STORAGE_KEY = 'showdart-language';
@@ -101,12 +102,9 @@ export default function Page() {
   const [authError, setAuthError] = useState('');
   const [profileRole, setProfileRole] = useState('user');
   const [profileEmail, setProfileEmail] = useState('');
-  const [iframeHeight, setIframeHeight] = useState(1200);
-  const [iframeLoaded, setIframeLoaded] = useState(false);
   const [screenInfo, setScreenInfo] = useState(null);
   const [screenError, setScreenError] = useState('');
   const [screenNotice, setScreenNotice] = useState('');
-  const iframeRef = useRef(null);
   const screenChannelRef = useRef(null);
   const screenChannelReadyRef = useRef(false);
   const pendingScreenPayloadRef = useRef(null);
@@ -121,17 +119,6 @@ export default function Page() {
       document.documentElement.lang = initialLang;
     }
   }, []);
-
-  function getTargetOrigin() {
-    if (typeof window === 'undefined') return '*';
-    return window.location.origin;
-  }
-
-  function postToIframe(message) {
-    const win = iframeRef.current?.contentWindow;
-    if (!win) return;
-    win.postMessage(message, getTargetOrigin());
-  }
 
   async function sendSpectatorPayload(payload) {
     const channel = screenChannelRef.current;
@@ -157,21 +144,6 @@ export default function Page() {
       localStorage.setItem(LANGUAGE_STORAGE_KEY, nextLang);
       document.documentElement.lang = nextLang;
     }
-    postToIframe({ type: 'showdart-set-language', language: nextLang });
-  }
-
-  function handleNavigate(target) {
-    if (target === 'admin') {
-      window.location.href = '/admin';
-      return;
-    }
-
-    if (target === 'rules') {
-      postToIframe({ type: 'showdart-open-rules' });
-      return;
-    }
-
-    postToIframe({ type: 'showdart-nav', target });
   }
 
   useEffect(() => {
@@ -310,65 +282,6 @@ export default function Page() {
     };
   }, [screenInfo, session, supabase]);
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return undefined;
-
-    const allowedOrigin = window.location.origin;
-
-    function handleIframeMessage(event) {
-      if (event.origin !== allowedOrigin) return;
-      const data = event.data || {};
-      if (data.type === 'showdart-height') {
-        const nextHeight = Number(data.height);
-        if (!Number.isFinite(nextHeight)) return;
-        const safeHeight = Math.max(900, Math.ceil(nextHeight));
-        setIframeHeight(prev => (Math.abs(prev - safeHeight) > 2 ? safeHeight : prev));
-        return;
-      }
-
-      if (data.type === 'showdart-state-sync' && data.state && typeof data.state === 'object') {
-        sendSpectatorPayload({
-          tournamentId: data.tournamentId || 'showdart-default',
-          state: data.state,
-          updatedAt: data.updatedAt || new Date().toISOString()
-        });
-      }
-    }
-
-    window.addEventListener('message', handleIframeMessage);
-    return () => {
-      window.removeEventListener('message', handleIframeMessage);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!session || !iframeLoaded) return;
-    const params = new URLSearchParams(window.location.search);
-    const nav = params.get('nav');
-    if (nav === 'registration' || nav === 'tournament') {
-      postToIframe({ type: 'showdart-nav', target: nav });
-    }
-    if (nav === 'rules') {
-      postToIframe({ type: 'showdart-open-rules' });
-    }
-    if (nav) {
-      params.delete('nav');
-      const next = params.toString();
-      window.history.replaceState({}, '', next ? `/?${next}` : '/');
-    }
-  }, [session, iframeLoaded]);
-
-  useEffect(() => {
-    if (!session || !iframeLoaded) return;
-    postToIframe({ type: 'showdart-set-user', userId: session.user.id });
-    postToIframe({ type: 'showdart-set-role', role: profileRole === 'admin' ? 'admin' : 'user' });
-  }, [session, iframeLoaded, profileRole]);
-
-  useEffect(() => {
-    if (!iframeLoaded || !screenInfo?.realtimeChannel) return;
-    postToIframe({ type: 'showdart-request-state-sync' });
-  }, [iframeLoaded, screenInfo]);
-
   async function handleAuthSubmit(e) {
     e.preventDefault();
     setAuthError('');
@@ -488,80 +401,24 @@ export default function Page() {
   }
 
   return (
-    <main style={{ width: '100%', minHeight: '100vh', margin: 0, fontFamily: 'Manrope, system-ui, sans-serif', background: theme.page }}>
-      <SharedTopNavigation
-        lang={lang}
-        role={profileRole}
-        email={profileEmail || session.user.email}
-        showRules
-        activePage="tournament"
-        onLanguageChange={changeLanguage}
-        onLogout={handleLogout}
-        onNavigate={handleNavigate}
-      />
-
-      <section style={{ maxWidth: 1520, margin: '-176px auto 18px', padding: '0 28px', minHeight: 158, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 18, position: 'relative', zIndex: 2, pointerEvents: 'none' }}>
-        <div style={{ width: 340, minHeight: 150, background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: 8, padding: '22px 22px', color: theme.text, boxShadow: '0 20px 38px rgba(0,0,0,0.38)', pointerEvents: 'auto' }}>
-          <h2 style={{ margin: 0, fontSize: 26, lineHeight: 1.05, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-            {t.tournamentTitle}
-          </h2>
-          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 18, color: theme.textSoft, fontSize: 14 }}>
-            <span>{profileRole === 'admin' ? 'Admin' : 'User'}</span>
-            <span>{t.screenLive}</span>
-          </div>
-        </div>
-
-        <div style={{ width: 310, background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: 8, padding: '18px 20px', color: theme.text, display: 'grid', gap: 12, boxShadow: '0 20px 38px rgba(0,0,0,0.38)', pointerEvents: 'auto' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', minWidth: 260 }}>
-            <div>
-              <div style={{ fontSize: 12, letterSpacing: '0.08em', textTransform: 'uppercase', color: theme.textMuted, marginBottom: 4 }}>
-                {t.screenPanelTitle}
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: theme.textSoft, fontWeight: 800 }}>
-                <span style={{ width: 10, height: 10, borderRadius: '50%', background: screenInfo?.screenUrl ? '#46c37b' : '#b88b45', boxShadow: `0 0 12px ${screenInfo?.screenUrl ? 'rgba(70,195,123,0.55)' : 'rgba(184,139,69,0.45)'}` }} />
-                {screenInfo?.screenUrl ? t.screenLive : t.screenLoading}
-              </div>
-            </div>
-            {screenNotice ? <div style={{ color: theme.goldSoft, fontSize: 14 }}>{screenNotice}</div> : null}
-            {screenError ? <div style={{ color: '#f3a7a7', fontSize: 14 }}>{t.screenError}</div> : null}
-          </div>
-
-          <div style={{ display: 'grid', gap: 10 }}>
-            <button
-              type="button"
-              disabled={!screenInfo?.screenUrl}
-              onClick={() => screenInfo?.screenUrl && window.open(screenInfo.screenUrl, '_blank', 'noopener,noreferrer')}
-              style={{ padding: '10px 16px', borderRadius: 6, border: `1px solid ${theme.gold}`, background: `linear-gradient(180deg, ${theme.goldSoft}, ${theme.gold})`, color: '#10150f', fontWeight: 900, cursor: screenInfo?.screenUrl ? 'pointer' : 'default', opacity: screenInfo?.screenUrl ? 1 : 0.65, textTransform: 'uppercase', letterSpacing: '0.04em' }}
-            >
-              {screenInfo?.screenUrl ? t.screenOpen : t.screenLoading}
-            </button>
-            <button
-              type="button"
-              disabled={!screenInfo?.screenUrl}
-              onClick={handleCopyScreenLink}
-              style={{ padding: '10px 16px', borderRadius: 6, border: `1px solid ${theme.borderStrong}`, background: 'rgba(2,8,5,0.3)', color: theme.textSoft, fontWeight: 900, cursor: screenInfo?.screenUrl ? 'pointer' : 'default', opacity: screenInfo?.screenUrl ? 1 : 0.65, textTransform: 'uppercase', letterSpacing: '0.04em' }}
-            >
-              {t.screenCopy}
-            </button>
-          </div>
-        </div>
-      </section>
-
-      <div style={{ width: '100%' }}>
-        <iframe
-          ref={iframeRef}
-          src="/index.html"
-          title={t.tournamentTitle}
-          onLoad={() => {
-            setIframeLoaded(true);
-            postToIframe({ type: 'showdart-set-language', language: lang });
-            postToIframe({ type: 'showdart-set-user', userId: session.user.id });
-            postToIframe({ type: 'showdart-set-role', role: profileRole === 'admin' ? 'admin' : 'user' });
-          }}
-          style={{ width: '100%', height: `${iframeHeight}px`, border: 0 }}
-          scrolling="no"
-        />
-      </div>
-    </main>
+    <ShowdartDashboard
+      lang={lang}
+      role={profileRole}
+      email={profileEmail || session.user.email}
+      session={session}
+      screenInfo={screenInfo}
+      screenNotice={screenNotice}
+      screenError={screenError ? t.screenError : ''}
+      onCopyScreenLink={handleCopyScreenLink}
+      onOpenAdmin={() => { window.location.href = '/admin'; }}
+      onOpenRules={() => {
+        window.alert(lang === 'da'
+          ? 'Regler vises i den nye dashboard-version i næste poleringsrunde.'
+          : 'Rules will be shown in the new dashboard version in the next polish pass.');
+      }}
+      onLogout={handleLogout}
+      onLanguageChange={changeLanguage}
+      onStateSync={sendSpectatorPayload}
+    />
   );
 }
