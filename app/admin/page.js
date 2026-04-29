@@ -59,6 +59,21 @@ const texts = {
   }
 };
 
+const theme = {
+  page: 'radial-gradient(circle at 14% 0%, rgba(214, 184, 77, 0.1), transparent 28rem), radial-gradient(circle at 86% 12%, rgba(79, 117, 95, 0.16), transparent 24rem), linear-gradient(180deg, #0a1711 0%, #07120d 50%, #050b08 100%)',
+  surface: 'linear-gradient(180deg, rgba(20, 39, 31, 0.98), rgba(12, 24, 19, 0.98))',
+  input: '#091610',
+  border: '#29463a',
+  borderStrong: '#4f755f',
+  rowBorder: '#20382d',
+  text: '#f1f7f0',
+  textSoft: '#d6e6dc',
+  textMuted: '#94ad9e',
+  gold: '#d6b84d',
+  goldSoft: '#f1d56d',
+  danger: '#9b3f3f'
+};
+
 function getInitialLanguage() {
   if (typeof window === 'undefined') return 'da';
   const stored = localStorage.getItem(LANGUAGE_STORAGE_KEY);
@@ -307,15 +322,15 @@ export default function AdminPage() {
   }
 
   if (loading) {
-    return <main style={{ padding: 24, fontFamily: 'system-ui' }}>{t.loading}</main>;
+    return <main style={{ padding: 24, fontFamily: 'Manrope, system-ui, sans-serif', background: theme.page, color: theme.text, minHeight: '100vh' }}>{t.loading}</main>;
   }
 
   if (!session) {
     return (
-      <main style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', fontFamily: 'system-ui', background: '#0b1e16', color: '#ecf8f2' }}>
-        <div style={{ width: 500, background: '#10271e', border: '1px solid #355748', borderRadius: 12, padding: 20 }}>
+      <main style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', fontFamily: 'Manrope, system-ui, sans-serif', background: theme.page, color: theme.text, padding: 18 }}>
+        <div style={{ width: 'min(500px, 100%)', background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: 8, padding: 22, boxShadow: '0 18px 45px rgba(0,0,0,0.34)' }}>
           <p>{t.notLoggedIn}</p>
-          <a href="/" style={{ color: '#f2d14c' }}>{t.back}</a>
+          <a href="/" style={{ color: theme.goldSoft }}>{t.back}</a>
         </div>
       </main>
     );
@@ -323,17 +338,17 @@ export default function AdminPage() {
 
   if (role !== 'admin') {
     return (
-      <main style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', fontFamily: 'system-ui', background: '#0b1e16', color: '#ecf8f2' }}>
-        <div style={{ width: 500, background: '#10271e', border: '1px solid #355748', borderRadius: 12, padding: 20 }}>
+      <main style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', fontFamily: 'Manrope, system-ui, sans-serif', background: theme.page, color: theme.text, padding: 18 }}>
+        <div style={{ width: 'min(500px, 100%)', background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: 8, padding: 22, boxShadow: '0 18px 45px rgba(0,0,0,0.34)' }}>
           <p>{t.notAdmin}</p>
-          <a href="/" style={{ color: '#f2d14c' }}>{t.back}</a>
+          <a href="/" style={{ color: theme.goldSoft }}>{t.back}</a>
         </div>
       </main>
     );
   }
 
   return (
-    <main style={{ width: '100%', minHeight: '100vh', margin: 0, fontFamily: 'system-ui', background: '#0b1e16', color: '#ecf8f2' }}>
+    <main style={{ width: '100%', minHeight: '100vh', margin: 0, fontFamily: 'Manrope, system-ui, sans-serif', background: theme.page, color: theme.text }}>
       <SharedTopNavigation
         lang={lang}
         role={role}
@@ -346,63 +361,63 @@ export default function AdminPage() {
       />
 
       <div style={{ maxWidth: 1180, margin: '20px auto', padding: '0 12px' }}>
-        <div style={{ background: '#10271e', border: '1px solid #355748', borderRadius: 12, padding: 16, marginBottom: 14 }}>
-          <h2 style={{ marginTop: 0 }}>{t.subtitle}</h2>
+        <div style={{ background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: 8, padding: 18, marginBottom: 14, boxShadow: '0 18px 45px rgba(0,0,0,0.28)' }}>
+          <h2 style={{ marginTop: 0, textTransform: 'uppercase', letterSpacing: '0.04em', color: theme.goldSoft }}>{t.subtitle}</h2>
           <form onSubmit={handleCreateUser} style={{ display: 'grid', gap: 10, gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
-            <input placeholder={t.email} type="email" value={email} onChange={e => setEmail(e.target.value)} style={{ padding: 10, borderRadius: 8, border: '1px solid #355748', background: '#0b1e16', color: '#ecf8f2' }} />
-            <input placeholder={t.password} type="password" value={password} onChange={e => setPassword(e.target.value)} style={{ padding: 10, borderRadius: 8, border: '1px solid #355748', background: '#0b1e16', color: '#ecf8f2' }} />
-            <input placeholder={t.displayName} value={displayName} onChange={e => setDisplayName(e.target.value)} style={{ padding: 10, borderRadius: 8, border: '1px solid #355748', background: '#0b1e16', color: '#ecf8f2' }} />
-            <select value={newRole} onChange={e => setNewRole(e.target.value)} style={{ padding: 10, borderRadius: 8, border: '1px solid #355748', background: '#0b1e16', color: '#ecf8f2' }}>
+            <input placeholder={t.email} type="email" value={email} onChange={e => setEmail(e.target.value)} style={{ padding: 11, borderRadius: 7, border: `1px solid ${theme.border}`, background: theme.input, color: theme.text }} />
+            <input placeholder={t.password} type="password" value={password} onChange={e => setPassword(e.target.value)} style={{ padding: 11, borderRadius: 7, border: `1px solid ${theme.border}`, background: theme.input, color: theme.text }} />
+            <input placeholder={t.displayName} value={displayName} onChange={e => setDisplayName(e.target.value)} style={{ padding: 11, borderRadius: 7, border: `1px solid ${theme.border}`, background: theme.input, color: theme.text }} />
+            <select value={newRole} onChange={e => setNewRole(e.target.value)} style={{ padding: 11, borderRadius: 7, border: `1px solid ${theme.border}`, background: theme.input, color: theme.text }}>
               <option value="user">{t.user}</option>
               <option value="admin">{t.admin}</option>
             </select>
-            <button type="submit" disabled={creating} style={{ padding: 10, borderRadius: 8, border: '1px solid #3e6353', background: '#1a3b30', color: '#f2d14c', fontWeight: 700 }}>
+            <button type="submit" disabled={creating} style={{ padding: 11, borderRadius: 7, border: `1px solid ${theme.goldSoft}`, background: `linear-gradient(135deg, ${theme.gold}, ${theme.goldSoft})`, color: '#11170f', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               {creating ? t.creating : t.create}
             </button>
           </form>
         </div>
 
-        <div style={{ background: '#10271e', border: '1px solid #355748', borderRadius: 12, padding: 16 }}>
+        <div style={{ background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: 8, padding: 18, boxShadow: '0 18px 45px rgba(0,0,0,0.28)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <h3 style={{ margin: 0 }}>{t.createdUsers}</h3>
-            <button type="button" onClick={loadUsers} disabled={usersLoading} style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #3e6353', background: '#1a3b30', color: '#f2d14c', fontWeight: 700 }}>{t.refresh}</button>
+            <h3 style={{ margin: 0, textTransform: 'uppercase', letterSpacing: '0.04em', color: theme.goldSoft }}>{t.createdUsers}</h3>
+            <button type="button" onClick={loadUsers} disabled={usersLoading} style={{ padding: '8px 12px', borderRadius: 7, border: `1px solid ${theme.borderStrong}`, background: 'rgba(12,24,19,0.35)', color: theme.textSoft, fontWeight: 800 }}>{t.refresh}</button>
           </div>
 
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
               <thead>
                 <tr>
-                  <th style={{ width: '30%', textAlign: 'left', borderBottom: '1px solid #355748', padding: '8px 6px' }}>{t.email}</th>
-                  <th style={{ width: '28%', textAlign: 'left', borderBottom: '1px solid #355748', padding: '8px 6px' }}>{t.displayName}</th>
-                  <th style={{ width: '17%', textAlign: 'left', borderBottom: '1px solid #355748', padding: '8px 6px' }}>{t.role}</th>
-                  <th style={{ width: '25%', textAlign: 'left', borderBottom: '1px solid #355748', padding: '8px 6px' }}>{t.actions}</th>
+                  <th style={{ width: '30%', textAlign: 'left', borderBottom: `1px solid ${theme.border}`, padding: '9px 6px', color: theme.goldSoft, textTransform: 'uppercase', fontSize: 12, letterSpacing: '0.06em' }}>{t.email}</th>
+                  <th style={{ width: '28%', textAlign: 'left', borderBottom: `1px solid ${theme.border}`, padding: '9px 6px', color: theme.goldSoft, textTransform: 'uppercase', fontSize: 12, letterSpacing: '0.06em' }}>{t.displayName}</th>
+                  <th style={{ width: '17%', textAlign: 'left', borderBottom: `1px solid ${theme.border}`, padding: '9px 6px', color: theme.goldSoft, textTransform: 'uppercase', fontSize: 12, letterSpacing: '0.06em' }}>{t.role}</th>
+                  <th style={{ width: '25%', textAlign: 'left', borderBottom: `1px solid ${theme.border}`, padding: '9px 6px', color: theme.goldSoft, textTransform: 'uppercase', fontSize: 12, letterSpacing: '0.06em' }}>{t.actions}</th>
                 </tr>
               </thead>
               <tbody>
                 {users.map(userItem => (
                   <tr key={userItem.id}>
-                    <td style={{ borderBottom: '1px solid #244336', padding: '8px 6px', verticalAlign: 'top', wordBreak: 'break-word' }}>{userItem.email}</td>
-                    <td style={{ borderBottom: '1px solid #244336', padding: '8px 6px', verticalAlign: 'top' }}>
+                    <td style={{ borderBottom: `1px solid ${theme.rowBorder}`, padding: '9px 6px', verticalAlign: 'top', wordBreak: 'break-word' }}>{userItem.email}</td>
+                    <td style={{ borderBottom: `1px solid ${theme.rowBorder}`, padding: '9px 6px', verticalAlign: 'top' }}>
                       <input
                         value={userItem.display_name}
                         onChange={e => setUsers(prev => prev.map(u => (u.id === userItem.id ? { ...u, display_name: e.target.value } : u)))}
-                        style={{ width: '100%', boxSizing: 'border-box', padding: 8, borderRadius: 6, border: '1px solid #355748', background: '#0b1e16', color: '#ecf8f2' }}
+                        style={{ width: '100%', boxSizing: 'border-box', padding: 8, borderRadius: 7, border: `1px solid ${theme.border}`, background: theme.input, color: theme.text }}
                       />
                     </td>
-                    <td style={{ borderBottom: '1px solid #244336', padding: '8px 6px', verticalAlign: 'top' }}>
+                    <td style={{ borderBottom: `1px solid ${theme.rowBorder}`, padding: '9px 6px', verticalAlign: 'top' }}>
                       <select
                         value={userItem.role}
                         onChange={e => setUsers(prev => prev.map(u => (u.id === userItem.id ? { ...u, role: e.target.value === 'admin' ? 'admin' : 'user' } : u)))}
-                        style={{ width: '100%', boxSizing: 'border-box', padding: 8, borderRadius: 6, border: '1px solid #355748', background: '#0b1e16', color: '#ecf8f2' }}
+                        style={{ width: '100%', boxSizing: 'border-box', padding: 8, borderRadius: 7, border: `1px solid ${theme.border}`, background: theme.input, color: theme.text }}
                       >
                         <option value="user">{t.user}</option>
                         <option value="admin">{t.admin}</option>
                       </select>
                     </td>
-                    <td style={{ borderBottom: '1px solid #244336', padding: '8px 6px', verticalAlign: 'top' }}>
+                    <td style={{ borderBottom: `1px solid ${theme.rowBorder}`, padding: '9px 6px', verticalAlign: 'top' }}>
                       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                        <button type="button" onClick={() => handleSaveUser(userItem.id)} disabled={savingId === userItem.id} style={{ padding: '7px 10px', borderRadius: 8, border: '1px solid #3e6353', background: '#1a3b30', color: '#f2d14c', fontWeight: 700 }}>{t.save}</button>
-                        <button type="button" onClick={() => handleDeleteUser(userItem.id)} disabled={deletingId === userItem.id || userItem.id === session.user?.id} style={{ padding: '7px 10px', borderRadius: 8, border: '1px solid #a64a4a', background: '#a64a4a', color: '#fff', fontWeight: 700 }}>{t.delete}</button>
+                        <button type="button" onClick={() => handleSaveUser(userItem.id)} disabled={savingId === userItem.id} style={{ padding: '7px 10px', borderRadius: 7, border: `1px solid ${theme.goldSoft}`, background: `linear-gradient(135deg, ${theme.gold}, ${theme.goldSoft})`, color: '#11170f', fontWeight: 800 }}>{t.save}</button>
+                        <button type="button" onClick={() => handleDeleteUser(userItem.id)} disabled={deletingId === userItem.id || userItem.id === session.user?.id} style={{ padding: '7px 10px', borderRadius: 7, border: `1px solid ${theme.danger}`, background: theme.danger, color: '#fff', fontWeight: 800 }}>{t.delete}</button>
                       </div>
                     </td>
                   </tr>

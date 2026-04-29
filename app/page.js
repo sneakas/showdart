@@ -58,6 +58,20 @@ const texts = {
   }
 };
 
+const theme = {
+  page: 'radial-gradient(circle at 14% 0%, rgba(214, 184, 77, 0.1), transparent 28rem), radial-gradient(circle at 86% 12%, rgba(79, 117, 95, 0.16), transparent 24rem), linear-gradient(180deg, #0a1711 0%, #07120d 50%, #050b08 100%)',
+  surface: 'linear-gradient(180deg, rgba(20, 39, 31, 0.98), rgba(12, 24, 19, 0.98))',
+  input: '#091610',
+  border: '#29463a',
+  borderStrong: '#4f755f',
+  text: '#f1f7f0',
+  textSoft: '#d6e6dc',
+  textMuted: '#94ad9e',
+  gold: '#d6b84d',
+  goldSoft: '#f1d56d',
+  danger: '#9b3f3f'
+};
+
 function setStoredAccessToken(session) {
   if (typeof window === 'undefined') return;
   if (session?.access_token) {
@@ -413,14 +427,14 @@ export default function Page() {
         onClick={() => changeLanguage('da')}
         title="Dansk"
         aria-label="Skift sprog til dansk"
-        style={{ width: 40, height: 30, borderRadius: 6, border: lang === 'da' ? '2px solid #f2d14c' : '1px solid #3e6353', backgroundImage: "url('https://flagcdn.com/w40/dk.png')", backgroundSize: 'cover', backgroundPosition: 'center', backgroundColor: '#10271e', padding: 0 }}
+        style={{ width: 40, height: 30, borderRadius: 6, border: lang === 'da' ? `2px solid ${theme.gold}` : `1px solid ${theme.borderStrong}`, backgroundImage: "url('https://flagcdn.com/w40/dk.png')", backgroundSize: 'cover', backgroundPosition: 'center', backgroundColor: theme.surface, padding: 0 }}
       />
       <button
         type="button"
         onClick={() => changeLanguage('en')}
         title="English"
         aria-label="Switch language to English"
-        style={{ width: 40, height: 30, borderRadius: 6, border: lang === 'en' ? '2px solid #f2d14c' : '1px solid #3e6353', backgroundImage: "url('https://flagcdn.com/w40/gb.png')", backgroundSize: 'cover', backgroundPosition: 'center', backgroundColor: '#10271e', padding: 0 }}
+        style={{ width: 40, height: 30, borderRadius: 6, border: lang === 'en' ? `2px solid ${theme.gold}` : `1px solid ${theme.borderStrong}`, backgroundImage: "url('https://flagcdn.com/w40/gb.png')", backgroundSize: 'cover', backgroundPosition: 'center', backgroundColor: theme.surface, padding: 0 }}
       />
     </div>
   );
@@ -431,8 +445,8 @@ export default function Page() {
 
   if (!isSupabaseConfigured) {
     return (
-      <main style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', fontFamily: 'system-ui', background: '#0b1e16', color: '#ecf8f2', padding: 20 }}>
-        <div style={{ maxWidth: 680, background: '#10271e', border: '1px solid #355748', borderRadius: 12, padding: 20 }}>
+      <main style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', fontFamily: 'Manrope, system-ui, sans-serif', background: theme.page, color: theme.text, padding: 20 }}>
+        <div style={{ maxWidth: 680, background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: 8, padding: 22, boxShadow: '0 18px 45px rgba(0,0,0,0.34)' }}>
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>{flagLanguageButtons}</div>
           <h2 style={{ marginTop: 0 }}>{t.missingEnvTitle}</h2>
           <p>{t.missingEnvBody}</p>
@@ -448,24 +462,24 @@ export default function Page() {
 
   if (!session) {
     return (
-      <main style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', fontFamily: 'system-ui', background: '#0b1e16', color: '#ecf8f2' }}>
-        <form onSubmit={handleAuthSubmit} style={{ width: 380, background: '#10271e', border: '1px solid #355748', borderRadius: 12, padding: 20 }}>
+      <main style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', fontFamily: 'Manrope, system-ui, sans-serif', background: theme.page, color: theme.text, padding: 18 }}>
+        <form onSubmit={handleAuthSubmit} style={{ width: 'min(390px, 100%)', background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: 8, padding: 22, boxShadow: '0 18px 45px rgba(0,0,0,0.34)' }}>
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>{flagLanguageButtons}</div>
-          <h2 style={{ marginTop: 0, marginBottom: 16 }}>{mode === 'login' ? t.login : t.signup}</h2>
+          <h2 style={{ marginTop: 0, marginBottom: 16, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{mode === 'login' ? t.login : t.signup}</h2>
 
           <label style={{ display: 'block', marginBottom: 6 }}>{t.email}</label>
-          <input type="email" value={email} onChange={e => setEmail(e.target.value)} style={{ width: '100%', marginBottom: 12, padding: 10, borderRadius: 8, border: '1px solid #355748', background: '#0b1e16', color: '#ecf8f2' }} />
+          <input type="email" value={email} onChange={e => setEmail(e.target.value)} style={{ width: '100%', marginBottom: 12, padding: 11, borderRadius: 7, border: `1px solid ${theme.border}`, background: theme.input, color: theme.text }} />
 
           <label style={{ display: 'block', marginBottom: 6 }}>{t.password}</label>
-          <input type="password" value={password} onChange={e => setPassword(e.target.value)} style={{ width: '100%', marginBottom: 12, padding: 10, borderRadius: 8, border: '1px solid #355748', background: '#0b1e16', color: '#ecf8f2' }} />
+          <input type="password" value={password} onChange={e => setPassword(e.target.value)} style={{ width: '100%', marginBottom: 12, padding: 11, borderRadius: 7, border: `1px solid ${theme.border}`, background: theme.input, color: theme.text }} />
 
-          {authError ? <p style={{ color: '#f3e39f', marginTop: 0 }}>{authError}</p> : null}
+          {authError ? <p style={{ color: theme.goldSoft, marginTop: 0 }}>{authError}</p> : null}
 
-          <button type="submit" style={{ width: '100%', padding: 10, borderRadius: 8, border: '1px solid #3e6353', background: '#1a3b30', color: '#f2d14c', fontWeight: 700 }}>
+          <button type="submit" style={{ width: '100%', padding: 11, borderRadius: 7, border: `1px solid ${theme.goldSoft}`, background: `linear-gradient(135deg, ${theme.gold}, ${theme.goldSoft})`, color: '#11170f', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
             {mode === 'login' ? t.login : t.createAccount}
           </button>
 
-          <button type="button" onClick={() => setMode(mode === 'login' ? 'signup' : 'login')} style={{ marginTop: 10, width: '100%', padding: 10, borderRadius: 8, border: '1px solid #355748', background: 'transparent', color: '#ecf8f2' }}>
+          <button type="button" onClick={() => setMode(mode === 'login' ? 'signup' : 'login')} style={{ marginTop: 10, width: '100%', padding: 11, borderRadius: 7, border: `1px solid ${theme.border}`, background: 'rgba(12,24,19,0.35)', color: theme.textSoft, fontWeight: 700 }}>
             {mode === 'login' ? t.needAccount : t.haveAccount}
           </button>
         </form>
@@ -474,7 +488,7 @@ export default function Page() {
   }
 
   return (
-    <main style={{ width: '100%', minHeight: '100vh', margin: 0, fontFamily: 'system-ui', background: '#0b1e16' }}>
+    <main style={{ width: '100%', minHeight: '100vh', margin: 0, fontFamily: 'Manrope, system-ui, sans-serif', background: theme.page }}>
       <SharedTopNavigation
         lang={lang}
         role={profileRole}
@@ -487,18 +501,18 @@ export default function Page() {
       />
 
       <section style={{ maxWidth: 1200, margin: '0 auto', padding: '0 16px 16px' }}>
-        <div style={{ background: '#10271e', border: '1px solid #355748', borderRadius: 12, padding: '12px 14px', color: '#ecf8f2', display: 'flex', gap: 14, alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+        <div style={{ background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: 8, padding: '13px 15px', color: theme.text, display: 'flex', gap: 14, alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', boxShadow: '0 14px 32px rgba(0,0,0,0.22)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', minWidth: 260 }}>
             <div>
-              <div style={{ fontSize: 12, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#9db9ab', marginBottom: 4 }}>
+              <div style={{ fontSize: 12, letterSpacing: '0.08em', textTransform: 'uppercase', color: theme.textMuted, marginBottom: 4 }}>
                 {t.screenPanelTitle}
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#d9ece2', fontWeight: 700 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: theme.textSoft, fontWeight: 800 }}>
                 <span style={{ width: 10, height: 10, borderRadius: '50%', background: screenInfo?.screenUrl ? '#46c37b' : '#b88b45', boxShadow: `0 0 12px ${screenInfo?.screenUrl ? 'rgba(70,195,123,0.55)' : 'rgba(184,139,69,0.45)'}` }} />
                 {screenInfo?.screenUrl ? t.screenLive : t.screenLoading}
               </div>
             </div>
-            {screenNotice ? <div style={{ color: '#f2d14c', fontSize: 14 }}>{screenNotice}</div> : null}
+            {screenNotice ? <div style={{ color: theme.goldSoft, fontSize: 14 }}>{screenNotice}</div> : null}
             {screenError ? <div style={{ color: '#f3a7a7', fontSize: 14 }}>{t.screenError}</div> : null}
           </div>
 
@@ -507,7 +521,7 @@ export default function Page() {
               type="button"
               disabled={!screenInfo?.screenUrl}
               onClick={() => screenInfo?.screenUrl && window.open(screenInfo.screenUrl, '_blank', 'noopener,noreferrer')}
-              style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid #3e6353', background: '#1a3b30', color: '#f2d14c', fontWeight: 700, cursor: screenInfo?.screenUrl ? 'pointer' : 'default', opacity: screenInfo?.screenUrl ? 1 : 0.65 }}
+              style={{ padding: '10px 14px', borderRadius: 7, border: `1px solid ${theme.goldSoft}`, background: `linear-gradient(135deg, ${theme.gold}, ${theme.goldSoft})`, color: '#11170f', fontWeight: 800, cursor: screenInfo?.screenUrl ? 'pointer' : 'default', opacity: screenInfo?.screenUrl ? 1 : 0.65 }}
             >
               {screenInfo?.screenUrl ? t.screenOpen : t.screenLoading}
             </button>
@@ -515,7 +529,7 @@ export default function Page() {
               type="button"
               disabled={!screenInfo?.screenUrl}
               onClick={handleCopyScreenLink}
-              style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid #355748', background: 'transparent', color: '#ecf8f2', fontWeight: 700, cursor: screenInfo?.screenUrl ? 'pointer' : 'default', opacity: screenInfo?.screenUrl ? 1 : 0.65 }}
+              style={{ padding: '10px 14px', borderRadius: 7, border: `1px solid ${theme.border}`, background: 'rgba(12,24,19,0.35)', color: theme.textSoft, fontWeight: 800, cursor: screenInfo?.screenUrl ? 'pointer' : 'default', opacity: screenInfo?.screenUrl ? 1 : 0.65 }}
             >
               {t.screenCopy}
             </button>

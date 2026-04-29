@@ -21,6 +21,21 @@ const headerTexts = {
   }
 };
 
+const theme = {
+  bg: '#07120d',
+  bgGlass: 'rgba(7, 18, 13, 0.9)',
+  surface: '#101f19',
+  surface2: '#14271f',
+  border: '#29463a',
+  borderStrong: '#4f755f',
+  text: '#f1f7f0',
+  textSoft: '#d6e6dc',
+  textMuted: '#94ad9e',
+  gold: '#d6b84d',
+  goldSoft: '#f1d56d',
+  danger: '#9b3f3f'
+};
+
 export function SharedTopNavigation({
   lang,
   role,
@@ -36,14 +51,15 @@ export function SharedTopNavigation({
   const isAdmin = role === 'admin';
 
   const navButtonStyle = isActive => ({
-    color: isActive ? '#f2d14c' : '#b6cec1',
-    fontWeight: 700,
+    color: isActive ? '#11170f' : theme.textSoft,
+    fontWeight: 800,
     textTransform: 'uppercase',
     letterSpacing: '0.05em',
-    borderRadius: 8,
-    padding: '0.55rem 0.8rem',
-    border: '1px solid transparent',
-    background: isActive ? '#1a3b30' : 'transparent',
+    borderRadius: 7,
+    padding: '0.62rem 0.9rem',
+    border: isActive ? `1px solid ${theme.goldSoft}` : '1px solid transparent',
+    background: isActive ? `linear-gradient(135deg, ${theme.gold}, ${theme.goldSoft})` : 'transparent',
+    boxShadow: isActive ? '0 10px 22px rgba(214, 184, 77, 0.18)' : 'none',
     textDecoration: 'none',
     cursor: 'pointer',
     lineHeight: 1.15,
@@ -63,19 +79,19 @@ export function SharedTopNavigation({
 
   return (
     <>
-      <div style={{ background: 'rgba(11, 30, 22, 0.92)', borderBottom: '1px solid #355748', color: '#ecf8f2' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '10px 16px', display: 'flex', gap: 12, alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' }}>
-          <div style={{ color: '#d9ece2' }}>
+      <div style={{ background: theme.bgGlass, borderBottom: `1px solid ${theme.border}`, color: theme.text, backdropFilter: 'blur(14px)' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '9px 16px', display: 'flex', gap: 12, alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+          <div style={{ color: theme.textSoft, fontSize: 14 }}>
             {t.loggedInAs} <strong>{email || '-'}</strong> ({role || 'user'})
           </div>
-          <button onClick={onLogout} style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #a64a4a', background: '#a64a4a', color: '#fff', fontWeight: 700, lineHeight: 1 }}>
+          <button onClick={onLogout} style={{ padding: '8px 12px', borderRadius: 7, border: `1px solid ${theme.danger}`, background: theme.danger, color: '#fff', fontWeight: 800, lineHeight: 1, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
             {t.logout}
           </button>
         </div>
       </div>
 
-      <div style={{ background: 'rgba(11, 30, 22, 0.92)', borderBottom: '1px solid #355748' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '10px 16px', display: 'flex', gap: 12, alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+      <div style={{ background: 'linear-gradient(90deg, rgba(9, 20, 14, 0.98), rgba(15, 35, 27, 0.98))', borderBottom: `1px solid ${theme.border}`, boxShadow: '0 10px 28px rgba(0,0,0,0.22)' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '11px 16px', display: 'flex', gap: 12, alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
             {navItem('registration', t.registration)}
             {navItem('tournament', t.tournament)}
@@ -89,14 +105,14 @@ export function SharedTopNavigation({
               onClick={() => onLanguageChange?.('da')}
               title="Dansk"
               aria-label="Skift sprog til dansk"
-              style={{ width: 40, height: 30, borderRadius: 6, border: lang === 'da' ? '2px solid #f2d14c' : '1px solid #3e6353', backgroundImage: "url('https://flagcdn.com/w40/dk.png')", backgroundSize: 'cover', backgroundPosition: 'center', backgroundColor: '#10271e', padding: 0 }}
+              style={{ width: 40, height: 30, borderRadius: 6, border: lang === 'da' ? `2px solid ${theme.gold}` : `1px solid ${theme.borderStrong}`, backgroundImage: "url('https://flagcdn.com/w40/dk.png')", backgroundSize: 'cover', backgroundPosition: 'center', backgroundColor: theme.surface, padding: 0, boxShadow: lang === 'da' ? '0 0 0 2px rgba(214,184,77,0.15)' : 'none' }}
             />
             <button
               type="button"
               onClick={() => onLanguageChange?.('en')}
               title="English"
               aria-label="Switch language to English"
-              style={{ width: 40, height: 30, borderRadius: 6, border: lang === 'en' ? '2px solid #f2d14c' : '1px solid #3e6353', backgroundImage: "url('https://flagcdn.com/w40/gb.png')", backgroundSize: 'cover', backgroundPosition: 'center', backgroundColor: '#10271e', padding: 0 }}
+              style={{ width: 40, height: 30, borderRadius: 6, border: lang === 'en' ? `2px solid ${theme.gold}` : `1px solid ${theme.borderStrong}`, backgroundImage: "url('https://flagcdn.com/w40/gb.png')", backgroundSize: 'cover', backgroundPosition: 'center', backgroundColor: theme.surface, padding: 0, boxShadow: lang === 'en' ? '0 0 0 2px rgba(214,184,77,0.15)' : 'none' }}
             />
           </div>
         </div>
@@ -106,19 +122,19 @@ export function SharedTopNavigation({
         <div
           style={{
             backgroundImage:
-              "linear-gradient(115deg, rgba(9, 21, 15, 0.92) 0%, rgba(9, 21, 15, 0.66) 45%, rgba(9, 21, 15, 0.86) 100%), url('https://images.unsplash.com/photo-1582562124811-c09040d0a901?auto=format&fit=crop&w=1400&q=80')",
+              "linear-gradient(115deg, rgba(5, 12, 8, 0.94) 0%, rgba(8, 18, 13, 0.62) 48%, rgba(5, 12, 8, 0.92) 100%), url('https://images.unsplash.com/photo-1582562124811-c09040d0a901?auto=format&fit=crop&w=1400&q=80')",
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             color: '#f4efe1',
-            padding: '3.25rem 0',
-            marginBottom: '1.25rem',
+            padding: '3.75rem 0',
+            marginBottom: '1.35rem',
             borderTop: '1px solid rgba(255,255,255,0.05)',
-            borderBottom: '1px solid #355748',
-            boxShadow: 'inset 0 -60px 80px rgba(0,0,0,0.35)'
+            borderBottom: `1px solid ${theme.border}`,
+            boxShadow: 'inset 0 -80px 110px rgba(0,0,0,0.45)'
           }}
         >
           <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 16px', textAlign: 'center' }}>
-            <h1 style={{ margin: 0, fontSize: 'clamp(1.7rem, 4.4vw, 2.55rem)', lineHeight: 1.05, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            <h1 style={{ margin: 0, fontSize: 'clamp(1.85rem, 4.6vw, 3.05rem)', lineHeight: 1.02, textTransform: 'uppercase', letterSpacing: '0.04em', textShadow: '0 12px 32px rgba(0,0,0,0.55)' }}>
               {t.siteTitle}
             </h1>
           </div>

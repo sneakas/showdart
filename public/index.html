@@ -9,31 +9,38 @@
         @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Manrope:wght@400;500;700;800&display=swap');
 
         :root {
-            --club-bg: #0b1e16;
-            --club-surface: #10271e;
-            --club-surface-2: #161f1b;
-            --club-border: #355748;
-            --club-border-strong: #3e6353;
-            --club-text: #ecf8f2;
-            --club-text-soft: #d9ece2;
-            --club-text-muted: #b6cec1;
-            --club-gold: #f2d14c;
-            --club-accent: #d4652b;
-            --club-accent-hover: #e1763b;
-            --club-danger: #a64a4a;
+            --club-bg: #07120d;
+            --club-bg-2: #0b1b14;
+            --club-surface: #101f19;
+            --club-surface-2: #14271f;
+            --club-surface-3: #0c1813;
+            --club-border: #29463a;
+            --club-border-strong: #4f755f;
+            --club-text: #f1f7f0;
+            --club-text-soft: #d6e6dc;
+            --club-text-muted: #94ad9e;
+            --club-gold: #d6b84d;
+            --club-gold-soft: #f1d56d;
+            --club-accent: #c96a32;
+            --club-accent-hover: #df7a3f;
+            --club-danger: #9b3f3f;
+            --club-shadow: 0 18px 45px rgba(0, 0, 0, 0.34);
         }
 
         body {
             font-family: 'Manrope', system-ui, sans-serif;
-            background: linear-gradient(180deg, #0d1d16 0%, var(--club-bg) 45%);
+            background:
+                radial-gradient(circle at 14% 0%, rgba(214, 184, 77, 0.1), transparent 28rem),
+                radial-gradient(circle at 86% 12%, rgba(79, 117, 95, 0.16), transparent 24rem),
+                linear-gradient(180deg, #0a1711 0%, var(--club-bg) 50%, #050b08 100%);
             color: var(--club-text);
             min-height: 100vh;
         }
 
         .navbar {
-            background-color: rgba(11, 30, 22, 0.92);
+            background-color: rgba(7, 18, 13, 0.92);
             border-bottom: 1px solid var(--club-border);
-            backdrop-filter: blur(8px);
+            backdrop-filter: blur(12px);
         }
 
         .navbar-brand,
@@ -62,38 +69,40 @@
 
         .nav-link:hover,
         .nav-link.active {
-            color: var(--club-gold) !important;
-            background: #1a3b30;
+            color: #11170f !important;
+            background: linear-gradient(135deg, var(--club-gold), var(--club-gold-soft));
+            box-shadow: 0 8px 20px rgba(214, 184, 77, 0.18);
         }
 
         .hero {
             background:
-                linear-gradient(115deg, rgba(9, 21, 15, 0.92) 0%, rgba(9, 21, 15, 0.66) 45%, rgba(9, 21, 15, 0.86) 100%),
+                linear-gradient(115deg, rgba(5, 12, 8, 0.92) 0%, rgba(8, 18, 13, 0.66) 45%, rgba(5, 12, 8, 0.9) 100%),
                 url('https://images.unsplash.com/photo-1582562124811-c09040d0a901?auto=format&fit=crop&w=1400&q=80');
             background-size: cover;
             background-position: center;
             color: #f4efe1;
-            padding: 3.25rem 0;
+            padding: 3.75rem 0;
             margin-bottom: 2rem;
             border-top: 1px solid rgba(255,255,255,0.05);
             border-bottom: 1px solid var(--club-border);
-            box-shadow: inset 0 -60px 80px rgba(0,0,0,0.35);
+            box-shadow: inset 0 -80px 110px rgba(0,0,0,0.45);
         }
 
         .card {
             margin-bottom: 1.5rem;
-            background: var(--club-surface);
+            background: linear-gradient(180deg, rgba(20, 39, 31, 0.98), rgba(12, 24, 19, 0.98));
             border: 1px solid var(--club-border);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
-            border-radius: 14px;
+            box-shadow: var(--club-shadow);
+            border-radius: 8px;
             overflow: hidden;
         }
 
         .card-header {
-            background: var(--club-surface-2);
+            background: linear-gradient(90deg, rgba(12, 24, 19, 0.98), rgba(20, 39, 31, 0.98));
             color: var(--club-gold);
             font-weight: 800;
             border-bottom: 1px solid var(--club-border);
+            padding: 0.9rem 1.15rem;
         }
 
         .card-body,
@@ -116,16 +125,25 @@
         }
 
         .form-control {
-            background: var(--club-bg);
+            background: #091610;
             border: 1px solid var(--club-border);
             color: var(--club-text);
+            border-radius: 7px;
         }
 
-        .form-control:focus {
-            background: var(--club-bg);
+        .form-control:focus,
+        .form-select:focus {
+            background: #091610;
             color: var(--club-text);
             border-color: var(--club-gold);
             box-shadow: 0 0 0 0.2rem rgba(242, 209, 76, 0.18);
+        }
+
+        .form-select {
+            background-color: #091610;
+            border: 1px solid var(--club-border);
+            color: var(--club-text);
+            border-radius: 7px;
         }
 
         .table {
@@ -167,8 +185,8 @@
         }
 
         #playersTable thead th {
-            color: #f7f1d6 !important;
-            background: var(--club-surface-2);
+            color: var(--club-gold-soft) !important;
+            background: #0b1712;
             border-color: var(--club-border) !important;
             font-weight: 800;
             letter-spacing: 0.03em;
@@ -179,29 +197,31 @@
         }
 
         .btn {
-            border-radius: 8px;
+            border-radius: 7px;
             font-weight: 800;
             text-transform: uppercase;
             letter-spacing: 0.04em;
         }
 
         .btn-primary {
-            background-color: var(--club-surface);
-            border: 1px solid var(--club-border-strong);
-            color: var(--club-text-soft);
+            background: linear-gradient(135deg, var(--club-gold), var(--club-gold-soft));
+            border: 1px solid rgba(241, 213, 109, 0.65);
+            color: #11170f;
+            box-shadow: 0 10px 22px rgba(214, 184, 77, 0.16);
         }
 
         .btn-primary:hover,
         .btn-primary:focus {
-            background-color: #1a3b30;
-            border-color: var(--club-gold);
-            color: var(--club-gold);
+            background: linear-gradient(135deg, #e3c65a, #ffe488);
+            border-color: var(--club-gold-soft);
+            color: #11170f;
         }
 
         .btn-success {
-            background-color: var(--club-accent);
-            border: 1px solid var(--club-accent);
+            background: linear-gradient(135deg, var(--club-accent), var(--club-accent-hover));
+            border: 1px solid rgba(223, 122, 63, 0.75);
             color: #fff;
+            box-shadow: 0 10px 22px rgba(201, 106, 50, 0.18);
         }
 
         .btn-success:hover,
@@ -230,12 +250,27 @@
         .btn-outline-success {
             border-color: var(--club-border-strong);
             color: var(--club-text-soft);
+            background: rgba(12, 24, 19, 0.32);
         }
 
         .btn-outline-success:hover {
             border-color: var(--club-gold);
-            color: var(--club-gold);
-            background: #1a3b30;
+            color: #11170f;
+            background: var(--club-gold);
+        }
+
+        .btn-outline-secondary,
+        .btn-outline-info {
+            border-color: var(--club-border-strong);
+            color: var(--club-text-soft);
+            background: rgba(12, 24, 19, 0.32);
+        }
+
+        .btn-outline-secondary:hover,
+        .btn-outline-info:hover {
+            border-color: var(--club-gold);
+            color: #11170f;
+            background: var(--club-gold);
         }
 
         .alert {
@@ -245,7 +280,7 @@
 
         .alert-info,
         .alert-primary {
-            background: var(--club-surface);
+            background: rgba(20, 39, 31, 0.9);
             border-color: var(--club-border);
             color: var(--club-text-soft);
         }
@@ -264,6 +299,25 @@
 
         .text-muted {
             color: var(--club-text-muted) !important;
+        }
+
+        .badge {
+            border-radius: 999px;
+            padding: 0.42em 0.72em;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+        }
+
+        .bg-success {
+            background-color: #2e8b62 !important;
+        }
+
+        .bg-secondary {
+            background-color: #53675b !important;
+        }
+
+        .bg-warning {
+            background-color: var(--club-gold) !important;
         }
 
         .player-tag {
@@ -380,9 +434,10 @@
             align-items: end;
             padding: 1rem;
             margin-bottom: 1rem;
-            background: rgba(12, 30, 23, 0.76);
+            background: linear-gradient(135deg, rgba(9, 22, 16, 0.92), rgba(15, 35, 27, 0.88));
             border: 1px solid var(--club-border);
-            border-radius: 12px;
+            border-radius: 8px;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
         }
 
         .setup-toolbar .setup-field,
@@ -420,10 +475,10 @@
         .registration-collapsed-copy {
             display: none;
             padding: 0.95rem 1rem;
-            border-radius: 12px;
+            border-radius: 8px;
             border: 1px dashed var(--club-border);
             color: var(--club-text-soft);
-            background: rgba(12, 30, 23, 0.42);
+            background: rgba(12, 24, 19, 0.72);
         }
 
         .registration-section-card.panel-collapsed .registration-collapsed-copy {
@@ -447,10 +502,12 @@
 
         .summary-chip {
             padding: 0.95rem 1rem;
-            border-radius: 12px;
+            border-radius: 8px;
             border: 1px solid var(--club-border);
-            background: rgba(12, 30, 23, 0.72);
+            background:
+                linear-gradient(180deg, rgba(18, 38, 30, 0.92), rgba(9, 22, 16, 0.92));
             min-height: 84px;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
         }
 
         .summary-chip strong {
@@ -511,9 +568,9 @@
         }
 
         .round-board-intro {
-            background: rgba(12, 30, 23, 0.75);
+            background: linear-gradient(135deg, rgba(9, 22, 16, 0.92), rgba(20, 39, 31, 0.88));
             border: 1px solid var(--club-border);
-            border-radius: 12px;
+            border-radius: 8px;
             padding: 1rem;
             margin-bottom: 1rem;
         }
@@ -593,17 +650,17 @@
         }
 
         .round-team-panel {
-            border-radius: 12px;
+            border-radius: 8px;
             padding: 1rem 0.95rem;
             text-align: center;
-            background: rgba(8, 20, 15, 0.72);
+            background: rgba(5, 13, 9, 0.76);
             border: 1px solid rgba(255,255,255,0.08);
         }
 
         .round-team-panel.is-winner {
             border-color: var(--club-gold);
-            box-shadow: 0 0 0 1px rgba(242, 209, 76, 0.18);
-            background: rgba(32, 58, 46, 0.92);
+            box-shadow: 0 0 0 1px rgba(214, 184, 77, 0.25), 0 14px 28px rgba(214, 184, 77, 0.12);
+            background: linear-gradient(180deg, rgba(50, 72, 44, 0.96), rgba(24, 46, 35, 0.96));
         }
 
         .round-team-name {
@@ -652,9 +709,9 @@
         .lane-config-panel {
             margin-bottom: 1rem;
             padding: 1rem;
-            border-radius: 12px;
+            border-radius: 8px;
             border: 1px solid var(--club-border);
-            background: rgba(12, 30, 23, 0.75);
+            background: linear-gradient(135deg, rgba(9, 22, 16, 0.94), rgba(20, 39, 31, 0.86));
         }
 
         .lane-config-headline {
@@ -708,7 +765,7 @@
 
         .history-table-wrap {
             border: 1px solid var(--club-border);
-            border-radius: 12px;
+            border-radius: 8px;
             overflow: hidden;
             background: rgba(8, 20, 15, 0.72);
         }
@@ -719,8 +776,8 @@
         }
 
         .history-table thead th {
-            background: rgba(12, 30, 23, 0.9);
-            color: var(--club-gold);
+            background: #08120d;
+            color: var(--club-gold-soft);
             text-transform: uppercase;
             letter-spacing: 0.06em;
             font-size: 0.75rem;
@@ -762,7 +819,7 @@
         .bye-strip {
             margin-bottom: 1rem;
             padding: 0.95rem 1rem;
-            border-radius: 12px;
+            border-radius: 8px;
             border: 1px solid rgba(242, 209, 76, 0.38);
             background: rgba(70, 56, 17, 0.28);
         }
