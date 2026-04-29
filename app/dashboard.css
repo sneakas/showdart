@@ -849,6 +849,8 @@
 
 .sd-rules-dialog {
   width: min(100%, 720px);
+  max-height: min(86vh, 760px);
+  overflow: auto;
 }
 
 .sd-dialog-mark {
@@ -940,6 +942,49 @@
 @media (min-width: 1500px) {
   .sd-dashboard {
     grid-template-columns: 305px minmax(390px, 1fr) 300px minmax(560px, 1.35fr);
+  }
+}
+
+@media (min-width: 1201px) {
+  .sd-dashboard {
+    height: max(430px, calc(100vh - 88px - 210px - 104px));
+    overflow: hidden;
+    align-items: stretch;
+  }
+
+  .sd-dashboard > .sd-stack,
+  .sd-dashboard > .sd-card {
+    min-height: 0;
+    max-height: 100%;
+  }
+
+  .sd-dashboard > .sd-stack {
+    overflow: auto;
+    padding-right: 2px;
+  }
+
+  .sd-dashboard > .sd-card.sd-panel {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .sd-dashboard > .sd-card.sd-panel > div:first-child {
+    flex: 0 0 auto;
+  }
+
+  .sd-table-wrap,
+  .sd-lane-list,
+  .sd-match-list,
+  .sd-history-wrap {
+    min-height: 0;
+    max-height: none;
+    overflow: auto;
+  }
+
+  .sd-table-wrap,
+  .sd-lane-list,
+  .sd-match-list {
+    flex: 1 1 auto;
   }
 }
 

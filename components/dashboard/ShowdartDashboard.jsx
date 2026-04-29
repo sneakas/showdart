@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { ArrowDown, ArrowUp, CalendarDays, Check, ClipboardList, Copy, ExternalLink, GitBranch, History, MoreVertical, Plus, QrCode, RefreshCw, ShieldCheck, Trophy, Upload, UsersRound } from 'lucide-react';
+import { ArrowDown, ArrowUp, CalendarDays, Check, ClipboardList, Eye, ExternalLink, GitBranch, History, MoreVertical, Plus, QrCode, RefreshCw, RotateCcw, ShieldCheck, Trophy, Upload, UsersRound } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   addFixedTeam,
@@ -41,22 +41,41 @@ const texts = {
     rulesChangingTitle: 'Regler for skiftende makkere',
     rulesFixedTitle: 'Regler for faste makkere',
     rulesChanging: [
-      'Spillere registreres enkeltvis, og systemet danner nye makkerpar for hver runde.',
-      'Systemet forsøger at undgå gentagne makkere og modstandere på tværs af runder.',
-      'Ved ulige antal spillere kan nogle spille 1 mod 1, eller en spiller kan sidde over.',
-      'S-tag bruges til spillere, der har spillet 1 mod 1. O-tag bruges til spillere, der har siddet over.',
-      'Når alle aktive spillere har fået samme tag, nulstilles tag-cyklussen automatisk.',
-      'Tabere får 1 nederlag. Når en spiller når maks. nederlag, ryger spilleren ud.',
-      'Mellem runder kan turneringslederen rette nederlag, tilføje spillere, ændre tags og starte finale.'
+      'Spillere skal registreres, før turneringen begynder.',
+      'Turneringslederen bestemmer, hvor mange nederlag en spiller kan få før eliminering, baseret på antallet af deltagere.',
+      'Aktive spillere fordeles tilfældigt i hold på 2 for 2v2-kampe i hver runde.',
+      'Fairness-motoren forsøger at undgå gentagne makkere og gentagne modstandere på tværs af runder.',
+      'Særlige regler gælder, når der ikke er nok spillere til lige 2v2-kampe: Hvis 3 spillere forbliver uparrede, spiller 2 en 1v1-kamp, og 1 sidder over.',
+      'Hvis 2 spillere forbliver uparrede, spiller de en 1v1-kamp.',
+      'Hvis 1 spiller forbliver uparret, sidder spilleren over.',
+      '"S" tag bruges til spillere, der har spillet i en 1v1-kamp.',
+      '"O" tag bruges til spillere, der har siddet over.',
+      'Tags tildeles automatisk efter kampene genereres i hver runde, og turneringslederen kan manuelt tilføje eller fjerne tags mellem runder.',
+      'Spillere med "S" tag prioriteres væk fra 1v1-kampe, indtil alle andre aktive spillere har modtaget "S" tags.',
+      'Spillere med "O" tag prioriteres væk fra at sidde over, indtil alle andre aktive spillere har modtaget "O" tags.',
+      'Når alle aktive spillere har fået samme tag, nulstilles tag-cyklussen automatisk. Hvis den sidste spiller uden S-tag spiller 1v1 mod en spiller, der allerede har S-tag, beholder begge S-tag, og de øvrige nulstilles.',
+      'Baner vælges før næste runde genereres. Efter runden er genereret, kan turneringslederen stadig ændre bane på hver kamp manuelt.',
+      'Efter hver runde markeres vinderne, og taberne modtager 1 nederlag.',
+      'Når en spiller bliver elimineret, vises elimineringsrunden i spillerens status, f.eks. "Elimineret R3".',
+      'Mellem runder kan turneringslederen rette nederlag, gendanne eliminerede spillere ved at sænke nederlag, tilføje spillere, ændre tags og se kamphistorik.',
+      'Tilskuerskærmen viser stilling mellem runder, aktuelle kampe under runden, vindere når de markeres, og kan midlertidigt vise stillingen i 30 sekunder.',
+      'Når 5 eller færre aktive spillere er tilbage, kan turneringslederen starte en finale. I finalen rangeres de resterende spillere manuelt fra 1. plads til sidste plads.'
     ],
     rulesFixed: [
-      'Spillere registreres som faste hold med 2 personer på hvert hold.',
-      'Holdene spiller som faste makkere gennem hele turneringen.',
-      'Systemet forsøger at undgå gentagne modstanderhold og samme hold, der sidder over flere gange i træk.',
-      'Faste makker-turneringer bruger ikke S- og O-tags.',
-      'Tabende hold får 1 nederlag. Når et hold når maks. nederlag, ryger holdet ud.',
-      'Mellem runder kan turneringslederen rette nederlag, tilføje hold, ændre baner og starte finale.',
-      'Finalen kan startes, når få aktive hold er tilbage, hvorefter holdene rangeres manuelt.'
+      'Hold skal registreres som to faste spillere, før turneringen starter.',
+      'Turneringslederen bestemmer, hvor mange nederlag et hold må få, før det elimineres.',
+      'De samme to spillere bliver på holdet under hele turneringen og spiller altid sammen.',
+      'Kampe genereres som hold mod hold i hver runde.',
+      'Fairness-motoren forsøger at undgå gentagne opgør mellem de samme hold.',
+      'Hvis et ulige antal hold er aktive, sidder ét hold over i runden.',
+      'Systemet forsøger at undgå, at det samme hold sidder over to runder i træk.',
+      'Der bruges ikke S- eller O-tags i faste makker-turneringer.',
+      'Baner vælges før næste runde genereres. Efter runden er genereret, kan turneringslederen stadig ændre bane på hver kamp manuelt.',
+      'Efter hver runde modtager det tabende hold 1 nederlag.',
+      'Når et hold når det maksimale antal nederlag, bliver det elimineret, og elimineringsrunden vises i oversigten.',
+      'Mellem runder kan turneringslederen rette nederlag, gendanne eliminerede hold ved at sænke nederlag, tilføje hold, ændre baner og se kamphistorik.',
+      'Tilskuerskærmen viser stilling mellem runder, aktuelle kampe under runden, vindere når de markeres, og kan midlertidigt vise stillingen i 30 sekunder.',
+      'Når 5 eller færre aktive hold er tilbage, kan turneringslederen starte en finale. I finalen rangeres de resterende hold manuelt fra 1. plads til sidste plads.'
     ],
     logout: 'Log ud',
     brandSub: 'Turnering',
@@ -143,22 +162,41 @@ const texts = {
     rulesChangingTitle: 'Rules for changing teammates',
     rulesFixedTitle: 'Rules for fixed teammates',
     rulesChanging: [
-      'Players are registered individually, and the system creates new teams each round.',
-      'The system tries to avoid repeated partners and opponents across rounds.',
-      'With uneven player counts, some players may play 1v1 or one player may sit out.',
-      'S tags are used for players who played 1v1. O tags are used for players who sat out.',
-      'When all active players have received the same tag, that tag cycle resets automatically.',
-      'Losers receive 1 loss. When a player reaches the maximum losses, they are eliminated.',
-      'Between rounds the organizer can edit losses, add players, change tags and start the final.'
+      'Players must register before the tournament begins.',
+      'The tournament director decides how many losses a player can get before elimination based on the number of participants.',
+      'Active players are randomly split into teams of 2 for 2v2 matches each round.',
+      'The fairness engine tries to avoid repeated partners and repeated opponents across rounds.',
+      'Special rules apply when there are not enough players for even 2v2 matches: If 3 players remain unmatched, 2 play a 1v1 match and 1 sits out.',
+      'If 2 players remain unmatched, they play a 1v1 match.',
+      'If 1 player remains unmatched, that player sits out.',
+      '"S" tag is used for players who have played in a 1v1 match.',
+      '"O" tag is used for players who have sat out.',
+      'Tags are assigned automatically after generating matches for each round, and the tournament director can manually add or remove tags between rounds.',
+      'Players with "S" tag are prioritized away from 1v1 matches until all other active players have received "S" tags.',
+      'Players with "O" tag are prioritized away from sitting out until all other active players have received "O" tags.',
+      'When all active players have received the same tag, that tag cycle resets automatically. If the last player without S tag plays 1v1 against a player who already has S tag, both keep S tag and the others are reset.',
+      'Lanes are selected before the next round is generated. After the round is generated, the tournament director can still manually change the lane for each match.',
+      'After each round, winners are marked and losers receive 1 loss.',
+      'When a player is eliminated, the elimination round is shown in their status, e.g. "Eliminated R3".',
+      'Between rounds the tournament director can edit losses, restore eliminated players by lowering losses, add players, change tags and view match history.',
+      'The spectator screen shows standings between rounds, current matches during the round, winners as soon as they are marked, and can temporarily show standings for 30 seconds.',
+      'When 5 or fewer active players remain, the tournament director can start a final. In the final, remaining players are ranked manually from 1st place to last place.'
     ],
     rulesFixed: [
-      'Players are registered as fixed two-person teams.',
-      'Teams stay together for the full tournament.',
-      'The system tries to avoid repeated opponents and the same team sitting out repeatedly.',
-      'Fixed teammate tournaments do not use S and O tags.',
-      'The losing team receives 1 loss. When a team reaches the maximum losses, it is eliminated.',
-      'Between rounds the organizer can edit losses, add teams, change lanes and start the final.',
-      'The final can be started when few active teams remain, then teams are ranked manually.'
+      'Teams must be registered as two fixed players before the tournament starts.',
+      'The tournament director decides how many losses a team may receive before elimination.',
+      'The same two players stay together for the entire tournament and always play as one team.',
+      'Matches are generated as team-versus-team pairings each round.',
+      'The fairness engine tries to avoid repeated matchups between the same teams.',
+      'If an odd number of teams remain active, one team sits out for the round.',
+      'The system tries to avoid giving the same team a sit-out in consecutive rounds.',
+      'Fixed teammate tournaments do not use S or O tags.',
+      'Lanes are selected before the next round is generated. After the round is generated, the tournament director can still manually change the lane for each match.',
+      'After each round, the losing team receives 1 loss.',
+      'When a team reaches the maximum number of losses, it is eliminated and its elimination round is shown in the standings.',
+      'Between rounds the tournament director can edit losses, restore eliminated teams by lowering losses, add teams, change lanes and view match history.',
+      'The spectator screen shows standings between rounds, current matches during the round, winners as soon as they are marked, and can temporarily show standings for 30 seconds.',
+      'When 5 or fewer active teams remain, the tournament director can start a final. In the final, remaining teams are ranked manually from 1st place to last place.'
     ],
     logout: 'Logout',
     brandSub: 'Tournament',
@@ -552,8 +590,8 @@ export function ShowdartDashboard({
               <button type="button" className="sd-button gold full" disabled={!screenInfo?.screenUrl} onClick={() => screenInfo?.screenUrl && window.open(screenInfo.screenUrl, '_blank', 'noopener,noreferrer')}>
                 {t.openSpectator} <ExternalLink size={15} />
               </button>
-              <button type="button" className="sd-button full" disabled={!screenInfo?.screenUrl} onClick={onCopyScreenLink}>
-                {t.copy} <Copy size={15} />
+              <button type="button" className="sd-button full" disabled={!isRoundActive || tournamentFinished} onClick={() => commit(previous => showStandingsOverride(previous))}>
+                {t.showStandings} <Eye size={15} />
               </button>
             </div>
           </div>
@@ -594,6 +632,7 @@ export function ShowdartDashboard({
               <button type="button" className="sd-button full" disabled={!canAddEntries} onClick={() => importInputRef.current?.click()}><Upload size={17} /> {t.importParticipants}</button>
               <button type="button" className="sd-button full" onClick={() => setTreeVisible(value => !value)}><GitBranch size={17} /> {treeVisible ? t.hideStandingsTree : t.standingsTree}</button>
               <button type="button" className="sd-button full" disabled={!state.roundHistory?.length} onClick={() => setHistoryVisible(value => !value)}><History size={17} /> {historyVisible ? t.hideHistory : t.history}</button>
+              <button type="button" className="sd-button full" onClick={handleResetTournament}><RotateCcw size={17} /> {t.reset}</button>
             </div>
           </Panel>
         </div>
@@ -671,7 +710,6 @@ export function ShowdartDashboard({
                   />
                 ))}
                 {skippedEntries.length ? <div className="sd-lane-card"><div className="sd-mini-board" /><div><div className="sd-lane-title">{t.sitOver}</div><div>{skippedEntries.map(entry => entry.name).join(', ')}</div></div></div> : null}
-                <button type="button" className="sd-button" onClick={() => commit(previous => showStandingsOverride(previous))}>{t.showStandings}</button>
                 <button type="button" className="sd-button gold" onClick={handleComplete}>{t.complete}</button>
               </>
             ) : (
@@ -682,7 +720,6 @@ export function ShowdartDashboard({
                 {canStartFinal ? <button type="button" className="sd-button" onClick={handleStartFinal}><Trophy size={16} /> {t.startFinal}</button> : null}
               </>
             )}
-            <button type="button" className="sd-button danger" onClick={handleResetTournament}>{t.reset}</button>
           </div>
         </Panel>
         {historyVisible ? <HistoryPanel history={state.roundHistory || []} t={t} /> : null}

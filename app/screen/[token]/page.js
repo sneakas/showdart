@@ -194,20 +194,21 @@ function BottomItem({ label, value, green }) {
   );
 }
 
-function StatusBar({ t, screenState, updatedAt, lang }) {
+function StatusBar({ t, screenState, updatedAt, lang, compact }) {
   return (
     <footer style={{
-      position: 'fixed',
+      position: compact ? 'static' : 'fixed',
       left: 0,
       right: 0,
       bottom: 0,
-      height: 72,
+      height: compact ? 'auto' : 72,
       display: 'grid',
-      gridTemplateColumns: 'repeat(4, 1fr)',
+      gridTemplateColumns: compact ? 'repeat(2, minmax(0, 1fr))' : 'repeat(4, 1fr)',
+      gap: compact ? 12 : 0,
       background: 'linear-gradient(90deg, rgba(5, 28, 18, .96), rgba(9, 42, 28, .96), rgba(4, 18, 12, .96))',
       borderTop: '1px solid #1c5a41',
       boxShadow: '0 -18px 40px rgba(0,0,0,.4)',
-      padding: '12px 54px',
+      padding: compact ? '14px 18px' : '12px 54px',
       zIndex: 20
     }}>
       <BottomItem label={t.status} value={screenState.phase === 'round' ? t.roundLive : screenState.phase === 'final' ? t.finalResults : t.standings} green />
@@ -276,7 +277,7 @@ function TeamBox({ active, label }) {
   );
 }
 
-function MatchCard({ match, t, round }) {
+function MatchCard({ match, t, round, compact }) {
   const winner = match.winner === 1 ? match.team1Label : match.winner === 2 ? match.team2Label : '';
   const laneText = Number.isFinite(Number(match.laneNumber)) ? `${t.lane} ${match.laneNumber}` : t.waitingForLane;
 
@@ -286,9 +287,9 @@ function MatchCard({ match, t, round }) {
         <strong>{t.round} {round} - #{match.id}</strong>
         <span style={{ border: '1px solid rgba(241, 189, 53, .38)', color: colors.gold2, borderRadius: 999, padding: '7px 12px', fontWeight: 900 }}>{laneText}</span>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: 14, alignItems: 'center' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: compact ? '1fr' : '1fr auto 1fr', gap: compact ? 8 : 14, alignItems: 'center' }}>
         <TeamBox active={match.winner === 1} label={match.team1Label} />
-        <div style={{ color: colors.muted, fontWeight: 900 }}>{t.vs}</div>
+        <div style={{ color: colors.muted, fontWeight: 900, textAlign: 'center' }}>{t.vs}</div>
         <TeamBox active={match.winner === 2} label={match.team2Label} />
       </div>
       {winner ? <div style={{ color: colors.green, marginTop: 14, fontWeight: 900 }}>{t.winner}: {winner}</div> : null}
@@ -310,9 +311,12 @@ export default function ScreenPage() {
   const [updatedAt, setUpdatedAt] = useState(null);
   const [shareUrl, setShareUrl] = useState('');
   const [clockTick, setClockTick] = useState(0);
+  const [viewportWidth, setViewportWidth] = useState(1280);
 
   const t = texts[lang] || texts.da;
   const screenState = useMemo(() => buildScreenState(tournamentState), [tournamentState, clockTick]);
+  const compact = viewportWidth < 900;
+  const phone = viewportWidth < 620;
 
   useEffect(() => {
     const initialLang = getInitialLanguage();
@@ -332,6 +336,14 @@ export default function ScreenPage() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
     setShareUrl(window.location.href);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const updateWidth = () => setViewportWidth(window.innerWidth || 1280);
+    updateWidth();
+    window.addEventListener('resize', updateWidth);
+    return () => window.removeEventListener('resize', updateWidth);
   }, []);
 
   useEffect(() => {
@@ -433,18 +445,19 @@ export default function ScreenPage() {
   return (
     <main style={pageStyle}>
       <header style={{
-        height: 88,
+        minHeight: compact ? 0 : 88,
         display: 'flex',
+        flexWrap: compact ? 'wrap' : 'nowrap',
         justifyContent: 'space-between',
         alignItems: 'center',
-        gap: 24,
-        padding: '0 44px',
+        gap: compact ? 14 : 24,
+        padding: compact ? '14px 18px' : '0 44px',
         borderBottom: `1px solid ${colors.gold}`,
         background: 'linear-gradient(90deg, #020604, #04120c 44%, #02100a)'
       }}>
         <Brand />
-        <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 9, border: `1px solid ${colors.border}`, borderRadius: 999, background: 'rgba(5, 43, 27, .82)', padding: '9px 14px', color: colors.soft, fontSize: 13, fontWeight: 900 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexWrap: 'wrap', justifyContent: compact ? 'flex-start' : 'flex-end', width: compact ? '100%' : 'auto' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 9, border: `1px solid ${colors.border}`, borderRadius: 999, background: 'rgba(5, 43, 27, .82)', padding: compact ? '7px 10px' : '9px 14px', color: colors.soft, fontSize: phone ? 11 : 13, fontWeight: 900, maxWidth: '100%' }}>
             <span style={{ width: 10, height: 10, borderRadius: '50%', background: colors.green, boxShadow: '0 0 16px rgba(75, 209, 125, .65)' }} />
             {t.live} · {t.updated}: {formatUpdatedAt(updatedAt, lang)}
           </div>
@@ -454,21 +467,21 @@ export default function ScreenPage() {
       </header>
 
       <section style={{
-        minHeight: 238,
+        minHeight: compact ? 0 : 238,
         display: 'grid',
-        gridTemplateColumns: 'minmax(0, 1fr) 350px',
-        gap: 28,
+        gridTemplateColumns: compact ? '1fr' : 'minmax(0, 1fr) 350px',
+        gap: compact ? 14 : 28,
         alignItems: 'start',
-        padding: '28px 34px 34px',
+        padding: compact ? '16px 18px 18px' : '28px 34px 34px',
         borderBottom: '1px solid #1c5a41',
         background: 'linear-gradient(90deg, rgba(3, 8, 6, .64), rgba(3, 8, 6, .08) 45%, rgba(3, 8, 6, .7)), url(/assets/dart-venue-banner.svg)',
         backgroundSize: 'cover',
         backgroundPosition: 'center 43%'
       }}>
-        <Card style={{ padding: 28, maxWidth: 680, minHeight: 174 }}>
+        <Card style={{ padding: compact ? 18 : 28, maxWidth: compact ? 'none' : 680, minHeight: compact ? 0 : 174 }}>
           <div style={{ color: colors.muted, fontSize: 12, fontWeight: 900, letterSpacing: '.09em' }}>{modeLabel}</div>
-          <h1 style={{ margin: 0, fontSize: 'clamp(2.7rem, 6vw, 5.8rem)', lineHeight: .92, letterSpacing: '.07em' }}>{displayTitle}</h1>
-          <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', marginTop: 22, color: colors.soft, fontSize: 15, fontWeight: 800 }}>
+          <h1 style={{ margin: 0, fontSize: phone ? '2rem' : compact ? '3rem' : 'clamp(2.7rem, 6vw, 5.8rem)', lineHeight: compact ? 1 : .92, letterSpacing: compact ? '.04em' : '.07em', overflowWrap: 'anywhere' }}>{displayTitle}</h1>
+          <div style={{ display: 'flex', gap: compact ? 10 : 18, flexWrap: 'wrap', marginTop: compact ? 14 : 22, color: colors.soft, fontSize: compact ? 13 : 15, fontWeight: 800 }}>
             <span>{screenState.entries.length} {t.participants}</span>
             <span>{t.round} {screenState.currentRound || 0}</span>
             <span>{screenState.maxLosses} {t.losses}</span>
@@ -476,9 +489,9 @@ export default function ScreenPage() {
         </Card>
 
         {showQrCode ? (
-          <Card style={{ padding: 18, textAlign: 'center' }}>
+          <Card style={{ padding: compact ? 14 : 18, textAlign: 'center' }}>
             <div style={{ color: colors.muted, fontSize: 12, fontWeight: 900, letterSpacing: '.09em' }}>{t.scanQr}</div>
-            <img src={qrSrc} alt={t.scanQr} style={{ width: 180, maxWidth: '100%', height: 'auto', background: '#fff', borderRadius: 8, padding: 8, margin: '12px auto', display: 'block' }} />
+            <img src={qrSrc} alt={t.scanQr} style={{ width: phone ? 128 : compact ? 150 : 180, maxWidth: '100%', height: 'auto', background: '#fff', borderRadius: 8, padding: 8, margin: '12px auto', display: 'block' }} />
             <div style={{ color: colors.soft, fontSize: 13 }}>{t.scanQrHint}</div>
           </Card>
         ) : (
@@ -491,7 +504,7 @@ export default function ScreenPage() {
         )}
       </section>
 
-      <section style={{ padding: '18px 34px 110px' }}>
+      <section style={{ padding: compact ? '14px 18px 18px' : '18px 34px 110px' }}>
         {screenState.phase === 'waiting' ? (
           <Card style={{ padding: 22, maxWidth: 980 }}>
             <div style={{ color: colors.muted, fontSize: 12, fontWeight: 900, letterSpacing: '.09em' }}>{t.tournamentNotStarted}</div>
@@ -547,8 +560,8 @@ export default function ScreenPage() {
               </Card>
             ) : null}
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(310px, 1fr))', gap: 14 }}>
-              {screenState.matches.map(match => <MatchCard key={match.id} match={match} t={t} round={screenState.currentRound} />)}
+            <div style={{ display: 'grid', gridTemplateColumns: compact ? '1fr' : 'repeat(auto-fit, minmax(310px, 1fr))', gap: compact ? 10 : 14 }}>
+              {screenState.matches.map(match => <MatchCard key={match.id} match={match} t={t} round={screenState.currentRound} compact={compact} />)}
             </div>
           </div>
         ) : null}
@@ -562,7 +575,7 @@ export default function ScreenPage() {
         ) : null}
       </section>
 
-      <StatusBar t={t} screenState={screenState} updatedAt={updatedAt} lang={lang} />
+      <StatusBar t={t} screenState={screenState} updatedAt={updatedAt} lang={lang} compact={compact} />
     </main>
   );
 }
