@@ -562,7 +562,7 @@
 
 .sd-lane-toggle {
   width: 100%;
-  min-height: 148px;
+  min-height: 74px;
   display: grid;
   grid-template-columns: 44px minmax(0, 1fr);
   gap: 12px;
@@ -989,7 +989,7 @@
 
 @media (min-width: 1201px) {
   .sd-dashboard {
-    height: max(430px, calc(100vh - 88px - 210px - 104px));
+    height: max(860px, calc((100vh - 88px - 210px - 104px) * 2));
     overflow: hidden;
     align-items: stretch;
   }
