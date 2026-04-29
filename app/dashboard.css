@@ -626,10 +626,16 @@
   transform: translateY(1px) scale(.96);
 }
 
-.sd-tag.is-on {
+.sd-tag.tag-s.is-on {
   background: linear-gradient(180deg, rgba(75, 209, 125, .92), rgba(40, 136, 82, .9));
   border-color: rgba(75, 209, 125, .9);
   color: #06100b;
+}
+
+.sd-tag.tag-o.is-on {
+  background: linear-gradient(180deg, rgba(242, 132, 76, .96), rgba(170, 69, 45, .94));
+  border-color: rgba(242, 132, 76, .95);
+  color: #fff6ed;
 }
 
 .sd-tag.is-pending {

@@ -82,6 +82,8 @@ const texts = {
     remove: 'Fjern',
     eliminate: 'Eliminér',
     editBetweenRoundsOnly: 'Ændringer kan kun laves mellem runder.',
+    confirmReset: 'Er du sikker på, at du vil nulstille hele turneringen? Alle kampe, spillere og resultater bliver slettet.',
+    confirmFinalStart: 'Er du sikker på, at du vil starte finalen nu? Du skal rangere de resterende deltagere manuelt.',
     changing: 'Skiftende makkere',
     fixed: 'Faste makkere',
     name: 'Navn',
@@ -156,6 +158,8 @@ const texts = {
     remove: 'Remove',
     eliminate: 'Eliminate',
     editBetweenRoundsOnly: 'Edits can only be made between rounds.',
+    confirmReset: 'Are you sure you want to reset the whole tournament? All matches, players and results will be deleted.',
+    confirmFinalStart: 'Are you sure you want to start the final now? You will need to rank the remaining entries manually.',
     changing: 'Changing teammates',
     fixed: 'Fixed teammates',
     name: 'Name',
@@ -230,6 +234,7 @@ export function ShowdartDashboard({
   const canStartFinal = state.started && !tournamentFinished && !isRoundActive && activeEntries.length > 1 && activeEntries.length <= 5;
   const finalPlacements = useMemo(() => buildFinalPlacements(entries, state), [entries, state]);
   const matchesPlayed = state.roundHistory?.reduce((total, round) => total + (round.matches?.length || 0), 0) || 0;
+  const registrationMode = state.started ? state.teammateMode : form.teammateMode;
 
   const persist = useCallback(async nextState => {
     if (!token) return;
@@ -304,7 +309,7 @@ export function ShowdartDashboard({
       setNotice(t.editBetweenRoundsOnly);
       return;
     }
-    commit(previous => previous.teammateMode === 'fixed'
+    commit(previous => registrationMode === 'fixed'
       ? addFixedTeam(previous, memberOne, memberTwo)
       : addPlayer(previous, playerName));
     setPlayerName('');
@@ -321,6 +326,14 @@ export function ShowdartDashboard({
     };
     setForm(nextConfig);
     commit(previous => startTournament(configureTournament(previous, nextConfig), nextConfig));
+  }
+
+  function handleTournamentFormatChange(value) {
+    const nextForm = { ...form, teammateMode: value };
+    setForm(nextForm);
+    if (!state.started) {
+      commit(previous => configureTournament(previous, nextForm));
+    }
   }
 
   function handleGenerate() {
@@ -369,8 +382,17 @@ export function ShowdartDashboard({
   }
 
   function handleStartFinal() {
+    if (!window.confirm(t.confirmFinalStart)) return;
     setFinalRankingIds(activeEntries.map(entry => entry.id));
     commit(previous => startFinalMatch(previous));
+  }
+
+  function handleResetTournament() {
+    if (!window.confirm(t.confirmReset)) return;
+    setFinalRankingIds([]);
+    setHistoryVisible(false);
+    setTreeVisible(false);
+    commit(resetTournament());
   }
 
   function moveFinalist(id, direction) {
@@ -455,7 +477,7 @@ export function ShowdartDashboard({
             <div className="sd-form-grid">
               <Field label={t.tournamentName}><input className="sd-input" value={form.tournamentName || state.tournamentName || ''} onChange={event => setForm({ ...form, tournamentName: event.target.value })} /></Field>
               <Field label={t.format}>
-                <select className="sd-select" value={form.teammateMode} disabled={state.started} onChange={event => setForm({ ...form, teammateMode: event.target.value })}>
+                <select className="sd-select" value={form.teammateMode} disabled={state.started} onChange={event => handleTournamentFormatChange(event.target.value)}>
                   <option value="changing">{t.changing}</option>
                   <option value="fixed">{t.fixed}</option>
                 </select>
@@ -469,7 +491,7 @@ export function ShowdartDashboard({
           <Panel title={t.quick}>
             <div className="sd-stack">
               <form onSubmit={handleAddEntry} className="sd-stack">
-                {state.teammateMode === 'fixed' ? (
+                {registrationMode === 'fixed' ? (
                   <>
                     <input className="sd-input" placeholder={t.memberOne} value={memberOne} disabled={!canAddEntries} onChange={event => setMemberOne(event.target.value)} />
                     <input className="sd-input" placeholder={t.memberTwo} value={memberTwo} disabled={!canAddEntries} onChange={event => setMemberTwo(event.target.value)} />
@@ -506,7 +528,7 @@ export function ShowdartDashboard({
                     <td>
                       <div className="sd-tag-actions">
                         {['S', 'O'].map(tag => (
-                          <button key={tag} type="button" className={`sd-tag ${entry.tags?.includes(tag) ? 'is-on' : ''} ${entry.modifiedTags?.includes(tag) ? 'is-pending' : ''}`} disabled={!state.started || !canManageEntries} onClick={() => commit(previous => togglePlayerTag(previous, entry.id, tag))}>
+                          <button key={tag} type="button" className={`sd-tag tag-${tag.toLowerCase()} ${entry.tags?.includes(tag) ? 'is-on' : ''} ${entry.modifiedTags?.includes(tag) ? 'is-pending' : ''}`} disabled={!state.started || !canManageEntries} onClick={() => commit(previous => togglePlayerTag(previous, entry.id, tag))}>
                             {tag}
                           </button>
                         ))}
@@ -571,7 +593,7 @@ export function ShowdartDashboard({
                 {canStartFinal ? <button type="button" className="sd-button" onClick={handleStartFinal}><Trophy size={16} /> {t.startFinal}</button> : null}
               </>
             )}
-            <button type="button" className="sd-button danger" onClick={() => commit(resetTournament())}>{t.reset}</button>
+            <button type="button" className="sd-button danger" onClick={handleResetTournament}>{t.reset}</button>
           </div>
         </Panel>
         {historyVisible ? <HistoryPanel history={state.roundHistory || []} t={t} /> : null}
