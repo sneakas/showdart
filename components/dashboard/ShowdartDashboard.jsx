@@ -84,6 +84,11 @@ const texts = {
     editBetweenRoundsOnly: 'Ændringer kan kun laves mellem runder.',
     confirmReset: 'Er du sikker på, at du vil nulstille hele turneringen? Alle kampe, spillere og resultater bliver slettet.',
     confirmFinalStart: 'Er du sikker på, at du vil starte finalen nu? Du skal rangere de resterende deltagere manuelt.',
+    warningTitle: 'Bekræft handling',
+    errorTitle: 'Turneringsbesked',
+    ok: 'OK',
+    cancel: 'Annuller',
+    continue: 'Fortsæt',
     changing: 'Skiftende makkere',
     fixed: 'Faste makkere',
     name: 'Navn',
@@ -160,6 +165,11 @@ const texts = {
     editBetweenRoundsOnly: 'Edits can only be made between rounds.',
     confirmReset: 'Are you sure you want to reset the whole tournament? All matches, players and results will be deleted.',
     confirmFinalStart: 'Are you sure you want to start the final now? You will need to rank the remaining entries manually.',
+    warningTitle: 'Confirm action',
+    errorTitle: 'Tournament message',
+    ok: 'OK',
+    cancel: 'Cancel',
+    continue: 'Continue',
     changing: 'Changing teammates',
     fixed: 'Fixed teammates',
     name: 'Name',
@@ -218,6 +228,7 @@ export function ShowdartDashboard({
   const [historyVisible, setHistoryVisible] = useState(false);
   const [treeVisible, setTreeVisible] = useState(false);
   const [finalRankingIds, setFinalRankingIds] = useState([]);
+  const [dialog, setDialog] = useState(null);
   const importInputRef = useRef(null);
 
   const token = session?.access_token;
@@ -235,6 +246,39 @@ export function ShowdartDashboard({
   const finalPlacements = useMemo(() => buildFinalPlacements(entries, state), [entries, state]);
   const matchesPlayed = state.roundHistory?.reduce((total, round) => total + (round.matches?.length || 0), 0) || 0;
   const registrationMode = state.started ? state.teammateMode : form.teammateMode;
+
+  function showDialog(message, options = {}) {
+    if (!message) return;
+    setNotice(message);
+    setDialog({
+      kind: options.kind || 'alert',
+      title: options.title || t.errorTitle,
+      message,
+      confirmLabel: options.confirmLabel || t.ok,
+      cancelLabel: options.cancelLabel || t.cancel,
+      onConfirm: options.onConfirm || null
+    });
+  }
+
+  function showConfirm(message, onConfirm) {
+    showDialog(message, {
+      kind: 'confirm',
+      title: t.warningTitle,
+      confirmLabel: t.continue,
+      cancelLabel: t.cancel,
+      onConfirm
+    });
+  }
+
+  function closeDialog() {
+    setDialog(null);
+  }
+
+  function confirmDialog() {
+    const action = dialog?.onConfirm;
+    setDialog(null);
+    action?.();
+  }
 
   const persist = useCallback(async nextState => {
     if (!token) return;
@@ -256,10 +300,10 @@ export function ShowdartDashboard({
   const commit = useCallback(updater => {
     setState(previous => {
       const next = normalizeTournamentState(typeof updater === 'function' ? updater(previous) : updater);
-      persist(next).catch(error => setNotice(error instanceof Error ? error.message : 'Save failed'));
+      persist(next).catch(error => showDialog(error instanceof Error ? error.message : 'Save failed'));
       return next;
     });
-  }, [persist]);
+  }, [persist, showDialog]);
 
   useEffect(() => {
     if (!token) return;
@@ -306,7 +350,7 @@ export function ShowdartDashboard({
   function handleAddEntry(event) {
     event.preventDefault();
     if (!canAddEntries) {
-      setNotice(t.editBetweenRoundsOnly);
+      showDialog(t.editBetweenRoundsOnly);
       return;
     }
     commit(previous => registrationMode === 'fixed'
@@ -339,15 +383,15 @@ export function ShowdartDashboard({
   function handleGenerate() {
     setState(previous => {
       const next = normalizeTournamentState(generateMatches(previous));
-      if (next.lastGenerationError) setNotice(next.lastGenerationError);
-      persist(next).catch(error => setNotice(error instanceof Error ? error.message : 'Save failed'));
+      if (next.lastGenerationError) showDialog(next.lastGenerationError);
+      persist(next).catch(error => showDialog(error instanceof Error ? error.message : 'Save failed'));
       return next;
     });
   }
 
   function handleComplete() {
     if (state.matches.some(match => !match.winner)) {
-      setNotice('Marker vinder i alle kampe først.');
+      showDialog('Marker vinder i alle kampe først.');
       return;
     }
     commit(previous => completeRound(previous));
@@ -359,7 +403,7 @@ export function ShowdartDashboard({
     event.target.value = '';
     if (!file) return;
     if (!canAddEntries) {
-      setNotice(t.editBetweenRoundsOnly);
+      showDialog(t.editBetweenRoundsOnly);
       return;
     }
     const reader = new FileReader();
@@ -371,7 +415,7 @@ export function ShowdartDashboard({
 
   function handleEntryAction(entry) {
     if (state.started && !canManageEntries) {
-      setNotice(t.editBetweenRoundsOnly);
+      showDialog(t.editBetweenRoundsOnly);
       return;
     }
     if (state.started && entry.active !== false) {
@@ -382,17 +426,19 @@ export function ShowdartDashboard({
   }
 
   function handleStartFinal() {
-    if (!window.confirm(t.confirmFinalStart)) return;
-    setFinalRankingIds(activeEntries.map(entry => entry.id));
-    commit(previous => startFinalMatch(previous));
+    showConfirm(t.confirmFinalStart, () => {
+      setFinalRankingIds(activeEntries.map(entry => entry.id));
+      commit(previous => startFinalMatch(previous));
+    });
   }
 
   function handleResetTournament() {
-    if (!window.confirm(t.confirmReset)) return;
-    setFinalRankingIds([]);
-    setHistoryVisible(false);
-    setTreeVisible(false);
-    commit(resetTournament());
+    showConfirm(t.confirmReset, () => {
+      setFinalRankingIds([]);
+      setHistoryVisible(false);
+      setTreeVisible(false);
+      commit(resetTournament());
+    });
   }
 
   function moveFinalist(id, direction) {
@@ -452,7 +498,7 @@ export function ShowdartDashboard({
           <div className="sd-card sd-spectator-card">
             <div className="sd-small-label">{t.spectator}</div>
             <div className="sd-live"><span className="sd-dot" /> {screenInfo?.screenUrl ? t.liveActive : '...'}</div>
-            {screenNotice || screenError || notice ? <div className="sd-small-label" style={{ marginTop: 8 }}>{screenNotice || screenError || notice}</div> : null}
+            {screenNotice || screenError ? <div className="sd-small-label" style={{ marginTop: 8 }}>{screenNotice || screenError}</div> : null}
             <div style={{ display: 'grid', gap: 10, marginTop: 14 }}>
               {screenInfo?.screenUrl && !state.started ? (
                 <div className="sd-qr-box">
@@ -608,6 +654,13 @@ export function ShowdartDashboard({
         <BottomItem label={t.lanesInUse} value={`${state.activeLanes.length} / ${state.laneCount}`} />
         <BottomItem label={t.lastUpdate} value={loaded ? new Date().toLocaleTimeString('da-DK') : '...'} />
       </footer>
+      {dialog ? (
+        <ShowdartDialog
+          dialog={dialog}
+          onCancel={closeDialog}
+          onConfirm={confirmDialog}
+        />
+      ) : null}
     </main>
   );
 }
@@ -620,6 +673,29 @@ function Panel({ title, action, children }) {
         {action}
       </div>
       {children}
+    </div>
+  );
+}
+
+function ShowdartDialog({ dialog, onCancel, onConfirm }) {
+  const isConfirm = dialog.kind === 'confirm';
+  return (
+    <div className="sd-dialog-backdrop" role="presentation" onMouseDown={event => {
+      if (event.target === event.currentTarget && !isConfirm) onCancel();
+    }}>
+      <div className="sd-dialog" role="dialog" aria-modal="true" aria-labelledby="sd-dialog-title">
+        <div className="sd-dialog-mark">{isConfirm ? '!' : 'i'}</div>
+        <div>
+          <h2 id="sd-dialog-title" className="sd-dialog-title">{dialog.title}</h2>
+          <p className="sd-dialog-message">{dialog.message}</p>
+        </div>
+        <div className="sd-dialog-actions">
+          {isConfirm ? <button type="button" className="sd-button" onClick={onCancel}>{dialog.cancelLabel}</button> : null}
+          <button type="button" className={`sd-button ${isConfirm ? 'gold' : 'gold'}`} autoFocus onClick={isConfirm ? onConfirm : onCancel}>
+            {dialog.confirmLabel}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
