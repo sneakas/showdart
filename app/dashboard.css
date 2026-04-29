@@ -3,13 +3,13 @@
 :root {
   --sd-bg: #030806;
   --sd-bg-2: #07120d;
-  --sd-panel: rgba(5, 34, 22, 0.92);
+  --sd-panel: rgba(4, 39, 24, 0.94);
   --sd-panel-2: rgba(3, 18, 12, 0.96);
-  --sd-panel-3: rgba(9, 46, 30, 0.75);
-  --sd-border: #1d4d3a;
-  --sd-border-2: #577c68;
-  --sd-gold: #d69b23;
-  --sd-gold-2: #efbd3e;
+  --sd-panel-3: rgba(8, 50, 31, 0.78);
+  --sd-border: #1c5a41;
+  --sd-border-2: #63806d;
+  --sd-gold: #d89d24;
+  --sd-gold-2: #f1bd35;
   --sd-text: #f6f6ed;
   --sd-soft: #dfe8de;
   --sd-muted: #aab9ae;
@@ -24,7 +24,14 @@
     linear-gradient(180deg, var(--sd-bg) 0%, var(--sd-bg-2) 46%, #020504 100%);
   color: var(--sd-text);
   font-family: Manrope, system-ui, sans-serif;
-  padding-bottom: 94px;
+  padding-bottom: 104px;
+}
+
+.sd-page,
+.sd-page *,
+.sd-page *::before,
+.sd-page *::after {
+  box-sizing: border-box;
 }
 
 .sd-topbar {
@@ -32,9 +39,9 @@
   border-bottom: 1px solid var(--sd-gold);
   background: linear-gradient(90deg, #020604, #04120c 44%, #02100a);
   display: grid;
-  grid-template-columns: 300px 1fr 360px;
+  grid-template-columns: 300px minmax(520px, 1fr) minmax(390px, 440px);
   align-items: center;
-  padding: 0 46px;
+  padding: 0 44px;
   gap: 20px;
 }
 
@@ -92,6 +99,14 @@
   height: 88px;
 }
 
+.sd-nav button:focus {
+  outline: none;
+}
+
+.sd-nav button:focus-visible {
+  box-shadow: inset 0 0 0 1px rgba(241, 189, 53, .42);
+}
+
 .sd-nav button:not(.is-active) {
   opacity: .92;
 }
@@ -108,6 +123,14 @@
   gap: 9px;
   font-size: 12px;
   color: var(--sd-soft);
+  min-width: 0;
+}
+
+.sd-userbar > span {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .sd-flag {
@@ -131,12 +154,14 @@
   font-weight: 900;
   text-transform: uppercase;
   padding: 8px 13px;
+  min-width: 76px;
+  white-space: nowrap;
 }
 
 .sd-hero {
   min-height: 210px;
   background:
-    linear-gradient(90deg, rgba(3, 8, 6, .72), rgba(3, 8, 6, .18) 45%, rgba(3, 8, 6, .72)),
+    linear-gradient(90deg, rgba(3, 8, 6, .64), rgba(3, 8, 6, .08) 45%, rgba(3, 8, 6, .7)),
     url('/assets/dart-venue-banner.svg');
   background-size: cover;
   background-position: center 43%;
@@ -144,7 +169,8 @@
 }
 
 .sd-hero-inner {
-  max-width: 1640px;
+  width: 100%;
+  max-width: none;
   min-height: 210px;
   margin: 0 auto;
   padding: 22px 34px;
@@ -156,21 +182,21 @@
 
 .sd-card {
   background:
-    radial-gradient(circle at 100% 0%, rgba(28, 87, 55, .18), transparent 14rem),
-    linear-gradient(145deg, rgba(5, 37, 24, .94), rgba(3, 18, 12, .97));
-  border: 1px solid rgba(43, 91, 70, .85);
+    radial-gradient(circle at 100% 0%, rgba(31, 100, 62, .22), transparent 14rem),
+    linear-gradient(145deg, rgba(5, 43, 27, .95), rgba(3, 18, 12, .98));
+  border: 1px solid rgba(43, 99, 73, .88);
   border-radius: 8px;
   box-shadow: 0 18px 34px rgba(0, 0, 0, .42);
 }
 
 .sd-hero-card {
-  width: 374px;
+  width: 430px;
   min-height: 168px;
   padding: 24px;
 }
 
 .sd-spectator-card {
-  width: 310px;
+  width: 352px;
   padding: 18px 20px;
 }
 
@@ -189,6 +215,12 @@
   color: var(--sd-soft);
   margin-top: 18px;
   font-size: 14px;
+}
+
+.sd-meta-row span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .sd-small-label {
@@ -259,9 +291,10 @@
 }
 
 .sd-dashboard {
-  max-width: 1640px;
+  width: 100%;
+  max-width: none;
   margin: 17px auto 0;
-  padding: 0 34px;
+  padding: 0 34px 112px;
   display: grid;
   grid-template-columns: 305px minmax(390px, 1fr) 300px minmax(520px, 1.36fr);
   gap: 8px;
@@ -271,6 +304,7 @@
 .sd-panel {
   padding: 18px 18px 16px;
   min-height: 0;
+  overflow: hidden;
 }
 
 .sd-panel-title {
@@ -329,7 +363,7 @@
 }
 
 .sd-table-wrap {
-  max-height: calc(100vh - 438px);
+  max-height: calc(100vh - 455px);
   overflow: auto;
 }
 
@@ -390,7 +424,7 @@
 .sd-match-card {
   border: 1px solid rgba(43, 91, 70, .85);
   border-radius: 8px;
-  background: linear-gradient(145deg, rgba(7, 38, 25, .78), rgba(3, 16, 11, .86));
+  background: linear-gradient(145deg, rgba(7, 45, 28, .82), rgba(3, 17, 11, .9));
   padding: 14px;
 }
 
@@ -429,9 +463,10 @@
 }
 
 .sd-match-list {
-  max-height: calc(100vh - 390px);
+  max-height: calc(100vh - 535px);
   overflow: auto;
   padding-right: 2px;
+  padding-bottom: 12px;
 }
 
 .sd-match-list::-webkit-scrollbar,
@@ -506,14 +541,14 @@
   left: 0;
   right: 0;
   bottom: 0;
-  height: 74px;
+  height: 70px;
   z-index: 20;
   display: grid;
   grid-template-columns: repeat(6, 1fr);
   background: linear-gradient(90deg, rgba(5, 28, 18, .96), rgba(9, 42, 28, .96), rgba(4, 18, 12, .96));
   border-top: 1px solid var(--sd-border);
   box-shadow: 0 -18px 40px rgba(0,0,0,.4);
-  padding: 13px 54px;
+  padding: 12px 54px;
   backdrop-filter: blur(8px);
 }
 
@@ -539,6 +574,12 @@
   font-size: 18px;
   font-weight: 900;
   margin-top: 3px;
+}
+
+@media (min-width: 1500px) {
+  .sd-dashboard {
+    grid-template-columns: 305px minmax(390px, 1fr) 300px minmax(560px, 1.35fr);
+  }
 }
 
 @media (max-width: 1200px) {

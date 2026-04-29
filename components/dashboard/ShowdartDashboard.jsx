@@ -265,6 +265,7 @@ export function ShowdartDashboard({
       maxLosses: form.maxLosses,
       laneCount: form.laneCount
     };
+    setForm(nextConfig);
     commit(previous => startTournament(configureTournament(previous, nextConfig), nextConfig));
   }
 
@@ -274,7 +275,7 @@ export function ShowdartDashboard({
 
   function handleComplete() {
     if (state.matches.some(match => !match.winner)) {
-      setNotice('Marker vinder i alle kampe forst.');
+      setNotice('Marker vinder i alle kampe først.');
       return;
     }
     commit(previous => completeRound(previous));
@@ -339,7 +340,7 @@ export function ShowdartDashboard({
         <div className="sd-stack">
           <Panel title={t.setup}>
             <div className="sd-form-grid">
-              <Field label={t.tournamentName}><input className="sd-input" value={form.tournamentName} onChange={event => setForm({ ...form, tournamentName: event.target.value })} /></Field>
+              <Field label={t.tournamentName}><input className="sd-input" value={form.tournamentName || state.tournamentName || ''} onChange={event => setForm({ ...form, tournamentName: event.target.value })} /></Field>
               <Field label={t.format}>
                 <select className="sd-select" value={form.teammateMode} disabled={state.started} onChange={event => setForm({ ...form, teammateMode: event.target.value })}>
                   <option value="changing">{t.changing}</option>
