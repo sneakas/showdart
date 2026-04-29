@@ -202,7 +202,7 @@
   min-height: 210px;
   background:
     linear-gradient(90deg, rgba(3, 8, 6, .64), rgba(3, 8, 6, .08) 45%, rgba(3, 8, 6, .7)),
-    url('/assets/dart-venue-banner.svg');
+    url('/assets/showdart-banner.png');
   background-size: cover;
   background-position: center 43%;
   border-bottom: 1px solid var(--sd-border);

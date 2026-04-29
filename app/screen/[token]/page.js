@@ -474,7 +474,7 @@ export default function ScreenPage() {
         alignItems: 'start',
         padding: compact ? '16px 18px 18px' : '28px 34px 34px',
         borderBottom: '1px solid #1c5a41',
-        background: 'linear-gradient(90deg, rgba(3, 8, 6, .64), rgba(3, 8, 6, .08) 45%, rgba(3, 8, 6, .7)), url(/assets/dart-venue-banner.svg)',
+        background: 'linear-gradient(90deg, rgba(3, 8, 6, .64), rgba(3, 8, 6, .08) 45%, rgba(3, 8, 6, .7)), url(/assets/showdart-banner.png)',
         backgroundSize: 'cover',
         backgroundPosition: 'center 43%'
       }}>
