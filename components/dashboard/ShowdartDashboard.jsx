@@ -953,7 +953,7 @@ function HistoryPanel({ history, t }) {
                     <td>{t.round} {roundEntry.round}</td>
                     <td><span className={`sd-history-badge ${isSingles ? 'is-singles' : 'is-playing'}`}>{isSingles ? t.historySingles : t.historyPlaying}</span></td>
                     <td>{t.match} #{match.id}: {match.team1Label} VS {match.team2Label}</td>
-                    <td>{Number.isInteger(match.laneNumber) ? `Bane ${match.laneNumber}` : '-'}</td>
+                    <td>{Number.isInteger(match.laneNumber) && match.laneNumber > 0 ? `Bane ${match.laneNumber}` : '-'}</td>
                     <td>{match.winnerLabel || '-'}</td>
                   </tr>
                 );
@@ -992,9 +992,13 @@ function StandingsPanel({ standings, t, maxLosses }) {
         {standings.map((entry, index) => (
           <div className={`sd-standing-card ${entry.active === false ? 'is-out' : ''}`} key={entry.id}>
             <span className="sd-seed">{index + 1}</span>
-            <strong>{entry.name}</strong>
-            <span>{entry.losses || 0}/{maxLosses} {t.losses}</span>
-            <span>{entry.active === false ? `${t.eliminated}${entry.eliminationRound ? ` R${entry.eliminationRound}` : ''}` : t.active}</span>
+            <div className="sd-standing-main">
+              <strong>{entry.name}</strong>
+              <span>{entry.losses || 0}/{maxLosses} {t.losses}</span>
+            </div>
+            <span className={`sd-standing-status ${entry.active === false ? 'is-out' : 'is-active'}`}>
+              {entry.active === false ? `${t.eliminated}${entry.eliminationRound ? ` R${entry.eliminationRound}` : ''}` : t.active}
+            </span>
           </div>
         ))}
       </div>

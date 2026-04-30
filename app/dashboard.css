@@ -828,12 +828,39 @@
 
 .sd-history-table th:nth-child(5),
 .sd-history-table td:nth-child(5) {
-  width: 112px;
+  width: 120px;
 }
 
 .sd-history-table th,
 .sd-history-table td {
   vertical-align: middle;
+  text-align: left;
+}
+
+.sd-history-table th:nth-child(3),
+.sd-history-table td:nth-child(3) {
+  padding-left: 18px;
+}
+
+.sd-history-table th:nth-child(4),
+.sd-history-table td:nth-child(4),
+.sd-history-table th:nth-child(5),
+.sd-history-table td:nth-child(5) {
+  text-align: left;
+  white-space: nowrap;
+}
+
+.sd-history-table td {
+  height: 48px;
+}
+
+.sd-history-table td:nth-child(1),
+.sd-history-table td:nth-child(3),
+.sd-history-table td:nth-child(4),
+.sd-history-table td:nth-child(5) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .sd-history-badge {
@@ -875,10 +902,9 @@
 }
 
 .sd-standings-grid {
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
 }
 
-.sd-standing-card,
 .sd-final-row {
   display: grid;
   grid-template-columns: 34px minmax(0, 1fr) auto auto;
@@ -889,6 +915,57 @@
   background: rgba(2, 8, 5, .32);
   padding: 10px 12px;
   transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease;
+}
+
+.sd-standing-card {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) max-content;
+  gap: 10px;
+  align-items: center;
+  min-width: 0;
+  border: 1px solid rgba(43, 91, 70, .75);
+  border-radius: 8px;
+  background: rgba(2, 8, 5, .32);
+  padding: 10px 12px;
+  transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease;
+}
+
+.sd-standing-main {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.sd-standing-main strong {
+  min-width: 0;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sd-standing-main span {
+  color: var(--sd-soft);
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+.sd-standing-status {
+  justify-self: end;
+  max-width: 92px;
+  text-align: right;
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1.25;
+  white-space: normal;
+}
+
+.sd-standing-status.is-active {
+  color: var(--sd-green);
+}
+
+.sd-standing-status.is-out {
+  color: var(--sd-muted);
 }
 
 .sd-standing-card:hover,
