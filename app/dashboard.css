@@ -529,7 +529,6 @@
 .sd-match-card:hover {
   border-color: rgba(241, 189, 53, .45);
   box-shadow: 0 14px 28px rgba(0, 0, 0, .28);
-  transform: translateY(-1px);
 }
 
 .sd-mini-board {
@@ -613,7 +612,6 @@
 .sd-lane-toggle:hover {
   border-color: rgba(241, 189, 53, .55);
   box-shadow: 0 14px 28px rgba(0, 0, 0, .28);
-  transform: translateY(-1px);
 }
 
 .sd-lane-toggle:hover .sd-mini-board {
