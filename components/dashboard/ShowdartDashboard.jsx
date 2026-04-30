@@ -153,6 +153,9 @@ const texts = {
     add: 'Tilføj',
     round: 'Runde',
     match: 'Kamp',
+    historyStatus: 'Status',
+    historyPlaying: 'Spiller',
+    historySingles: 'Singlekamp',
     ready: 'Klar til kamp',
     winner: 'Vinder',
     selectWinner: 'Markér vinder',
@@ -285,6 +288,9 @@ const texts = {
     add: 'Add',
     round: 'Round',
     match: 'Match',
+    historyStatus: 'Status',
+    historyPlaying: 'Playing',
+    historySingles: 'Singles',
     ready: 'Ready to play',
     winner: 'Winner',
     selectWinner: 'Select winner',
@@ -903,23 +909,26 @@ function HistoryPanel({ history, t }) {
       <h2 className="sd-panel-title">{t.history}</h2>
       <div className="sd-history-wrap">
         <table className="sd-table sd-history-table">
-          <thead><tr><th>{t.round}</th><th>{t.format}</th><th>{t.match} / {t.sitOver}</th><th>Bane</th><th>{t.winner}</th></tr></thead>
+          <thead><tr><th>{t.round}</th><th>{t.historyStatus}</th><th>{t.match} / {t.sitOver}</th><th>Bane</th><th>{t.winner}</th></tr></thead>
           <tbody>
             {[...history].sort((left, right) => (right.round || 0) - (left.round || 0)).flatMap(roundEntry => {
-              const rows = (roundEntry.matches || []).map(match => (
-                <tr key={`${roundEntry.round}-${match.id}`}>
-                  <td>{t.round} {roundEntry.round}</td>
-                  <td><span className="sd-pill">{roundEntry.mode === 'fixed' ? t.fixed : t.changing}</span></td>
-                  <td>{t.match} #{match.id}: {match.team1Label} VS {match.team2Label}</td>
-                  <td>{Number.isInteger(match.laneNumber) ? `Bane ${match.laneNumber}` : '-'}</td>
-                  <td>{match.winnerLabel || '-'}</td>
-                </tr>
-              ));
+              const rows = (roundEntry.matches || []).map(match => {
+                const isSingles = roundEntry.mode !== 'fixed' && isSinglesHistoryMatch(match);
+                return (
+                  <tr key={`${roundEntry.round}-${match.id}`}>
+                    <td>{t.round} {roundEntry.round}</td>
+                    <td><span className={`sd-history-badge ${isSingles ? 'is-singles' : 'is-playing'}`}>{isSingles ? t.historySingles : t.historyPlaying}</span></td>
+                    <td>{t.match} #{match.id}: {match.team1Label} VS {match.team2Label}</td>
+                    <td>{Number.isInteger(match.laneNumber) ? `Bane ${match.laneNumber}` : '-'}</td>
+                    <td>{match.winnerLabel || '-'}</td>
+                  </tr>
+                );
+              });
               if (roundEntry.sitOuts?.length) {
                 rows.push(
                   <tr key={`${roundEntry.round}-sit`}>
                     <td>{t.round} {roundEntry.round}</td>
-                    <td><span className="sd-pill">{t.sitOver}</span></td>
+                    <td><span className="sd-history-badge is-sitout">{t.sitOver}</span></td>
                     <td>{roundEntry.sitOuts.join(', ')}</td>
                     <td>-</td>
                     <td>-</td>
@@ -933,6 +942,12 @@ function HistoryPanel({ history, t }) {
       </div>
     </div>
   );
+}
+
+function isSinglesHistoryMatch(match) {
+  const left = String(match.team1Label || '').split(',').map(item => item.trim()).filter(Boolean);
+  const right = String(match.team2Label || '').split(',').map(item => item.trim()).filter(Boolean);
+  return left.length === 1 && right.length === 1;
 }
 
 function StandingsPanel({ standings, t, maxLosses }) {
