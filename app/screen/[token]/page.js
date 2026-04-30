@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { getSupabaseBrowserClient } from '../../../lib/supabaseBrowser';
 import { buildScreenState } from '../../../lib/tournamentScreenState';
@@ -36,6 +36,9 @@ const texts = {
     temporaryStandingsHint: 'Live kampe vender tilbage automatisk',
     updated: 'Senest opdateret',
     live: 'Live',
+    reconnecting: 'Genopretter forbindelse',
+    polling: 'Backup-opdatering aktiv',
+    stale: 'Forbindelse forsinket',
     scanQr: 'Scan QR-kode',
     scanQrHint: 'Åbn skærmen på din telefon',
     tournamentNotStarted: 'Turneringen er ikke startet',
@@ -72,6 +75,9 @@ const texts = {
     temporaryStandingsHint: 'Live matches return automatically',
     updated: 'Last updated',
     live: 'Live',
+    reconnecting: 'Reconnecting',
+    polling: 'Backup updates active',
+    stale: 'Connection delayed',
     scanQr: 'Scan QR Code',
     scanQrHint: 'Open this screen on your phone',
     tournamentNotStarted: 'Tournament not started',
@@ -315,11 +321,53 @@ export default function ScreenPage() {
   const [shareUrl, setShareUrl] = useState('');
   const [clockTick, setClockTick] = useState(0);
   const [viewportWidth, setViewportWidth] = useState(1280);
+  const [connectionState, setConnectionState] = useState('connecting');
+  const [lastFetchMs, setLastFetchMs] = useState(0);
 
   const t = texts[lang] || texts.da;
   const screenState = useMemo(() => buildScreenState(tournamentState), [tournamentState, clockTick]);
   const compact = viewportWidth < 900;
   const phone = viewportWidth < 620;
+
+  const loadScreen = useCallback(async ({ silent = false } = {}) => {
+    if (!token) {
+      setError('Missing token');
+      setLoading(false);
+      setConnectionState('stale');
+      return;
+    }
+
+    if (!silent) {
+      setLoading(true);
+      setError('');
+    }
+
+    try {
+      const response = await fetch(`/api/tournament-screen/public?token=${encodeURIComponent(token)}`, {
+        cache: 'no-store'
+      });
+      const payload = await response.json();
+
+      if (!response.ok) {
+        if (!silent) setError(payload?.error || 'Screen error');
+        setConnectionState('stale');
+        setLoading(false);
+        return;
+      }
+
+      setScreenMeta(payload);
+      setTournamentState(payload.state || null);
+      setUpdatedAt(payload.updatedAt || null);
+      setLastFetchMs(Date.now());
+      setConnectionState(previous => previous === 'live' ? 'live' : 'polling');
+      setLoading(false);
+      setError('');
+    } catch (_error) {
+      if (!silent) setError('Failed to load spectator screen');
+      setConnectionState('stale');
+      setLoading(false);
+    }
+  }, [token]);
 
   useEffect(() => {
     const initialLang = getInitialLanguage();
@@ -350,43 +398,16 @@ export default function ScreenPage() {
   }, []);
 
   useEffect(() => {
-    let cancelled = false;
+    loadScreen();
+  }, [loadScreen]);
 
-    async function loadScreen() {
-      setLoading(true);
-      setError('');
-      try {
-        const response = await fetch(`/api/tournament-screen/public?token=${encodeURIComponent(token)}`);
-        const payload = await response.json();
-        if (cancelled) return;
-
-        if (!response.ok) {
-          setError(payload?.error || 'Screen error');
-          setLoading(false);
-          return;
-        }
-
-        setScreenMeta(payload);
-        setTournamentState(payload.state || null);
-        setUpdatedAt(payload.updatedAt || null);
-        setLoading(false);
-      } catch (_error) {
-        if (cancelled) return;
-        setError('Failed to load spectator screen');
-        setLoading(false);
-      }
-    }
-
-    if (token) loadScreen();
-    else {
-      setError('Missing token');
-      setLoading(false);
-    }
-
-    return () => {
-      cancelled = true;
-    };
-  }, [token]);
+  useEffect(() => {
+    if (!token || typeof window === 'undefined') return undefined;
+    const intervalId = window.setInterval(() => {
+      loadScreen({ silent: true });
+    }, 8000);
+    return () => window.clearInterval(intervalId);
+  }, [loadScreen, token]);
 
   useEffect(() => {
     if (!supabase || !screenMeta?.realtimeChannel) return undefined;
@@ -397,14 +418,34 @@ export default function ScreenPage() {
         if (!payload?.state) return;
         setTournamentState(payload.state);
         setUpdatedAt(payload.updatedAt || new Date().toISOString());
+        setLastFetchMs(Date.now());
+        setConnectionState('live');
       });
 
-    channel.subscribe();
+    channel.subscribe(status => {
+      if (status === 'SUBSCRIBED') {
+        setConnectionState('live');
+        return;
+      }
+      if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+        setConnectionState(previous => previous === 'stale' ? 'stale' : 'polling');
+      }
+    });
 
     return () => {
       supabase.removeChannel(channel);
     };
   }, [screenMeta, supabase]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const intervalId = window.setInterval(() => {
+      if (lastFetchMs && Date.now() - lastFetchMs > 22000) {
+        setConnectionState('stale');
+      }
+    }, 3000);
+    return () => window.clearInterval(intervalId);
+  }, [lastFetchMs]);
 
   useEffect(() => {
     const expiresAt = Number(tournamentState?.spectatorOverride?.expiresAt || 0);
@@ -444,6 +485,14 @@ export default function ScreenPage() {
   const displayTitle = screenState.tournamentName || 'Showdart Live';
   const qrSrc = shareUrl ? `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=0&data=${encodeURIComponent(shareUrl)}` : '';
   const showQrCode = Boolean(qrSrc) && (screenState.phase === 'waiting' || screenState.phase === 'registration');
+  const connectionLabel = connectionState === 'live'
+    ? t.live
+    : connectionState === 'stale'
+      ? t.stale
+      : connectionState === 'polling'
+        ? t.polling
+        : t.reconnecting;
+  const connectionColor = connectionState === 'live' ? colors.green : connectionState === 'stale' ? colors.orange : colors.gold2;
 
   return (
     <main style={pageStyle}>
@@ -461,8 +510,8 @@ export default function ScreenPage() {
         <Brand />
         <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexWrap: 'wrap', justifyContent: compact ? 'flex-start' : 'flex-end', width: compact ? '100%' : 'auto' }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 9, border: `1px solid ${colors.border}`, borderRadius: 999, background: 'rgba(5, 43, 27, .82)', padding: compact ? '7px 10px' : '9px 14px', color: colors.soft, fontSize: phone ? 11 : 13, fontWeight: 900, maxWidth: '100%' }}>
-            <span style={{ width: 10, height: 10, borderRadius: '50%', background: colors.green, boxShadow: '0 0 16px rgba(75, 209, 125, .65)' }} />
-            {t.live} · {t.updated}: {formatUpdatedAt(updatedAt, lang)}
+            <span style={{ width: 10, height: 10, borderRadius: '50%', background: connectionColor, boxShadow: `0 0 16px ${connectionColor}88` }} />
+            {connectionLabel} · {t.updated}: {formatUpdatedAt(updatedAt, lang)}
           </div>
           <FlagButton active={lang === 'da'} label="Dansk" src="https://flagcdn.com/w40/dk.png" onClick={() => setLang('da')} />
           <FlagButton active={lang === 'en'} label="English" src="https://flagcdn.com/w40/gb.png" onClick={() => setLang('en')} />

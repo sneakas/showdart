@@ -1,8 +1,10 @@
 {
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "test": "node tests/tournamentEngine.test.mjs",
     "start": "next start"
   },
   "dependencies": {

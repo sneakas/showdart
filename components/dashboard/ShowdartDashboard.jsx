@@ -133,6 +133,7 @@ const texts = {
     confirmStartFormat: 'Format',
     confirmStartLosses: 'Maks. nederlag',
     confirmStartLanes: 'Baner',
+    confirmDisableLane: 'Bane {lane} er allerede tildelt {count} igangværende kamp(e). Hvis du deaktiverer banen, fjernes banen fra disse kampe. Vil du fortsætte?',
     confirmReset: 'Er du sikker på, at du vil nulstille hele turneringen? Alle kampe, spillere og resultater bliver slettet.',
     confirmFinalStart: 'Er du sikker på, at du vil starte finalen nu? Du skal rangere de resterende deltagere manuelt.',
     warningTitle: 'Bekræft handling',
@@ -268,6 +269,7 @@ const texts = {
     confirmStartFormat: 'Format',
     confirmStartLosses: 'Max losses',
     confirmStartLanes: 'Lanes',
+    confirmDisableLane: 'Lane {lane} is already assigned to {count} active match(es). If you disable it, the lane will be removed from those matches. Do you want to continue?',
     confirmReset: 'Are you sure you want to reset the whole tournament? All matches, players and results will be deleted.',
     confirmFinalStart: 'Are you sure you want to start the final now? You will need to rank the remaining entries manually.',
     warningTitle: 'Confirm action',
@@ -533,6 +535,22 @@ export function ShowdartDashboard({
     });
   }
 
+  function handleToggleLane(lane, active) {
+    if (active) {
+      const assignedCount = state.matches.filter(match => match.laneNumber === lane).length;
+      if (assignedCount > 0) {
+        showConfirm(
+          t.confirmDisableLane
+            .replace('{lane}', String(lane))
+            .replace('{count}', String(assignedCount)),
+          () => commit(previous => setActiveLane(previous, lane, false))
+        );
+        return;
+      }
+    }
+    commit(previous => setActiveLane(previous, lane, !active));
+  }
+
   function handleComplete() {
     if (state.matches.some(match => !match.winner)) {
       showDialog('Marker vinder i alle kampe først.');
@@ -742,7 +760,7 @@ export function ShowdartDashboard({
                   className={`sd-lane-toggle ${active ? 'is-active' : 'is-inactive'}`}
                   key={lane}
                   aria-pressed={active}
-                  onClick={() => commit(previous => setActiveLane(previous, lane, !active))}
+                  onClick={() => handleToggleLane(lane, active)}
                 >
                   <span className="sd-mini-board" />
                   <span>
@@ -1013,12 +1031,14 @@ function BottomItem({ label, value, green }) {
 
 function buildFinalPlacements(entries, state) {
   const finalIds = state.teammateMode === 'fixed' ? state.finalResultTeamIds : state.finalResultPlayerIds;
-  const orderedIds = state.finalResults?.map(entry => entry.id) || finalIds || [];
+  const storedResults = Array.isArray(state.finalResults) ? state.finalResults : [];
+  const orderedIds = storedResults.length ? storedResults.map(entry => entry.id) : finalIds || [];
   if (!orderedIds.length) return [];
   const finalistIds = new Set(orderedIds);
   const placements = orderedIds.map((id, index) => {
     const entry = entries.find(item => item.id === id);
-    return entry ? { ...entry, place: index + 1 } : null;
+    const stored = storedResults.find(result => result.id === id);
+    return entry ? { ...entry, name: stored?.name || entry.name, place: Number.isFinite(Number(stored?.place)) ? Number(stored.place) : index + 1 } : null;
   }).filter(Boolean);
   const eliminatedGroups = new Map();
   entries.filter(entry => !finalistIds.has(entry.id)).forEach(entry => {
