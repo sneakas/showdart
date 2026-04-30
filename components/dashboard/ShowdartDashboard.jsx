@@ -122,6 +122,8 @@ const texts = {
     remove: 'Fjern',
     eliminate: 'Eliminér',
     editBetweenRoundsOnly: 'Ændringer kan kun laves mellem runder.',
+    minSingles: 'Der skal være mindst 4 spillere for at starte turneringen.',
+    minPairs: 'Der skal være mindst 2 hold for at starte turneringen.',
     confirmReset: 'Er du sikker på, at du vil nulstille hele turneringen? Alle kampe, spillere og resultater bliver slettet.',
     confirmFinalStart: 'Er du sikker på, at du vil starte finalen nu? Du skal rangere de resterende deltagere manuelt.',
     warningTitle: 'Bekræft handling',
@@ -243,6 +245,8 @@ const texts = {
     remove: 'Remove',
     eliminate: 'Eliminate',
     editBetweenRoundsOnly: 'Edits can only be made between rounds.',
+    minSingles: 'At least 4 players are required to start the tournament.',
+    minPairs: 'At least 2 teams are required to start the tournament.',
     confirmReset: 'Are you sure you want to reset the whole tournament? All matches, players and results will be deleted.',
     confirmFinalStart: 'Are you sure you want to start the final now? You will need to rank the remaining entries manually.',
     warningTitle: 'Confirm action',
@@ -443,6 +447,12 @@ export function ShowdartDashboard({
   }
 
   function handleStart() {
+    const minimumEntries = form.teammateMode === 'fixed' ? 2 : 4;
+    const entryCount = form.teammateMode === 'fixed' ? state.fixedTeams.length : state.players.length;
+    if (entryCount < minimumEntries) {
+      showDialog(form.teammateMode === 'fixed' ? t.minPairs : t.minSingles);
+      return;
+    }
     const nextConfig = {
       tournamentName: form.tournamentName || 'Klubmesterskab 2025',
       teammateMode: form.teammateMode,
@@ -450,7 +460,12 @@ export function ShowdartDashboard({
       laneCount: form.laneCount
     };
     setForm(nextConfig);
-    commit(previous => startTournament(configureTournament(previous, nextConfig), nextConfig));
+    setState(previous => {
+      const next = normalizeTournamentState(startTournament(configureTournament(previous, nextConfig), nextConfig));
+      if (next.lastGenerationError) showDialog(next.lastGenerationError);
+      persist(next).catch(error => showDialog(error instanceof Error ? error.message : 'Save failed'));
+      return next;
+    });
   }
 
   function handleTournamentFormatChange(value) {
@@ -464,6 +479,15 @@ export function ShowdartDashboard({
   function handleGenerate() {
     setState(previous => {
       const next = normalizeTournamentState(generateMatches(previous));
+      if (next.lastGenerationError) showDialog(next.lastGenerationError);
+      persist(next).catch(error => showDialog(error instanceof Error ? error.message : 'Save failed'));
+      return next;
+    });
+  }
+
+  function handleAssignLane(matchId, lane) {
+    setState(previous => {
+      const next = normalizeTournamentState(assignMatchLane(previous, matchId, lane));
       if (next.lastGenerationError) showDialog(next.lastGenerationError);
       persist(next).catch(error => showDialog(error instanceof Error ? error.message : 'Save failed'));
       return next;
@@ -709,7 +733,7 @@ export function ShowdartDashboard({
                     match={match}
                     t={t}
                     onWinner={winner => commit(previous => selectWinner(previous, match.id, winner))}
-                    onLane={lane => commit(previous => assignMatchLane(previous, match.id, lane))}
+                    onLane={lane => handleAssignLane(match.id, lane)}
                   />
                 ))}
                 {skippedEntries.length ? <div className="sd-match-card"><div className="sd-match-title">{t.sitOver}</div><div>{skippedEntries.map(entry => entry.name).join(', ')}</div></div> : null}
@@ -836,7 +860,7 @@ function MatchCard({ state, match, t, onWinner, onLane }) {
       </div>
       <select className="sd-select" style={{ marginTop: 10 }} value={match.laneNumber || ''} onChange={event => onLane(event.target.value ? Number(event.target.value) : null)}>
         <option value="">Venter</option>
-        {Array.from({ length: state.laneCount }, (_, index) => index + 1).map(lane => <option key={lane} value={lane}>Bane {lane}</option>)}
+        {state.activeLanes.map(lane => <option key={lane} value={lane}>Bane {lane}</option>)}
       </select>
     </div>
   );
