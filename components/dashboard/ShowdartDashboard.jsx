@@ -134,6 +134,10 @@ const texts = {
     confirmStartLosses: 'Maks. nederlag',
     confirmStartLanes: 'Baner',
     confirmDisableLane: 'Bane {lane} er allerede tildelt {count} igangværende kamp(e). Hvis du deaktiverer banen, fjernes banen fra disse kampe. Vil du fortsætte?',
+    confirmCompleteRound: 'Er du sikker på, at du vil afslutte runden? Tabere får nederlag, og runden gemmes i historikken.',
+    confirmEliminateEntry: 'Er du sikker på, at du vil sætte {name} ud af turneringen?',
+    confirmRemoveEntry: 'Er du sikker på, at du vil fjerne {name} fra turneringen?',
+    confirmFinalResult: 'Er du sikker på, at finalerangeringen er korrekt? Slutresultatet bliver gemt.',
     confirmReset: 'Er du sikker på, at du vil nulstille hele turneringen? Alle kampe, spillere og resultater bliver slettet.',
     confirmFinalStart: 'Er du sikker på, at du vil starte finalen nu? Du skal rangere de resterende deltagere manuelt.',
     warningTitle: 'Bekræft handling',
@@ -270,6 +274,10 @@ const texts = {
     confirmStartLosses: 'Max losses',
     confirmStartLanes: 'Lanes',
     confirmDisableLane: 'Lane {lane} is already assigned to {count} active match(es). If you disable it, the lane will be removed from those matches. Do you want to continue?',
+    confirmCompleteRound: 'Are you sure you want to complete the round? Losers receive losses and the round is saved to history.',
+    confirmEliminateEntry: 'Are you sure you want to eliminate {name} from the tournament?',
+    confirmRemoveEntry: 'Are you sure you want to remove {name} from the tournament?',
+    confirmFinalResult: 'Are you sure the final ranking is correct? The final result will be saved.',
     confirmReset: 'Are you sure you want to reset the whole tournament? All matches, players and results will be deleted.',
     confirmFinalStart: 'Are you sure you want to start the final now? You will need to rank the remaining entries manually.',
     warningTitle: 'Confirm action',
@@ -556,8 +564,10 @@ export function ShowdartDashboard({
       showDialog('Marker vinder i alle kampe først.');
       return;
     }
-    commit(previous => completeRound(previous));
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    showConfirm(t.confirmCompleteRound, () => {
+      commit(previous => completeRound(previous));
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
   }
 
   function handleImportFile(event) {
@@ -581,10 +591,14 @@ export function ShowdartDashboard({
       return;
     }
     if (state.started && entry.active !== false) {
-      commit(previous => eliminateEntry(previous, entry.id));
+      showConfirm(t.confirmEliminateEntry.replace('{name}', entry.name), () => {
+        commit(previous => eliminateEntry(previous, entry.id));
+      });
       return;
     }
-    commit(previous => removeEntry(previous, entry.id));
+    showConfirm(t.confirmRemoveEntry.replace('{name}', entry.name), () => {
+      commit(previous => removeEntry(previous, entry.id));
+    });
   }
 
   function handleStartFinal() {
@@ -615,8 +629,10 @@ export function ShowdartDashboard({
   }
 
   function handleCompleteFinal() {
-    commit(previous => completeFinal(previous, finalRankingIds));
-    setFinalRankingIds([]);
+    showConfirm(t.confirmFinalResult, () => {
+      commit(previous => completeFinal(previous, finalRankingIds));
+      setFinalRankingIds([]);
+    });
   }
 
   const visibleEntries = standings.filter(entry => entry.name.toLowerCase().includes(search.toLowerCase()));

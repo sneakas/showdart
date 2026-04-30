@@ -11,8 +11,10 @@ import {
   getActiveEntries,
   normalizeTournamentState,
   selectWinner,
+  showStandingsOverride,
   setActiveLane,
-  startTournament
+  startTournament,
+  updateEntryLosses
 } from '../lib/tournament/reactEngine.js';
 import { buildScreenState } from '../lib/tournamentScreenState.js';
 
@@ -153,6 +155,87 @@ test('final placements include finalists first and earlier eliminated entries sh
     { id: 6, place: 5 }
   ]);
   assert.deepEqual(getActiveEntries(state).map(entry => entry.id), [2]);
+});
+
+test('nineteen changing players generate a valid round with one singles match and one sit-out', () => {
+  let state = startTournament(changingState(19), { teammateMode: 'changing', laneCount: 8 });
+  state = generateMatches(state);
+
+  assert.equal(state.lastGenerationError, '');
+  assert.equal(state.matches.length, 5);
+  assert.equal(state.skippedPlayerIds.length, 1);
+
+  const singlesMatches = state.matches.filter(match => match.team1PlayerIds.length === 1 && match.team2PlayerIds.length === 1);
+  assert.equal(singlesMatches.length, 1);
+
+  const usedPlayerIds = new Set(state.matches.flatMap(match => [...match.team1PlayerIds, ...match.team2PlayerIds]));
+  state.skippedPlayerIds.forEach(id => usedPlayerIds.add(id));
+  assert.equal(usedPlayerIds.size, 19);
+});
+
+test('manual loss editing can restore an eliminated player between rounds', () => {
+  let state = startTournament(changingState(4), { teammateMode: 'changing', maxLosses: 1 });
+  state = generateMatches(state);
+  state = completeRound(winAllMatches(state));
+
+  const eliminated = state.players.find(player => player.active === false);
+  assert.ok(eliminated, 'expected at least one eliminated player');
+
+  state = updateEntryLosses(state, eliminated.id, 0);
+  const restored = state.players.find(player => player.id === eliminated.id);
+  assert.equal(restored.active, true);
+  assert.equal(restored.eliminationRound, null);
+});
+
+test('players can be added between rounds and included in the next generated round', () => {
+  let state = startTournament(changingState(4), { teammateMode: 'changing', maxLosses: 3, laneCount: 3 });
+  state = generateMatches(state);
+  state = completeRound(winAllMatches(state));
+  state = addPlayer(state, 'Late Player');
+  state = generateMatches(state);
+
+  assert.equal(state.lastGenerationError, '');
+  assert.equal(state.players.length, 5);
+  assert.equal(state.skippedPlayerIds.length, 1);
+
+  const usedIds = new Set(state.matches.flatMap(match => [...match.team1PlayerIds, ...match.team2PlayerIds]));
+  state.skippedPlayerIds.forEach(id => usedIds.add(id));
+  assert.equal(usedIds.has(5), true);
+});
+
+test('spectator temporary standings override only changes the effective screen phase while active', () => {
+  let state = startTournament(changingState(4), { teammateMode: 'changing' });
+  state = generateMatches(state);
+
+  const liveScreen = buildScreenState(state);
+  assert.equal(liveScreen.phase, 'round');
+  assert.equal(liveScreen.basePhase, 'round');
+
+  state = showStandingsOverride(state, 30000);
+  const overrideScreen = buildScreenState(state);
+  assert.equal(overrideScreen.phase, 'standings');
+  assert.equal(overrideScreen.basePhase, 'round');
+  assert.equal(overrideScreen.spectatorOverride.active, true);
+});
+
+test('fixed-team final placements include teams eliminated before the final', () => {
+  let state = startTournament(fixedState(4), { teammateMode: 'fixed', maxLosses: 2 });
+  state = {
+    ...state,
+    fixedTeams: state.fixedTeams.map(team => {
+      if (team.id === 1 || team.id === 2) return team;
+      return { ...team, active: false, losses: 2, eliminationRound: 2 };
+    })
+  };
+
+  state = completeFinal(state, [1, 2]);
+  const screenState = buildScreenState(state);
+  assert.deepEqual(screenState.finalPlacements.map(entry => ({ id: entry.id, place: entry.place })), [
+    { id: 1, place: 1 },
+    { id: 2, place: 2 },
+    { id: 3, place: 3 },
+    { id: 4, place: 3 }
+  ]);
 });
 
 let failures = 0;

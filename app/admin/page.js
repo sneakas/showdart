@@ -29,7 +29,10 @@ const texts = {
     save: 'Gem',
     delete: 'Slet',
     refresh: 'Opdater',
-    confirmDelete: 'Er du sikker paa at du vil slette denne bruger?',
+    confirmDelete: 'Er du sikker på, at du vil slette denne bruger?',
+    warningTitle: 'Bekræft handling',
+    cancel: 'Annuller',
+    continue: 'Fortsæt',
     cannotDeleteSelf: 'Du kan ikke slette din egen admin-konto'
   },
   en: {
@@ -55,6 +58,9 @@ const texts = {
     delete: 'Delete',
     refresh: 'Refresh',
     confirmDelete: 'Are you sure you want to delete this user?',
+    warningTitle: 'Confirm action',
+    cancel: 'Cancel',
+    continue: 'Continue',
     cannotDeleteSelf: 'You cannot delete your own admin account'
   }
 };
@@ -100,6 +106,7 @@ export default function AdminPage() {
   const [usersLoading, setUsersLoading] = useState(false);
   const [savingId, setSavingId] = useState('');
   const [deletingId, setDeletingId] = useState('');
+  const [confirmDialog, setConfirmDialog] = useState(null);
 
   const t = texts[lang] || texts.da;
 
@@ -298,7 +305,14 @@ export default function AdminPage() {
       return;
     }
 
-    if (!window.confirm(t.confirmDelete)) return;
+    setConfirmDialog({
+      message: t.confirmDelete,
+      onConfirm: () => deleteUser(userId)
+    });
+  }
+
+  async function deleteUser(userId) {
+    if (!session?.access_token) return;
 
     setDeletingId(userId);
     try {
@@ -318,6 +332,7 @@ export default function AdminPage() {
       setMessage(error instanceof Error ? error.message : 'Failed to delete user');
     } finally {
       setDeletingId('');
+      setConfirmDialog(null);
     }
   }
 
@@ -429,6 +444,50 @@ export default function AdminPage() {
           {message ? <p style={{ marginTop: 12 }}>{message}</p> : null}
         </div>
       </div>
+      {confirmDialog ? (
+        <div
+          role="presentation"
+          onMouseDown={event => {
+            if (event.target === event.currentTarget) setConfirmDialog(null);
+          }}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            display: 'grid',
+            placeItems: 'center',
+            background: 'rgba(0, 0, 0, 0.62)',
+            zIndex: 50,
+            padding: 18
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="admin-confirm-title"
+            style={{
+              width: 'min(460px, 100%)',
+              background: theme.surface,
+              border: `1px solid ${theme.borderStrong}`,
+              borderRadius: 10,
+              boxShadow: '0 24px 70px rgba(0,0,0,0.55)',
+              padding: 22
+            }}
+          >
+            <div style={{ color: theme.goldSoft, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }} id="admin-confirm-title">
+              {t.warningTitle}
+            </div>
+            <p style={{ margin: '0 0 18px', color: theme.textSoft }}>{confirmDialog.message}</p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, flexWrap: 'wrap' }}>
+              <button type="button" onClick={() => setConfirmDialog(null)} style={{ padding: '9px 13px', borderRadius: 7, border: `1px solid ${theme.borderStrong}`, background: 'rgba(12,24,19,0.35)', color: theme.textSoft, fontWeight: 800 }}>
+                {t.cancel}
+              </button>
+              <button type="button" onClick={confirmDialog.onConfirm} style={{ padding: '9px 13px', borderRadius: 7, border: `1px solid ${theme.danger}`, background: theme.danger, color: '#fff', fontWeight: 800 }}>
+                {t.continue}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </main>
   );
 }
