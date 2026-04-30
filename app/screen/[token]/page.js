@@ -483,7 +483,7 @@ export default function ScreenPage() {
       }}>
         <Card style={{ padding: compact ? 18 : 28, maxWidth: compact ? 'none' : 680, minHeight: compact ? 0 : 174 }}>
           <div style={{ color: colors.muted, fontSize: 12, fontWeight: 900, letterSpacing: '.09em' }}>{modeLabel}</div>
-          <h1 style={{ margin: 0, fontSize: phone ? '2rem' : compact ? '3rem' : 'clamp(2.7rem, 6vw, 5.8rem)', lineHeight: compact ? 1 : .92, letterSpacing: compact ? '.04em' : '.07em', overflowWrap: 'anywhere' }}>{displayTitle}</h1>
+          <h1 style={{ margin: '10px 0 0', fontSize: phone ? '1.65rem' : compact ? '2.25rem' : 'clamp(2.2rem, 3.8vw, 3.9rem)', lineHeight: 1.02, letterSpacing: compact ? '.035em' : '.05em', overflowWrap: 'anywhere' }}>{displayTitle}</h1>
           <div style={{ display: 'flex', gap: compact ? 10 : 18, flexWrap: 'wrap', marginTop: compact ? 14 : 22, color: colors.soft, fontSize: compact ? 13 : 15, fontWeight: 800 }}>
             <span>{screenState.entries.length} {t.participants}</span>
             <span>{t.round} {screenState.currentRound || 0}</span>
