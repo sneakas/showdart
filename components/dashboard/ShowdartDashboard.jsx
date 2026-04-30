@@ -69,7 +69,9 @@ const texts = {
       'Fairness-motoren forsøger at undgå gentagne opgør mellem de samme hold.',
       'Hvis et ulige antal hold er aktive, sidder ét hold over i runden.',
       'Systemet forsøger at undgå, at det samme hold sidder over to runder i træk.',
-      'Der bruges ikke S- eller O-tags i faste makker-turneringer.',
+      '"O" tag bruges til hold, der har siddet over.',
+      'Hold med "O" tag prioriteres væk fra at sidde over, indtil alle andre aktive hold har modtaget "O" tags.',
+      'Når alle aktive hold har fået "O" tag, nulstilles O-tag-cyklussen automatisk.',
       'Baner vælges før næste runde genereres. Efter runden er genereret, kan turneringslederen stadig ændre bane på hver kamp manuelt.',
       'Efter hver runde modtager det tabende hold 1 nederlag.',
       'Når et hold når det maksimale antal nederlag, bliver det elimineret, og elimineringsrunden vises i oversigten.',
@@ -124,6 +126,13 @@ const texts = {
     editBetweenRoundsOnly: 'Ændringer kan kun laves mellem runder.',
     minSingles: 'Der skal være mindst 4 spillere for at starte turneringen.',
     minPairs: 'Der skal være mindst 2 hold for at starte turneringen.',
+    confirmStartIntro: 'Er du sikker på, at du vil starte turneringen med disse indstillinger?',
+    confirmStartName: 'Turneringsnavn',
+    confirmStartEntries: 'Deltagere',
+    confirmStartTeams: 'Hold',
+    confirmStartFormat: 'Format',
+    confirmStartLosses: 'Maks. nederlag',
+    confirmStartLanes: 'Baner',
     confirmReset: 'Er du sikker på, at du vil nulstille hele turneringen? Alle kampe, spillere og resultater bliver slettet.',
     confirmFinalStart: 'Er du sikker på, at du vil starte finalen nu? Du skal rangere de resterende deltagere manuelt.',
     warningTitle: 'Bekræft handling',
@@ -192,7 +201,9 @@ const texts = {
       'The fairness engine tries to avoid repeated matchups between the same teams.',
       'If an odd number of teams remain active, one team sits out for the round.',
       'The system tries to avoid giving the same team a sit-out in consecutive rounds.',
-      'Fixed teammate tournaments do not use S or O tags.',
+      '"O" tag is used for teams that have sat out.',
+      'Teams with "O" tag are prioritized away from sitting out until all other active teams have received "O" tags.',
+      'When all active teams have received the "O" tag, the O-tag cycle resets automatically.',
       'Lanes are selected before the next round is generated. After the round is generated, the tournament director can still manually change the lane for each match.',
       'After each round, the losing team receives 1 loss.',
       'When a team reaches the maximum number of losses, it is eliminated and its elimination round is shown in the standings.',
@@ -247,6 +258,13 @@ const texts = {
     editBetweenRoundsOnly: 'Edits can only be made between rounds.',
     minSingles: 'At least 4 players are required to start the tournament.',
     minPairs: 'At least 2 teams are required to start the tournament.',
+    confirmStartIntro: 'Are you sure you want to start the tournament with these settings?',
+    confirmStartName: 'Tournament name',
+    confirmStartEntries: 'Participants',
+    confirmStartTeams: 'Teams',
+    confirmStartFormat: 'Format',
+    confirmStartLosses: 'Max losses',
+    confirmStartLanes: 'Lanes',
     confirmReset: 'Are you sure you want to reset the whole tournament? All matches, players and results will be deleted.',
     confirmFinalStart: 'Are you sure you want to start the final now? You will need to rank the remaining entries manually.',
     warningTitle: 'Confirm action',
@@ -325,7 +343,7 @@ export function ShowdartDashboard({
   const canManageEntries = canManageEntriesBetweenRounds(state);
   const canEditEntries = !state.started || canManageEntries;
   const canAddEntries = !state.started || canManageEntries;
-  const canApproveTags = state.teammateMode !== 'fixed' && state.pendingTagChanges && canManageEntries;
+  const canApproveTags = state.pendingTagChanges && canManageEntries;
   const tournamentFinished = Boolean(state.finalResults || state.finalResultPlayerIds || state.finalResultTeamIds);
   const canStartFinal = state.started && !tournamentFinished && !isRoundActive && activeEntries.length > 1 && activeEntries.length <= 5;
   const finalPlacements = useMemo(() => buildFinalPlacements(entries, state), [entries, state]);
@@ -459,13 +477,28 @@ export function ShowdartDashboard({
       maxLosses: form.maxLosses,
       laneCount: form.laneCount
     };
-    setForm(nextConfig);
-    setState(previous => {
-      const next = normalizeTournamentState(startTournament(configureTournament(previous, nextConfig), nextConfig));
-      if (next.lastGenerationError) showDialog(next.lastGenerationError);
-      persist(next).catch(error => showDialog(error instanceof Error ? error.message : 'Save failed'));
-      return next;
-    });
+    const entryLabel = nextConfig.teammateMode === 'fixed' ? t.confirmStartTeams : t.confirmStartEntries;
+    const modeLabel = nextConfig.teammateMode === 'fixed' ? t.fixed : t.changing;
+    showConfirm(
+      [
+        t.confirmStartIntro,
+        '',
+        `${t.confirmStartName}: ${nextConfig.tournamentName}`,
+        `${entryLabel}: ${entryCount}`,
+        `${t.confirmStartFormat}: ${modeLabel}`,
+        `${t.confirmStartLosses}: ${nextConfig.maxLosses}`,
+        `${t.confirmStartLanes}: ${nextConfig.laneCount}`
+      ].join('\n'),
+      () => {
+        setForm(nextConfig);
+        setState(previous => {
+          const next = normalizeTournamentState(startTournament(configureTournament(previous, nextConfig), nextConfig));
+          if (next.lastGenerationError) showDialog(next.lastGenerationError);
+          persist(next).catch(error => showDialog(error instanceof Error ? error.message : 'Save failed'));
+          return next;
+        });
+      }
+    );
   }
 
   function handleTournamentFormatChange(value) {
@@ -562,7 +595,7 @@ export function ShowdartDashboard({
     setFinalRankingIds([]);
   }
 
-  const visibleEntries = entries.filter(entry => entry.name.toLowerCase().includes(search.toLowerCase()));
+  const visibleEntries = standings.filter(entry => entry.name.toLowerCase().includes(search.toLowerCase()));
   const tournamentTitle = state.tournamentName || form.tournamentName || 'Klubmesterskab 2025';
 
   return (
@@ -668,7 +701,7 @@ export function ShowdartDashboard({
           </div>
           <div className="sd-table-wrap">
           <table className="sd-table">
-            <thead><tr><th></th><th>{t.name}</th><th>{t.roleStatus}</th><th>{t.losses}</th>{state.teammateMode !== 'fixed' ? <th>{t.tags}</th> : null}<th></th></tr></thead>
+            <thead><tr><th></th><th>{t.name}</th><th>{t.roleStatus}</th><th>{t.losses}</th><th>{t.tags}</th><th></th></tr></thead>
             <tbody>
               {visibleEntries.map((entry, index) => (
                 <tr key={entry.id}>
@@ -676,17 +709,15 @@ export function ShowdartDashboard({
                   <td>{entry.name}</td>
                   <td>{entry.active ? t.active : t.eliminated}{entry.eliminationRound ? ` R${entry.eliminationRound}` : ''}</td>
                   <td><input className="sd-input" style={{ width: 58, padding: 5 }} type="number" min="0" value={entry.losses || 0} disabled={!canEditEntries} onChange={event => commit(previous => updateEntryLosses(previous, entry.id, Number(event.target.value)))} /></td>
-                  {state.teammateMode !== 'fixed' ? (
-                    <td>
-                      <div className="sd-tag-actions">
-                        {['S', 'O'].map(tag => (
-                          <button key={tag} type="button" className={`sd-tag tag-${tag.toLowerCase()} ${entry.tags?.includes(tag) ? 'is-on' : ''} ${entry.modifiedTags?.includes(tag) ? 'is-pending' : ''}`} disabled={!state.started || !canManageEntries} onClick={() => commit(previous => togglePlayerTag(previous, entry.id, tag))}>
-                            {tag}
-                          </button>
-                        ))}
-                      </div>
-                    </td>
-                  ) : null}
+                  <td>
+                    <div className="sd-tag-actions">
+                      {(state.teammateMode === 'fixed' ? ['O'] : ['S', 'O']).map(tag => (
+                        <button key={tag} type="button" className={`sd-tag tag-${tag.toLowerCase()} ${entry.tags?.includes(tag) ? 'is-on' : ''} ${entry.modifiedTags?.includes(tag) ? 'is-pending' : ''}`} disabled={!state.started || !canManageEntries} onClick={() => commit(previous => togglePlayerTag(previous, entry.id, tag))}>
+                          {tag}
+                        </button>
+                      ))}
+                    </div>
+                  </td>
                   <td><button type="button" className="sd-button" title={entry.active ? t.eliminate : t.remove} disabled={state.started && !canManageEntries} style={{ minHeight: 32, padding: 5 }} onClick={() => handleEntryAction(entry)}><MoreVertical size={16} /></button></td>
                 </tr>
               ))}
