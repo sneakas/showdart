@@ -376,23 +376,23 @@ export default function Page() {
   if (!session) {
     return (
       <main style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', fontFamily: 'Manrope, system-ui, sans-serif', background: theme.page, color: theme.text, padding: 18 }}>
-        <form onSubmit={handleAuthSubmit} style={{ width: 'min(390px, 100%)', background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: 8, padding: 22, boxShadow: '0 18px 45px rgba(0,0,0,0.34)' }}>
+        <form onSubmit={handleAuthSubmit} style={{ width: 'min(390px, 100%)', boxSizing: 'border-box', background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: 8, padding: 22, boxShadow: '0 18px 45px rgba(0,0,0,0.34)' }}>
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>{flagLanguageButtons}</div>
           <h2 style={{ marginTop: 0, marginBottom: 16, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{mode === 'login' ? t.login : t.signup}</h2>
 
           <label style={{ display: 'block', marginBottom: 6 }}>{t.email}</label>
-          <input type="email" value={email} onChange={e => setEmail(e.target.value)} style={{ width: '100%', marginBottom: 12, padding: 11, borderRadius: 7, border: `1px solid ${theme.border}`, background: theme.input, color: theme.text }} />
+          <input type="email" value={email} onChange={e => setEmail(e.target.value)} style={{ width: '100%', boxSizing: 'border-box', marginBottom: 12, padding: 11, borderRadius: 7, border: `1px solid ${theme.border}`, background: theme.input, color: theme.text }} />
 
           <label style={{ display: 'block', marginBottom: 6 }}>{t.password}</label>
-          <input type="password" value={password} onChange={e => setPassword(e.target.value)} style={{ width: '100%', marginBottom: 12, padding: 11, borderRadius: 7, border: `1px solid ${theme.border}`, background: theme.input, color: theme.text }} />
+          <input type="password" value={password} onChange={e => setPassword(e.target.value)} style={{ width: '100%', boxSizing: 'border-box', marginBottom: 12, padding: 11, borderRadius: 7, border: `1px solid ${theme.border}`, background: theme.input, color: theme.text }} />
 
           {authError ? <p style={{ color: theme.goldSoft, marginTop: 0 }}>{authError}</p> : null}
 
-          <button type="submit" style={{ width: '100%', padding: 11, borderRadius: 7, border: `1px solid ${theme.goldSoft}`, background: `linear-gradient(135deg, ${theme.gold}, ${theme.goldSoft})`, color: '#11170f', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+          <button type="submit" style={{ width: '100%', boxSizing: 'border-box', padding: 11, borderRadius: 7, border: `1px solid ${theme.goldSoft}`, background: `linear-gradient(135deg, ${theme.gold}, ${theme.goldSoft})`, color: '#11170f', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
             {mode === 'login' ? t.login : t.createAccount}
           </button>
 
-          <button type="button" onClick={() => setMode(mode === 'login' ? 'signup' : 'login')} style={{ marginTop: 10, width: '100%', padding: 11, borderRadius: 7, border: `1px solid ${theme.border}`, background: 'rgba(12,24,19,0.35)', color: theme.textSoft, fontWeight: 700 }}>
+          <button type="button" onClick={() => setMode(mode === 'login' ? 'signup' : 'login')} style={{ marginTop: 10, width: '100%', boxSizing: 'border-box', padding: 11, borderRadius: 7, border: `1px solid ${theme.border}`, background: 'rgba(12,24,19,0.35)', color: theme.textSoft, fontWeight: 700 }}>
             {mode === 'login' ? t.needAccount : t.haveAccount}
           </button>
         </form>

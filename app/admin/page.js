@@ -8,10 +8,10 @@ const LANGUAGE_STORAGE_KEY = 'showdart-language';
 
 const texts = {
   da: {
-    loading: 'Indlaeser...',
+    loading: 'Indlæser...',
     title: 'Admin',
     subtitle: 'Administrer konti',
-    notLoggedIn: 'Du skal vaere logget ind for at bruge adminsiden.',
+    notLoggedIn: 'Du skal være logget ind for at bruge adminsiden.',
     notAdmin: 'Du har ikke admin-adgang.',
     back: 'Tilbage til turnering',
     email: 'E-mail',
@@ -19,7 +19,7 @@ const texts = {
     displayName: 'Vist navn (valgfri)',
     create: 'Opret konto',
     creating: 'Opretter...',
-    needFields: 'E-mail og adgangskode er paakraevet.',
+    needFields: 'E-mail og adgangskode er påkrævet.',
     missingToken: 'Session mangler. Log ind igen.',
     user: 'Bruger',
     admin: 'Admin',
@@ -93,6 +93,7 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState(null);
   const [role, setRole] = useState('user');
+  const [roleLoading, setRoleLoading] = useState(true);
   const [profileEmail, setProfileEmail] = useState('');
   const [message, setMessage] = useState('');
   const [creating, setCreating] = useState(false);
@@ -139,6 +140,7 @@ export default function AdminPage() {
       if (!active) return;
       setSession(data.session || null);
       setProfileEmail(data.session?.user?.email || '');
+      setRoleLoading(!!data.session);
       setLoading(false);
     }
 
@@ -147,6 +149,7 @@ export default function AdminPage() {
     const { data: subscription } = supabase.auth.onAuthStateChange((_evt, nextSession) => {
       setSession(nextSession || null);
       setProfileEmail(nextSession?.user?.email || '');
+      setRoleLoading(!!nextSession);
     });
 
     return () => {
@@ -159,23 +162,32 @@ export default function AdminPage() {
     async function loadRole() {
       if (!session?.access_token) {
         setRole('user');
+        setRoleLoading(false);
         return;
       }
 
-      const response = await fetch('/api/profile/me', {
-        headers: {
-          Authorization: `Bearer ${session.access_token}`
+      setRoleLoading(true);
+      try {
+        const response = await fetch('/api/profile/me', {
+          headers: {
+            Authorization: `Bearer ${session.access_token}`
+          }
+        });
+
+        const payload = await response.json();
+        if (!response.ok) {
+          setRole('user');
+          setRoleLoading(false);
+          return;
         }
-      });
 
-      const payload = await response.json();
-      if (!response.ok) {
+        setRole(payload.role || 'user');
+        setProfileEmail(payload.email || session.user?.email || '');
+      } catch (_error) {
         setRole('user');
-        return;
+      } finally {
+        setRoleLoading(false);
       }
-
-      setRole(payload.role || 'user');
-      setProfileEmail(payload.email || session.user?.email || '');
     }
 
     loadRole();
@@ -336,7 +348,7 @@ export default function AdminPage() {
     }
   }
 
-  if (loading) {
+  if (loading || (session && roleLoading)) {
     return <main style={{ padding: 24, fontFamily: 'Manrope, system-ui, sans-serif', background: theme.page, color: theme.text, minHeight: '100vh' }}>{t.loading}</main>;
   }
 
