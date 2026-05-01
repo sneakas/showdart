@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { ArrowDown, ArrowUp, CalendarDays, Check, ClipboardList, Eye, ExternalLink, GitBranch, History, MoreVertical, Plus, QrCode, RefreshCw, RotateCcw, ShieldCheck, Trophy, Upload, UsersRound } from 'lucide-react';
+import { ArrowDown, ArrowUp, CalendarDays, Check, Eye, ExternalLink, GitBranch, History, MoreVertical, Plus, QrCode, RefreshCw, RotateCcw, ShieldCheck, Trophy, Upload, UsersRound } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   addFixedTeam,
@@ -33,7 +33,6 @@ import {
 
 const texts = {
   da: {
-    registration: 'Registrering',
     tournament: 'Turnering',
     admin: 'Admin',
     rules: 'Regler',
@@ -173,7 +172,6 @@ const texts = {
     lastUpdate: 'Sidste opdatering'
   },
   en: {
-    registration: 'Registration',
     tournament: 'Tournament',
     admin: 'Admin',
     rules: 'Rules',
@@ -649,7 +647,6 @@ export function ShowdartDashboard({
           </div>
         </div>
         <nav className="sd-nav">
-          {navButton('registration', t.registration, ClipboardList, () => {})}
           {navButton('tournament', t.tournament, Trophy, () => {})}
           {role === 'admin' ? navButton('admin', t.admin, UsersRound, onOpenAdmin) : null}
           {navButton('rules', t.rules, ShieldCheck, () => setRulesOpen(true))}
