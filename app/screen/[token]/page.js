@@ -46,6 +46,7 @@ const texts = {
     changingTeams: 'Skiftende makkere',
     matches: 'Kampe',
     participants: 'Deltagere',
+    lanes: 'Baner',
     page: 'Side'
   },
   en: {
@@ -86,6 +87,7 @@ const texts = {
     changingTeams: 'Changing teammates',
     matches: 'Matches',
     participants: 'Participants',
+    lanes: 'Lanes',
     page: 'Page'
   }
 };
@@ -616,7 +618,7 @@ export default function ScreenPage() {
           <h1 style={{ margin: '10px 0 0', fontSize: phone ? '1.65rem' : compact ? '2.25rem' : denseDisplay ? 'clamp(1.8rem, 2.9vw, 2.7rem)' : 'clamp(2.2rem, 3.8vw, 3.9rem)', lineHeight: 1.02, letterSpacing: compact ? '.035em' : '.05em', overflowWrap: 'anywhere' }}>{displayTitle}</h1>
           <div style={{ display: 'flex', gap: compact ? 10 : 18, flexWrap: 'wrap', marginTop: compact ? 14 : denseDisplay ? 14 : 22, color: colors.soft, fontSize: compact ? 13 : 15, fontWeight: 800 }}>
             <span>{screenState.entries.length} {t.participants}</span>
-            <span>{t.round} {screenState.currentRound || 0}</span>
+            {screenState.started ? <span>{t.round} {screenState.currentRound || 0}</span> : <span>{screenState.laneCount || 0} {t.lanes}</span>}
             <span>{screenState.maxLosses} {t.losses}</span>
           </div>
         </Card>

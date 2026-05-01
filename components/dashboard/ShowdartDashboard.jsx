@@ -523,6 +523,14 @@ export function ShowdartDashboard({
     }
   }
 
+  function handleSetupChange(patch) {
+    const nextForm = { ...form, ...patch };
+    setForm(nextForm);
+    if (!state.started) {
+      commit(previous => configureTournament(previous, nextForm));
+    }
+  }
+
   function handleGenerate() {
     setState(previous => {
       const next = normalizeTournamentState(generateMatches(previous));
@@ -696,15 +704,15 @@ export function ShowdartDashboard({
         <div className="sd-stack">
           <Panel title={t.setup}>
             <div className="sd-form-grid">
-              <Field label={t.tournamentName}><input className="sd-input" value={form.tournamentName || state.tournamentName || ''} onChange={event => setForm({ ...form, tournamentName: event.target.value })} /></Field>
+              <Field label={t.tournamentName}><input className="sd-input" value={form.tournamentName} onChange={event => handleSetupChange({ tournamentName: event.target.value })} /></Field>
               <Field label={t.format}>
                 <select className="sd-select" value={form.teammateMode} disabled={state.started} onChange={event => handleTournamentFormatChange(event.target.value)}>
                   <option value="changing">{t.changing}</option>
                   <option value="fixed">{t.fixed}</option>
                 </select>
               </Field>
-              <Field label={t.losses}><input className="sd-input" type="number" min="1" value={form.maxLosses} onChange={event => setForm({ ...form, maxLosses: Number(event.target.value) })} /></Field>
-              <Field label={t.lanesCount}><input className="sd-input" type="number" min="1" max="32" value={form.laneCount} disabled={state.started} onChange={event => setForm({ ...form, laneCount: Number(event.target.value) })} /></Field>
+              <Field label={t.losses}><input className="sd-input" type="number" min="1" value={form.maxLosses} onChange={event => handleSetupChange({ maxLosses: Number(event.target.value) })} /></Field>
+              <Field label={t.lanesCount}><input className="sd-input" type="number" min="1" max="32" value={form.laneCount} disabled={state.started} onChange={event => handleSetupChange({ laneCount: Number(event.target.value) })} /></Field>
               <Field label={t.status}><span className="sd-green-text">{state.started ? t.started : t.waiting}</span></Field>
               {!state.started ? <button type="button" className="sd-button gold full" onClick={handleStart}>{t.start}</button> : null}
             </div>
