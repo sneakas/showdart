@@ -236,9 +236,9 @@ function getPageSize(phase, viewportWidth) {
   const phone = viewportWidth < 620;
   const tablet = viewportWidth < 900;
   if (phase === 'round') return phone ? 2 : tablet ? 3 : 6;
-  if (phase === 'registration') return phone ? 8 : tablet ? 12 : 14;
-  if (phase === 'final') return phone ? 8 : tablet ? 12 : 14;
-  return phone ? 7 : tablet ? 10 : 14;
+  if (phase === 'registration') return phone ? 8 : tablet ? 12 : 12;
+  if (phase === 'final') return phone ? 8 : tablet ? 12 : 12;
+  return phone ? 7 : tablet ? 10 : 12;
 }
 
 function chunkItems(items, size) {
