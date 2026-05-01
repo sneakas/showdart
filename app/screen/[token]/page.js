@@ -228,7 +228,7 @@ function StatusBar({ t, screenState, updatedAt, lang, compact }) {
   );
 }
 
-function StandingsTable({ entries, t, entryLabel, maxLosses, final }) {
+function StandingsTable({ entries, t, entryLabel, maxLosses, final, showTournamentColumns = true }) {
   return (
     <div style={{ overflowX: 'auto' }}>
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 18 }}>
@@ -236,8 +236,8 @@ function StandingsTable({ entries, t, entryLabel, maxLosses, final }) {
           <tr>
             <th style={tableHeadStyle}>{t.place}</th>
             <th style={tableHeadStyle}>{entryLabel}</th>
-            {!final ? <th style={tableHeadStyle}>{t.losses}</th> : null}
-            {!final ? <th style={tableHeadStyle}>{t.status}</th> : null}
+            {!final && showTournamentColumns ? <th style={tableHeadStyle}>{t.losses}</th> : null}
+            {!final && showTournamentColumns ? <th style={tableHeadStyle}>{t.status}</th> : null}
           </tr>
         </thead>
         <tbody>
@@ -245,8 +245,8 @@ function StandingsTable({ entries, t, entryLabel, maxLosses, final }) {
             <tr key={`${entry.place || index}-${entry.id}`}>
               <td style={tableCellStyle}>{entry.place || index + 1}</td>
               <td style={tableCellStyle}>{entry.name}</td>
-              {!final ? <td style={tableCellStyle}>{entry.losses}/{maxLosses}</td> : null}
-              {!final ? <td style={{ ...tableCellStyle, color: entry.active ? colors.green : colors.orange }}>{getStatusText(entry, t)}</td> : null}
+              {!final && showTournamentColumns ? <td style={tableCellStyle}>{entry.losses}/{maxLosses}</td> : null}
+              {!final && showTournamentColumns ? <td style={{ ...tableCellStyle, color: entry.active ? colors.green : colors.orange }}>{getStatusText(entry, t)}</td> : null}
             </tr>
           ))}
         </tbody>
@@ -569,7 +569,7 @@ export default function ScreenPage() {
           <Card style={{ padding: 22 }}>
             <div style={{ color: colors.muted, fontSize: 12, fontWeight: 900, letterSpacing: '.09em' }}>{t.tournamentNotStarted}</div>
             <h2 style={{ margin: '7px 0 18px', fontSize: 26, letterSpacing: '.04em' }}>{t.registrationOpen}</h2>
-            <StandingsTable entries={screenState.standings} t={t} entryLabel={entryLabel} maxLosses={screenState.maxLosses} />
+            <StandingsTable entries={screenState.standings} t={t} entryLabel={entryLabel} maxLosses={screenState.maxLosses} showTournamentColumns={false} />
           </Card>
         ) : null}
 
