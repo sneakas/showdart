@@ -236,9 +236,9 @@ function getPageSize(phase, viewportWidth) {
   const phone = viewportWidth < 620;
   const tablet = viewportWidth < 900;
   if (phase === 'round') return phone ? 2 : tablet ? 3 : 6;
-  if (phase === 'registration') return phone ? 8 : tablet ? 12 : 24;
-  if (phase === 'final') return phone ? 8 : tablet ? 12 : 18;
-  return phone ? 7 : tablet ? 10 : 18;
+  if (phase === 'registration') return phone ? 8 : tablet ? 12 : 14;
+  if (phase === 'final') return phone ? 8 : tablet ? 12 : 14;
+  return phone ? 7 : tablet ? 10 : 14;
 }
 
 function chunkItems(items, size) {
@@ -424,7 +424,16 @@ export default function ScreenPage() {
         return;
       }
 
-      setScreenMeta(payload);
+      setScreenMeta(previous => {
+        if (
+          previous?.realtimeChannel === payload?.realtimeChannel
+          && previous?.screenUrl === payload?.screenUrl
+          && previous?.token === payload?.token
+        ) {
+          return previous;
+        }
+        return payload;
+      });
       setTournamentState(payload.state || null);
       setUpdatedAt(payload.updatedAt || null);
       setLastFetchMs(Date.now());
@@ -479,10 +488,11 @@ export default function ScreenPage() {
   }, [loadScreen, token]);
 
   useEffect(() => {
-    if (!supabase || !screenMeta?.realtimeChannel) return undefined;
+    const realtimeChannel = screenMeta?.realtimeChannel;
+    if (!supabase || !realtimeChannel) return undefined;
 
     const channel = supabase
-      .channel(screenMeta.realtimeChannel, { config: { broadcast: { self: false } } })
+      .channel(realtimeChannel, { config: { broadcast: { self: false } } })
       .on('broadcast', { event: 'tournament-state' }, ({ payload }) => {
         if (!payload?.state) return;
         setTournamentState(payload.state);
@@ -496,7 +506,7 @@ export default function ScreenPage() {
         setConnectionState('live');
         return;
       }
-      if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+      if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
         setConnectionState(previous => previous === 'stale' ? 'stale' : 'polling');
       }
     });
@@ -504,7 +514,7 @@ export default function ScreenPage() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [screenMeta, supabase]);
+  }, [screenMeta?.realtimeChannel, supabase]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
