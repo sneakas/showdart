@@ -45,7 +45,8 @@ const texts = {
     fixedTeams: 'Faste makkere',
     changingTeams: 'Skiftende makkere',
     matches: 'Kampe',
-    participants: 'Deltagere'
+    participants: 'Deltagere',
+    page: 'Side'
   },
   en: {
     loading: 'Loading spectator screen...',
@@ -84,7 +85,8 @@ const texts = {
     fixedTeams: 'Fixed teammates',
     changingTeams: 'Changing teammates',
     matches: 'Matches',
-    participants: 'Participants'
+    participants: 'Participants',
+    page: 'Page'
   }
 };
 
@@ -194,44 +196,109 @@ function Card({ children, style }) {
   );
 }
 
-function BottomItem({ label, value, green }) {
+function BottomItem({ label, value, green, dense }) {
   return (
-    <div style={{ borderLeft: '1px solid rgba(255,255,255,.14)', paddingLeft: 28 }}>
-      <div style={{ color: colors.muted, fontSize: 12, fontWeight: 900, letterSpacing: '.08em' }}>{label}</div>
-      <div style={{ color: green ? colors.green : colors.text, fontSize: 19, fontWeight: 900, marginTop: 3 }}>{value}</div>
+    <div style={{ borderLeft: '1px solid rgba(255,255,255,.14)', paddingLeft: dense ? 18 : 28 }}>
+      <div style={{ color: colors.muted, fontSize: dense ? 10 : 12, fontWeight: 900, letterSpacing: '.08em' }}>{label}</div>
+      <div style={{ color: green ? colors.green : colors.text, fontSize: dense ? 16 : 19, fontWeight: 900, marginTop: 3 }}>{value}</div>
     </div>
   );
 }
 
-function StatusBar({ t, screenState, updatedAt, lang, compact }) {
+function StatusBar({ t, screenState, updatedAt, lang, compact, dense }) {
   return (
     <footer style={{
       position: compact ? 'static' : 'fixed',
       left: 0,
       right: 0,
       bottom: 0,
-      height: compact ? 'auto' : 72,
+      height: compact ? 'auto' : dense ? 58 : 72,
       display: 'grid',
       gridTemplateColumns: compact ? 'repeat(2, minmax(0, 1fr))' : 'repeat(4, 1fr)',
       gap: compact ? 12 : 0,
       background: 'linear-gradient(90deg, rgba(5, 28, 18, .96), rgba(9, 42, 28, .96), rgba(4, 18, 12, .96))',
       borderTop: '1px solid #1c5a41',
       boxShadow: '0 -18px 40px rgba(0,0,0,.4)',
-      padding: compact ? '14px 18px' : '12px 54px',
+      padding: compact ? '14px 18px' : dense ? '8px 42px' : '12px 54px',
       zIndex: 20
     }}>
-      <BottomItem label={t.status} value={screenState.phase === 'round' ? t.roundLive : screenState.phase === 'final' ? t.finalResults : t.standings} green />
-      <BottomItem label={t.participants} value={String(screenState.entries.length)} />
-      <BottomItem label={t.round} value={String(screenState.currentRound || 0)} />
-      <BottomItem label={t.updated} value={formatUpdatedAt(updatedAt, lang)} />
+      <BottomItem dense={dense} label={t.status} value={screenState.phase === 'round' ? t.roundLive : screenState.phase === 'final' ? t.finalResults : t.standings} green />
+      <BottomItem dense={dense} label={t.participants} value={String(screenState.entries.length)} />
+      <BottomItem dense={dense} label={t.round} value={String(screenState.currentRound || 0)} />
+      <BottomItem dense={dense} label={t.updated} value={formatUpdatedAt(updatedAt, lang)} />
     </footer>
   );
 }
 
-function StandingsTable({ entries, t, entryLabel, maxLosses, final, showTournamentColumns = true }) {
+function getPageSize(phase, viewportWidth) {
+  const phone = viewportWidth < 620;
+  const tablet = viewportWidth < 900;
+  if (phase === 'round') return phone ? 2 : tablet ? 3 : 6;
+  if (phase === 'registration') return phone ? 8 : tablet ? 12 : 24;
+  if (phase === 'final') return phone ? 8 : tablet ? 12 : 18;
+  return phone ? 7 : tablet ? 10 : 18;
+}
+
+function chunkItems(items, size) {
+  const safeSize = Math.max(1, Number(size) || 1);
+  const chunks = [];
+  for (let index = 0; index < items.length; index += safeSize) {
+    chunks.push(items.slice(index, index + safeSize));
+  }
+  return chunks.length ? chunks : [[]];
+}
+
+function PageIndicator({ t, page, pageCount }) {
+  if (pageCount <= 1) return null;
+  return (
+    <div style={{
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: 8,
+      border: `1px solid ${colors.border}`,
+      borderRadius: 999,
+      color: colors.gold2,
+      background: 'rgba(2, 8, 5, .42)',
+      padding: '7px 12px',
+      fontSize: 13,
+      fontWeight: 900,
+      letterSpacing: '.08em'
+    }}>
+      {t.page} {page + 1} / {pageCount}
+    </div>
+  );
+}
+
+function PagedDisplay({ items, pageSize, resetKey, t, children, intervalMs = 10000 }) {
+  const pages = useMemo(() => chunkItems(items, pageSize), [items, pageSize]);
+  const [page, setPage] = useState(0);
+
+  useEffect(() => {
+    setPage(0);
+  }, [resetKey, pageSize, pages.length]);
+
+  useEffect(() => {
+    if (pages.length <= 1 || typeof window === 'undefined') return undefined;
+    const intervalId = window.setInterval(() => {
+      setPage(current => (current + 1) % pages.length);
+    }, intervalMs);
+    return () => window.clearInterval(intervalId);
+  }, [pages.length, intervalMs]);
+
+  const safePage = Math.min(page, pages.length - 1);
+  return children({
+    visibleItems: pages[safePage] || [],
+    page: safePage,
+    pageCount: pages.length,
+    startIndex: safePage * Math.max(1, Number(pageSize) || 1),
+    indicator: <PageIndicator t={t} page={safePage} pageCount={pages.length} />
+  });
+}
+
+function StandingsTable({ entries, t, entryLabel, maxLosses, final, showTournamentColumns = true, startIndex = 0, dense = false }) {
   return (
     <div style={{ overflowX: 'auto' }}>
-      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 18 }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: dense ? 15 : 18 }}>
         <thead>
           <tr>
             <th style={tableHeadStyle}>{t.place}</th>
@@ -243,10 +310,10 @@ function StandingsTable({ entries, t, entryLabel, maxLosses, final, showTourname
         <tbody>
           {entries.map((entry, index) => (
             <tr key={`${entry.place || index}-${entry.id}`}>
-              <td style={tableCellStyle}>{entry.place || index + 1}</td>
-              <td style={tableCellStyle}>{entry.name}</td>
-              {!final && showTournamentColumns ? <td style={tableCellStyle}>{entry.losses}/{maxLosses}</td> : null}
-              {!final && showTournamentColumns ? <td style={{ ...tableCellStyle, color: entry.active ? colors.green : colors.orange }}>{getStatusText(entry, t)}</td> : null}
+              <td style={{ ...tableCellStyle, padding: dense ? '10px 12px' : tableCellStyle.padding }}>{entry.place || startIndex + index + 1}</td>
+              <td style={{ ...tableCellStyle, padding: dense ? '10px 12px' : tableCellStyle.padding }}>{entry.name}</td>
+              {!final && showTournamentColumns ? <td style={{ ...tableCellStyle, padding: dense ? '10px 12px' : tableCellStyle.padding }}>{entry.losses}/{maxLosses}</td> : null}
+              {!final && showTournamentColumns ? <td style={{ ...tableCellStyle, padding: dense ? '10px 12px' : tableCellStyle.padding, color: entry.active ? colors.green : colors.orange }}>{getStatusText(entry, t)}</td> : null}
             </tr>
           ))}
         </tbody>
@@ -485,6 +552,20 @@ export default function ScreenPage() {
   const displayTitle = screenState.tournamentName || 'Showdart Live';
   const qrSrc = shareUrl ? `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=0&data=${encodeURIComponent(shareUrl)}` : '';
   const showQrCode = Boolean(qrSrc) && (screenState.phase === 'waiting' || screenState.phase === 'registration');
+  const activeListSize = screenState.phase === 'round'
+    ? screenState.matches.length
+    : screenState.phase === 'final'
+      ? screenState.finalPlacements.length
+      : screenState.standings.length;
+  const pageSize = getPageSize(screenState.phase, viewportWidth);
+  const denseDisplay = !compact && activeListSize > pageSize;
+  const pageResetKey = [
+    screenState.phase,
+    screenState.currentRound,
+    updatedAt,
+    activeListSize,
+    screenState.spectatorOverride?.active ? 'override' : 'normal'
+  ].join('|');
   const connectionLabel = connectionState === 'live'
     ? t.live
     : connectionState === 'stale'
@@ -497,13 +578,13 @@ export default function ScreenPage() {
   return (
     <main style={pageStyle}>
       <header style={{
-        minHeight: compact ? 0 : 88,
+        minHeight: compact ? 0 : denseDisplay ? 66 : 88,
         display: 'flex',
         flexWrap: compact ? 'wrap' : 'nowrap',
         justifyContent: 'space-between',
         alignItems: 'center',
         gap: compact ? 14 : 24,
-        padding: compact ? '14px 18px' : '0 44px',
+        padding: compact ? '14px 18px' : denseDisplay ? '5px 34px' : '0 44px',
         borderBottom: `1px solid ${colors.gold}`,
         background: 'linear-gradient(90deg, #020604, #04120c 44%, #02100a)'
       }}>
@@ -519,21 +600,21 @@ export default function ScreenPage() {
       </header>
 
       <section style={{
-        minHeight: compact ? 0 : 238,
+        minHeight: compact ? 0 : denseDisplay ? 160 : 238,
         display: 'grid',
         gridTemplateColumns: compact ? '1fr' : 'minmax(0, 1fr) 350px',
         gap: compact ? 14 : 28,
         alignItems: 'start',
-        padding: compact ? '16px 18px 18px' : '28px 34px 34px',
+        padding: compact ? '16px 18px 18px' : denseDisplay ? '18px 34px 20px' : '28px 34px 34px',
         borderBottom: '1px solid #1c5a41',
         background: 'linear-gradient(90deg, rgba(3, 8, 6, .64), rgba(3, 8, 6, .08) 45%, rgba(3, 8, 6, .7)), url(/assets/showdart-banner.png)',
         backgroundSize: 'cover',
         backgroundPosition: 'center 43%'
       }}>
-        <Card style={{ padding: compact ? 18 : 28, maxWidth: compact ? 'none' : 680, minHeight: compact ? 0 : 174 }}>
+        <Card style={{ padding: compact ? 18 : denseDisplay ? 20 : 28, maxWidth: compact ? 'none' : 680, minHeight: compact ? 0 : denseDisplay ? 122 : 174 }}>
           <div style={{ color: colors.muted, fontSize: 12, fontWeight: 900, letterSpacing: '.09em' }}>{modeLabel}</div>
-          <h1 style={{ margin: '10px 0 0', fontSize: phone ? '1.65rem' : compact ? '2.25rem' : 'clamp(2.2rem, 3.8vw, 3.9rem)', lineHeight: 1.02, letterSpacing: compact ? '.035em' : '.05em', overflowWrap: 'anywhere' }}>{displayTitle}</h1>
-          <div style={{ display: 'flex', gap: compact ? 10 : 18, flexWrap: 'wrap', marginTop: compact ? 14 : 22, color: colors.soft, fontSize: compact ? 13 : 15, fontWeight: 800 }}>
+          <h1 style={{ margin: '10px 0 0', fontSize: phone ? '1.65rem' : compact ? '2.25rem' : denseDisplay ? 'clamp(1.8rem, 2.9vw, 2.7rem)' : 'clamp(2.2rem, 3.8vw, 3.9rem)', lineHeight: 1.02, letterSpacing: compact ? '.035em' : '.05em', overflowWrap: 'anywhere' }}>{displayTitle}</h1>
+          <div style={{ display: 'flex', gap: compact ? 10 : 18, flexWrap: 'wrap', marginTop: compact ? 14 : denseDisplay ? 14 : 22, color: colors.soft, fontSize: compact ? 13 : 15, fontWeight: 800 }}>
             <span>{screenState.entries.length} {t.participants}</span>
             <span>{t.round} {screenState.currentRound || 0}</span>
             <span>{screenState.maxLosses} {t.losses}</span>
@@ -541,9 +622,9 @@ export default function ScreenPage() {
         </Card>
 
         {showQrCode ? (
-          <Card style={{ padding: compact ? 14 : 18, textAlign: 'center' }}>
+          <Card style={{ padding: compact ? 14 : denseDisplay ? 12 : 18, textAlign: 'center' }}>
             <div style={{ color: colors.muted, fontSize: 12, fontWeight: 900, letterSpacing: '.09em' }}>{t.scanQr}</div>
-            <img src={qrSrc} alt={t.scanQr} style={{ width: phone ? 128 : compact ? 150 : 180, maxWidth: '100%', height: 'auto', background: '#fff', borderRadius: 8, padding: 8, margin: '12px auto', display: 'block' }} />
+            <img src={qrSrc} alt={t.scanQr} style={{ width: phone ? 128 : compact ? 150 : denseDisplay ? 128 : 180, maxWidth: '100%', height: 'auto', background: '#fff', borderRadius: 8, padding: 8, margin: denseDisplay ? '8px auto' : '12px auto', display: 'block' }} />
             <div style={{ color: colors.soft, fontSize: 13 }}>{t.scanQrHint}</div>
           </Card>
         ) : (
@@ -556,7 +637,7 @@ export default function ScreenPage() {
         )}
       </section>
 
-      <section style={{ padding: compact ? '14px 18px 18px' : '18px 34px 110px' }}>
+      <section style={{ padding: compact ? '14px 18px 18px' : denseDisplay ? '14px 34px 76px' : '18px 34px 110px' }}>
         {screenState.phase === 'waiting' ? (
           <Card style={{ padding: 22, maxWidth: 980 }}>
             <div style={{ color: colors.muted, fontSize: 12, fontWeight: 900, letterSpacing: '.09em' }}>{t.tournamentNotStarted}</div>
@@ -567,38 +648,67 @@ export default function ScreenPage() {
 
         {screenState.phase === 'registration' ? (
           <Card style={{ padding: 22 }}>
-            <div style={{ color: colors.muted, fontSize: 12, fontWeight: 900, letterSpacing: '.09em' }}>{t.tournamentNotStarted}</div>
-            <h2 style={{ margin: '7px 0 18px', fontSize: 26, letterSpacing: '.04em' }}>{t.registrationOpen}</h2>
-            <StandingsTable entries={screenState.standings} t={t} entryLabel={entryLabel} maxLosses={screenState.maxLosses} showTournamentColumns={false} />
+            <PagedDisplay items={screenState.standings} pageSize={pageSize} resetKey={pageResetKey} t={t}>
+              {({ visibleItems, startIndex, indicator }) => (
+                <>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'center', marginBottom: 18, flexWrap: 'wrap' }}>
+                    <div>
+                      <div style={{ color: colors.muted, fontSize: 12, fontWeight: 900, letterSpacing: '.09em' }}>{t.tournamentNotStarted}</div>
+                      <h2 style={{ margin: '7px 0 0', fontSize: denseDisplay ? 22 : 26, letterSpacing: '.04em' }}>{t.registrationOpen}</h2>
+                    </div>
+                    {indicator}
+                  </div>
+                  <StandingsTable entries={visibleItems} t={t} entryLabel={entryLabel} maxLosses={screenState.maxLosses} showTournamentColumns={false} startIndex={startIndex} dense={denseDisplay} />
+                </>
+              )}
+            </PagedDisplay>
           </Card>
         ) : null}
 
         {screenState.phase === 'standings' ? (
           <Card style={{ padding: 22 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'center', marginBottom: 16, flexWrap: 'wrap' }}>
-              <div>
-                <div style={{ color: colors.muted, fontSize: 12, fontWeight: 900, letterSpacing: '.09em' }}>{screenState.spectatorOverride?.active ? t.temporaryStandings : t.betweenRounds}</div>
-                <h2 style={{ margin: '7px 0 0', fontSize: 26, letterSpacing: '.04em' }}>{t.standings}</h2>
-              </div>
-              <strong style={{ fontSize: 22 }}>{t.round} {screenState.currentRound}</strong>
-            </div>
-            {screenState.spectatorOverride?.active ? (
-              <div style={{ marginBottom: 18 }}>
-                <div style={{ color: colors.soft, marginBottom: 8, fontSize: 13 }}>{t.temporaryStandingsHint}</div>
-                <div style={{ height: 8, borderRadius: 999, background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
-                  <div style={{ width: `${Math.max(0, Math.min(100, screenState.spectatorOverride.progress * 100))}%`, height: '100%', borderRadius: 999, background: `linear-gradient(90deg, ${colors.gold2} 0%, ${colors.green} 100%)`, transition: 'width 240ms linear' }} />
-                </div>
-              </div>
-            ) : null}
-            <StandingsTable entries={screenState.standings} t={t} entryLabel={entryLabel} maxLosses={screenState.maxLosses} />
+            <PagedDisplay items={screenState.standings} pageSize={pageSize} resetKey={pageResetKey} t={t}>
+              {({ visibleItems, startIndex, indicator }) => (
+                <>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'center', marginBottom: 16, flexWrap: 'wrap' }}>
+                    <div>
+                      <div style={{ color: colors.muted, fontSize: 12, fontWeight: 900, letterSpacing: '.09em' }}>{screenState.spectatorOverride?.active ? t.temporaryStandings : t.betweenRounds}</div>
+                      <h2 style={{ margin: '7px 0 0', fontSize: denseDisplay ? 22 : 26, letterSpacing: '.04em' }}>{t.standings}</h2>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                      {indicator}
+                      <strong style={{ fontSize: denseDisplay ? 18 : 22 }}>{t.round} {screenState.currentRound}</strong>
+                    </div>
+                  </div>
+                  {screenState.spectatorOverride?.active ? (
+                    <div style={{ marginBottom: denseDisplay ? 12 : 18 }}>
+                      <div style={{ color: colors.soft, marginBottom: 8, fontSize: 13 }}>{t.temporaryStandingsHint}</div>
+                      <div style={{ height: 8, borderRadius: 999, background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
+                        <div style={{ width: `${Math.max(0, Math.min(100, screenState.spectatorOverride.progress * 100))}%`, height: '100%', borderRadius: 999, background: `linear-gradient(90deg, ${colors.gold2} 0%, ${colors.green} 100%)`, transition: 'width 240ms linear' }} />
+                      </div>
+                    </div>
+                  ) : null}
+                  <StandingsTable entries={visibleItems} t={t} entryLabel={entryLabel} maxLosses={screenState.maxLosses} startIndex={startIndex} dense={denseDisplay} />
+                </>
+              )}
+            </PagedDisplay>
           </Card>
         ) : null}
 
         {screenState.phase === 'round' ? (
           <div style={{ display: 'grid', gap: 14 }}>
             <Card style={{ padding: 22 }}>
-              <div style={{ color: colors.muted, fontSize: 12, fontWeight: 900, letterSpacing: '.09em' }}>{t.roundLive}</div>
-              <h2 style={{ margin: '7px 0 0', fontSize: 26, letterSpacing: '.04em' }}>{t.round} {screenState.currentRound} · {screenState.matches.length} {t.matches}</h2>
+              <PagedDisplay items={screenState.matches} pageSize={pageSize} resetKey={pageResetKey} t={t}>
+                {({ indicator }) => (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
+                    <div>
+                      <div style={{ color: colors.muted, fontSize: 12, fontWeight: 900, letterSpacing: '.09em' }}>{t.roundLive}</div>
+                      <h2 style={{ margin: '7px 0 0', fontSize: denseDisplay ? 22 : 26, letterSpacing: '.04em' }}>{t.round} {screenState.currentRound} · {screenState.matches.length} {t.matches}</h2>
+                    </div>
+                    {indicator}
+                  </div>
+                )}
+              </PagedDisplay>
             </Card>
 
             {screenState.skippedEntries.length > 0 ? (
@@ -612,22 +722,37 @@ export default function ScreenPage() {
               </Card>
             ) : null}
 
-            <div style={{ display: 'grid', gridTemplateColumns: compact ? '1fr' : 'repeat(auto-fit, minmax(310px, 1fr))', gap: compact ? 10 : 14 }}>
-              {screenState.matches.map(match => <MatchCard key={match.id} match={match} t={t} round={screenState.currentRound} compact={compact} />)}
-            </div>
+            <PagedDisplay items={screenState.matches} pageSize={pageSize} resetKey={pageResetKey} t={t}>
+              {({ visibleItems }) => (
+                <div style={{ display: 'grid', gridTemplateColumns: compact ? '1fr' : 'repeat(auto-fit, minmax(310px, 1fr))', gap: compact ? 10 : 14 }}>
+                  {visibleItems.map(match => <MatchCard key={match.id} match={match} t={t} round={screenState.currentRound} compact={compact} />)}
+                </div>
+              )}
+            </PagedDisplay>
           </div>
         ) : null}
 
         {screenState.phase === 'final' ? (
           <Card style={{ padding: 22 }}>
-            <div style={{ color: colors.muted, fontSize: 12, fontWeight: 900, letterSpacing: '.09em' }}>{t.finalResults}</div>
-            <h2 style={{ margin: '7px 0 18px', fontSize: 26, letterSpacing: '.04em' }}>{displayTitle}</h2>
-            <StandingsTable entries={screenState.finalPlacements} t={t} entryLabel={entryLabel} maxLosses={screenState.maxLosses} final />
+            <PagedDisplay items={screenState.finalPlacements} pageSize={pageSize} resetKey={pageResetKey} t={t}>
+              {({ visibleItems, startIndex, indicator }) => (
+                <>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'center', marginBottom: 18, flexWrap: 'wrap' }}>
+                    <div>
+                      <div style={{ color: colors.muted, fontSize: 12, fontWeight: 900, letterSpacing: '.09em' }}>{t.finalResults}</div>
+                      <h2 style={{ margin: '7px 0 0', fontSize: denseDisplay ? 22 : 26, letterSpacing: '.04em' }}>{displayTitle}</h2>
+                    </div>
+                    {indicator}
+                  </div>
+                  <StandingsTable entries={visibleItems} t={t} entryLabel={entryLabel} maxLosses={screenState.maxLosses} final startIndex={startIndex} dense={denseDisplay} />
+                </>
+              )}
+            </PagedDisplay>
           </Card>
         ) : null}
       </section>
 
-      <StatusBar t={t} screenState={screenState} updatedAt={updatedAt} lang={lang} compact={compact} />
+      <StatusBar t={t} screenState={screenState} updatedAt={updatedAt} lang={lang} compact={compact} dense={denseDisplay} />
     </main>
   );
 }
