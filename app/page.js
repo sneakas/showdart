@@ -312,13 +312,14 @@ export default function Page() {
     setSession(null);
   }
 
-  async function handleCopyScreenLink() {
-    if (!screenInfo?.screenUrl) {
+  async function handleCopyScreenLink(url) {
+    const targetUrl = url || screenInfo?.screenUrl;
+    if (!targetUrl) {
       return;
     }
 
     try {
-      await navigator.clipboard.writeText(screenInfo.screenUrl);
+      await navigator.clipboard.writeText(targetUrl);
       setScreenNotice(t.screenCopied);
     } catch (_error) {
       setScreenNotice(t.screenCopyFailed);

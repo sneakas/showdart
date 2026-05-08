@@ -28,6 +28,7 @@ import {
   startFinalMatch,
   startTournament,
   togglePlayerTag,
+  updateTvScreen,
   updateEntryLosses
 } from '../../lib/tournament/reactEngine';
 
@@ -91,6 +92,20 @@ const texts = {
     bracket: 'Se turneringstræ',
     editSetup: 'Redigér opsætning',
     spectator: 'Publikumsskærm',
+    tvControl: 'TV-skærme',
+    screenOne: 'Skærm 1',
+    screenTwo: 'Skærm 2',
+    tvMode: 'Visning',
+    tvRows: 'Rækker',
+    tvRotation: 'Skift sek.',
+    tvQr: 'QR',
+    modeAuto: 'Auto',
+    modeLive: 'Kampe',
+    modeStandings: 'Stilling',
+    modeInfo: 'Info / QR',
+    modeLanes: 'Baner',
+    modeRotating: 'Roterende',
+    modeFinal: 'Resultater',
     openSpectator: 'Åbn publikumsskærm',
     copy: 'Kopier link',
     liveActive: 'Live opdateringer aktive',
@@ -230,6 +245,20 @@ const texts = {
     bracket: 'View bracket',
     editSetup: 'Edit setup',
     spectator: 'Spectator screen',
+    tvControl: 'TV screens',
+    screenOne: 'Screen 1',
+    screenTwo: 'Screen 2',
+    tvMode: 'View',
+    tvRows: 'Rows',
+    tvRotation: 'Rotate sec.',
+    tvQr: 'QR',
+    modeAuto: 'Auto',
+    modeLive: 'Matches',
+    modeStandings: 'Standings',
+    modeInfo: 'Info / QR',
+    modeLanes: 'Lanes',
+    modeRotating: 'Rotating',
+    modeFinal: 'Results',
     openSpectator: 'Open spectator screen',
     copy: 'Copy link',
     liveActive: 'Live updates active',
@@ -641,6 +670,15 @@ export function ShowdartDashboard({
     });
   }
 
+  function getScreenUrl(screenKey) {
+    if (!screenInfo?.screenUrl) return '';
+    return `${screenInfo.screenUrl}${screenInfo.screenUrl.includes('?') ? '&' : '?'}view=${encodeURIComponent(screenKey)}`;
+  }
+
+  function handleTvScreenChange(screenKey, patch) {
+    commit(previous => updateTvScreen(previous, screenKey, patch));
+  }
+
   const visibleEntries = standings.filter(entry => entry.name.toLowerCase().includes(search.toLowerCase()));
   const tournamentTitle = state.tournamentName || form.tournamentName || 'Klubmesterskab 2025';
 
@@ -696,6 +734,77 @@ export function ShowdartDashboard({
                 {t.showStandings} <Eye size={15} />
               </button>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="sd-tv-control">
+        <div className="sd-card sd-panel">
+          <h2 className="sd-panel-title">{t.tvControl}</h2>
+          <div className="sd-tv-grid">
+            {['screen1', 'screen2'].map(screenKey => {
+              const config = state.tvScreens?.[screenKey] || {};
+              const url = getScreenUrl(screenKey);
+              return (
+                <div className="sd-tv-card" key={screenKey}>
+                  <div className="sd-tv-head">
+                    <strong>{screenKey === 'screen1' ? t.screenOne : t.screenTwo}</strong>
+                    <span>{config.label}</span>
+                  </div>
+                  <div className="sd-tv-controls">
+                    <Field label={t.tvMode}>
+                      <select className="sd-select" value={config.mode || 'auto'} onChange={event => handleTvScreenChange(screenKey, { mode: event.target.value })}>
+                        <option value="auto">{t.modeAuto}</option>
+                        <option value="live">{t.modeLive}</option>
+                        <option value="standings">{t.modeStandings}</option>
+                        <option value="info">{t.modeInfo}</option>
+                        <option value="lanes">{t.modeLanes}</option>
+                        <option value="rotating">{t.modeRotating}</option>
+                        <option value="final">{t.modeFinal}</option>
+                      </select>
+                    </Field>
+                    <Field label={t.tvRows}>
+                      <input className="sd-input" type="number" min="6" max="20" value={config.rowsPerPage || 12} onChange={event => handleTvScreenChange(screenKey, { rowsPerPage: Number(event.target.value) })} />
+                    </Field>
+                    <Field label={t.tvRotation}>
+                      <input className="sd-input" type="number" min="5" max="60" value={config.rotationSeconds || 10} onChange={event => handleTvScreenChange(screenKey, { rotationSeconds: Number(event.target.value) })} />
+                    </Field>
+                    <label className="sd-tv-check">
+                      <input type="checkbox" checked={config.showQr !== false} onChange={event => handleTvScreenChange(screenKey, { showQr: event.target.checked })} />
+                      {t.tvQr}
+                    </label>
+                  </div>
+                  <div className="sd-tv-lanes">
+                    {Array.from({ length: state.laneCount }, (_, index) => index + 1).map(lane => {
+                      const selected = Array.isArray(config.lanes) && config.lanes.includes(lane);
+                      return (
+                        <button
+                          type="button"
+                          key={lane}
+                          className={`sd-tv-lane ${selected ? 'is-selected' : ''}`}
+                          onClick={() => {
+                            const lanes = Array.isArray(config.lanes) ? config.lanes : [];
+                            handleTvScreenChange(screenKey, {
+                              lanes: selected ? lanes.filter(value => value !== lane) : [...lanes, lane]
+                            });
+                          }}
+                        >
+                          Bane {lane}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <div className="sd-tv-actions">
+                    <button type="button" className="sd-button gold full" disabled={!url} onClick={() => url && window.open(url, '_blank', 'noopener,noreferrer')}>
+                      {t.openSpectator} <ExternalLink size={15} />
+                    </button>
+                    <button type="button" className="sd-button full" disabled={!url} onClick={() => onCopyScreenLink?.(url)}>
+                      {t.copy}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>

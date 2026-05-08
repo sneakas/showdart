@@ -1,22 +1,26 @@
-'use client';
+﻿'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { getSupabaseBrowserClient } from '../../../lib/supabaseBrowser';
 import { buildScreenState } from '../../../lib/tournamentScreenState';
 
 const LANGUAGE_STORAGE_KEY = 'showdart-language';
+const DEFAULT_TV_SCREENS = {
+  screen1: { label: 'SkÃ¦rm 1', mode: 'live', rowsPerPage: 12, rotationSeconds: 10, showQr: false },
+  screen2: { label: 'SkÃ¦rm 2', mode: 'standings', rowsPerPage: 12, rotationSeconds: 10, showQr: true }
+};
 
 const texts = {
   da: {
-    loading: 'Indlæser tilskuerskærm...',
-    invalidTitle: 'Ugyldigt skærmlink',
+    loading: 'IndlÃ¦ser tilskuerskÃ¦rm...',
+    invalidTitle: 'Ugyldigt skÃ¦rmlink',
     invalidBody: 'Dette link er ikke gyldigt eller kunne ikke hentes.',
     betweenRounds: 'Mellem runder',
     roundLive: 'Aktuelle kampe',
     registrationOpen: 'Registrerede deltagere',
-    waitingTitle: 'Venter på turnering',
-    waitingBody: 'Turneringen er ikke startet endnu. Skærmen opdaterer automatisk, når arrangøren opretter eller opdaterer turneringen.',
+    waitingTitle: 'Venter pÃ¥ turnering',
+    waitingBody: 'Turneringen er ikke startet endnu. SkÃ¦rmen opdaterer automatisk, nÃ¥r arrangÃ¸ren opretter eller opdaterer turneringen.',
     standings: 'Stilling',
     finalResults: 'Slutstilling',
     losses: 'Nederlag',
@@ -31,7 +35,7 @@ const texts = {
     winner: 'Vinder',
     onBye: 'Sidder over',
     lane: 'Bane',
-    waitingForLane: 'Venter på bane',
+    waitingForLane: 'Venter pÃ¥ bane',
     temporaryStandings: 'Midlertidig stilling',
     temporaryStandingsHint: 'Live kampe vender tilbage automatisk',
     updated: 'Senest opdateret',
@@ -40,7 +44,7 @@ const texts = {
     polling: 'Backup-opdatering aktiv',
     stale: 'Forbindelse forsinket',
     scanQr: 'Scan QR-kode',
-    scanQrHint: 'Åbn skærmen på din telefon',
+    scanQrHint: 'Ã…bn skÃ¦rmen pÃ¥ din telefon',
     tournamentNotStarted: 'Turneringen er ikke startet',
     fixedTeams: 'Faste makkere',
     changingTeams: 'Skiftende makkere',
@@ -241,6 +245,53 @@ function getPageSize(phase, viewportWidth) {
   return phone ? 7 : tablet ? 10 : 12;
 }
 
+function getScreenConfig(screenState, screenKey) {
+  const key = screenKey === 'screen2' ? 'screen2' : 'screen1';
+  const defaults = DEFAULT_TV_SCREENS[key];
+  const configured = screenState.tvScreens?.[key] || {};
+  return {
+    ...defaults,
+    ...configured,
+    rowsPerPage: Math.max(6, Math.min(20, Number(configured.rowsPerPage || defaults.rowsPerPage))),
+    rotationSeconds: Math.max(5, Math.min(60, Number(configured.rotationSeconds || defaults.rotationSeconds))),
+    showQr: configured.showQr !== undefined ? configured.showQr !== false : defaults.showQr !== false
+  };
+}
+
+function getAutoContentView(screenState) {
+  return screenState.phase;
+}
+
+function getModeContentView(mode, screenState, rotatingView) {
+  if (mode === 'rotating') return rotatingView;
+  if (mode === 'info') return 'info';
+  if (mode === 'live') {
+    if (screenState.phase === 'round') return 'round';
+    if (screenState.phase === 'final') return 'final';
+    return screenState.started ? 'standings' : 'info';
+  }
+  if (mode === 'lanes') {
+    if (screenState.phase === 'round') return 'round';
+    return screenState.started ? 'standings' : 'info';
+  }
+  if (mode === 'standings') {
+    if (screenState.phase === 'final') return 'final';
+    return screenState.started ? 'standings' : 'registration';
+  }
+  if (mode === 'final') {
+    return screenState.phase === 'final' ? 'final' : (screenState.started ? 'standings' : 'info');
+  }
+  return getAutoContentView(screenState);
+}
+
+function getRotatingViews(screenState) {
+  const views = ['info'];
+  if (screenState.phase === 'round') views.push('round');
+  if (screenState.entries.length > 0) views.push(screenState.started ? 'standings' : 'registration');
+  if (screenState.phase === 'final') views.push('final');
+  return [...new Set(views)];
+}
+
 function chunkItems(items, size) {
   const safeSize = Math.max(1, Number(size) || 1);
   const chunks = [];
@@ -378,8 +429,10 @@ function MatchCard({ match, t, round, compact }) {
 export default function ScreenPage() {
   const supabase = useMemo(() => getSupabaseBrowserClient(), []);
   const params = useParams();
+  const searchParams = useSearchParams();
   const rawToken = Array.isArray(params?.token) ? params.token[0] : params?.token;
   const token = decodeURIComponent(rawToken || '');
+  const screenKey = searchParams.get('view') === 'screen2' ? 'screen2' : 'screen1';
 
   const [lang, setLang] = useState('da');
   const [loading, setLoading] = useState(true);
@@ -392,9 +445,19 @@ export default function ScreenPage() {
   const [viewportWidth, setViewportWidth] = useState(1280);
   const [connectionState, setConnectionState] = useState('connecting');
   const [lastFetchMs, setLastFetchMs] = useState(0);
+  const [rotatingViewIndex, setRotatingViewIndex] = useState(0);
 
   const t = texts[lang] || texts.da;
   const screenState = useMemo(() => buildScreenState(tournamentState), [tournamentState, clockTick]);
+  const screenConfig = useMemo(() => getScreenConfig(screenState, screenKey), [screenState, screenKey]);
+  const filteredMatches = useMemo(() => {
+    const lanes = Array.isArray(screenConfig.lanes) ? screenConfig.lanes : [];
+    if (screenConfig.mode !== 'lanes' || lanes.length === 0) return screenState.matches;
+    return screenState.matches.filter(match => lanes.includes(Number(match.laneNumber)));
+  }, [screenConfig, screenState.matches]);
+  const rotatingViews = useMemo(() => getRotatingViews(screenState), [screenState]);
+  const rotatingView = rotatingViews[rotatingViewIndex % Math.max(1, rotatingViews.length)] || 'info';
+  const contentView = getModeContentView(screenConfig.mode, screenState, rotatingView);
   const compact = viewportWidth < 900;
   const phone = viewportWidth < 620;
 
@@ -542,6 +605,18 @@ export default function ScreenPage() {
     };
   }, [tournamentState?.spectatorOverride?.expiresAt]);
 
+  useEffect(() => {
+    setRotatingViewIndex(0);
+  }, [screenConfig.mode, screenKey, screenState.phase, screenState.currentRound, rotatingViews.length]);
+
+  useEffect(() => {
+    if (screenConfig.mode !== 'rotating' || rotatingViews.length <= 1 || typeof window === 'undefined') return undefined;
+    const intervalId = window.setInterval(() => {
+      setRotatingViewIndex(current => (current + 1) % rotatingViews.length);
+    }, screenConfig.rotationSeconds * 1000);
+    return () => window.clearInterval(intervalId);
+  }, [screenConfig.mode, screenConfig.rotationSeconds, rotatingViews.length]);
+
   if (loading) {
     return <main style={{ ...pageStyle, display: 'grid', placeItems: 'center', padding: 24 }}>{t.loading}</main>;
   }
@@ -563,16 +638,18 @@ export default function ScreenPage() {
   const modeLabel = screenState.isFixedTeams ? t.fixedTeams : t.changingTeams;
   const displayTitle = screenState.tournamentName || 'Showdart Live';
   const qrSrc = shareUrl ? `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=0&data=${encodeURIComponent(shareUrl)}` : '';
-  const showQrCode = Boolean(qrSrc) && (screenState.phase === 'waiting' || screenState.phase === 'registration');
-  const activeListSize = screenState.phase === 'round'
-    ? screenState.matches.length
-    : screenState.phase === 'final'
+  const showQrCode = Boolean(qrSrc) && screenConfig.showQr && (contentView === 'info' || screenState.phase === 'waiting' || screenState.phase === 'registration');
+  const activeListSize = contentView === 'round'
+    ? filteredMatches.length
+    : contentView === 'final'
       ? screenState.finalPlacements.length
       : screenState.standings.length;
-  const pageSize = getPageSize(screenState.phase, viewportWidth);
+  const pageSize = contentView === 'round' ? getPageSize('round', viewportWidth) : screenConfig.rowsPerPage;
   const denseDisplay = !compact && activeListSize > pageSize;
   const pageResetKey = [
-    screenState.phase,
+    contentView,
+    screenConfig.mode,
+    screenKey,
     screenState.currentRound,
     updatedAt,
     activeListSize,
@@ -604,7 +681,7 @@ export default function ScreenPage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexWrap: 'wrap', justifyContent: compact ? 'flex-start' : 'flex-end', width: compact ? '100%' : 'auto' }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 9, border: `1px solid ${colors.border}`, borderRadius: 999, background: 'rgba(5, 43, 27, .82)', padding: compact ? '7px 10px' : '9px 14px', color: colors.soft, fontSize: phone ? 11 : 13, fontWeight: 900, maxWidth: '100%' }}>
             <span style={{ width: 10, height: 10, borderRadius: '50%', background: connectionColor, boxShadow: `0 0 16px ${connectionColor}88` }} />
-            {connectionLabel} · {t.updated}: {formatUpdatedAt(updatedAt, lang)}
+            {connectionLabel} Â· {t.updated}: {formatUpdatedAt(updatedAt, lang)}
           </div>
           <FlagButton active={lang === 'da'} label="Dansk" src="https://flagcdn.com/w40/dk.png" onClick={() => setLang('da')} />
           <FlagButton active={lang === 'en'} label="English" src="https://flagcdn.com/w40/gb.png" onClick={() => setLang('en')} />
@@ -643,24 +720,26 @@ export default function ScreenPage() {
           <Card style={{ padding: 22 }}>
             <div style={{ color: colors.muted, fontSize: 12, fontWeight: 900, letterSpacing: '.09em' }}>{t.status}</div>
             <h2 style={{ margin: '7px 0 0', fontSize: 26, letterSpacing: '.04em' }}>
-              {screenState.phase === 'round' ? t.roundLive : screenState.phase === 'final' ? t.finalResults : t.standings}
+              {contentView === 'round' ? t.roundLive : contentView === 'final' ? t.finalResults : contentView === 'info' ? t.status : t.standings}
             </h2>
           </Card>
         )}
       </section>
 
       <section style={{ padding: compact ? '14px 18px 18px' : denseDisplay ? '14px 34px 76px' : '18px 34px 110px' }}>
-        {screenState.phase === 'waiting' ? (
+        {contentView === 'info' || contentView === 'waiting' ? (
           <Card style={{ padding: 22, maxWidth: 980 }}>
-            <div style={{ color: colors.muted, fontSize: 12, fontWeight: 900, letterSpacing: '.09em' }}>{t.tournamentNotStarted}</div>
-            <h2 style={{ margin: '7px 0 0', fontSize: 26, letterSpacing: '.04em' }}>{t.waitingTitle}</h2>
-            <p style={{ color: colors.soft, textTransform: 'none', lineHeight: 1.55 }}>{t.waitingBody}</p>
+            <div style={{ color: colors.muted, fontSize: 12, fontWeight: 900, letterSpacing: '.09em' }}>{modeLabel}</div>
+            <h2 style={{ margin: '7px 0 0', fontSize: 26, letterSpacing: '.04em' }}>{displayTitle}</h2>
+            <p style={{ color: colors.soft, textTransform: 'none', lineHeight: 1.55 }}>
+              {screenState.entries.length} {t.participants} · {screenState.laneCount || 0} {t.lanes} · {screenState.maxLosses} {t.losses}
+            </p>
           </Card>
         ) : null}
 
-        {screenState.phase === 'registration' ? (
+        {contentView === 'registration' ? (
           <Card style={{ padding: 22 }}>
-            <PagedDisplay items={screenState.standings} pageSize={pageSize} resetKey={pageResetKey} t={t}>
+            <PagedDisplay items={screenState.standings} pageSize={pageSize} resetKey={pageResetKey} t={t} intervalMs={screenConfig.rotationSeconds * 1000}>
               {({ visibleItems, startIndex, indicator }) => (
                 <>
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'center', marginBottom: 18, flexWrap: 'wrap' }}>
@@ -677,9 +756,9 @@ export default function ScreenPage() {
           </Card>
         ) : null}
 
-        {screenState.phase === 'standings' ? (
+        {contentView === 'standings' ? (
           <Card style={{ padding: 22 }}>
-            <PagedDisplay items={screenState.standings} pageSize={pageSize} resetKey={pageResetKey} t={t}>
+            <PagedDisplay items={screenState.standings} pageSize={pageSize} resetKey={pageResetKey} t={t} intervalMs={screenConfig.rotationSeconds * 1000}>
               {({ visibleItems, startIndex, indicator }) => (
                 <>
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'center', marginBottom: 16, flexWrap: 'wrap' }}>
@@ -707,15 +786,15 @@ export default function ScreenPage() {
           </Card>
         ) : null}
 
-        {screenState.phase === 'round' ? (
+        {contentView === 'round' ? (
           <div style={{ display: 'grid', gap: 14 }}>
             <Card style={{ padding: 22 }}>
-              <PagedDisplay items={screenState.matches} pageSize={pageSize} resetKey={pageResetKey} t={t}>
+              <PagedDisplay items={filteredMatches} pageSize={pageSize} resetKey={pageResetKey} t={t} intervalMs={screenConfig.rotationSeconds * 1000}>
                 {({ indicator }) => (
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
                     <div>
                       <div style={{ color: colors.muted, fontSize: 12, fontWeight: 900, letterSpacing: '.09em' }}>{t.roundLive}</div>
-                      <h2 style={{ margin: '7px 0 0', fontSize: denseDisplay ? 22 : 26, letterSpacing: '.04em' }}>{t.round} {screenState.currentRound} · {screenState.matches.length} {t.matches}</h2>
+                      <h2 style={{ margin: '7px 0 0', fontSize: denseDisplay ? 22 : 26, letterSpacing: '.04em' }}>{t.round} {screenState.currentRound} Â· {filteredMatches.length} {t.matches}</h2>
                     </div>
                     {indicator}
                   </div>
@@ -734,7 +813,7 @@ export default function ScreenPage() {
               </Card>
             ) : null}
 
-            <PagedDisplay items={screenState.matches} pageSize={pageSize} resetKey={pageResetKey} t={t}>
+            <PagedDisplay items={filteredMatches} pageSize={pageSize} resetKey={pageResetKey} t={t} intervalMs={screenConfig.rotationSeconds * 1000}>
               {({ visibleItems }) => (
                 <div style={{ display: 'grid', gridTemplateColumns: compact ? '1fr' : 'repeat(auto-fit, minmax(310px, 1fr))', gap: compact ? 10 : 14 }}>
                   {visibleItems.map(match => <MatchCard key={match.id} match={match} t={t} round={screenState.currentRound} compact={compact} />)}
@@ -744,9 +823,9 @@ export default function ScreenPage() {
           </div>
         ) : null}
 
-        {screenState.phase === 'final' ? (
+        {contentView === 'final' ? (
           <Card style={{ padding: 22 }}>
-            <PagedDisplay items={screenState.finalPlacements} pageSize={pageSize} resetKey={pageResetKey} t={t}>
+            <PagedDisplay items={screenState.finalPlacements} pageSize={pageSize} resetKey={pageResetKey} t={t} intervalMs={screenConfig.rotationSeconds * 1000}>
               {({ visibleItems, startIndex, indicator }) => (
                 <>
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'center', marginBottom: 18, flexWrap: 'wrap' }}>
