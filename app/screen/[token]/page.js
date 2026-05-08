@@ -7,20 +7,20 @@ import { buildScreenState } from '../../../lib/tournamentScreenState';
 
 const LANGUAGE_STORAGE_KEY = 'showdart-language';
 const DEFAULT_TV_SCREENS = {
-  screen1: { label: 'SkÃ¦rm 1', mode: 'live', rowsPerPage: 12, rotationSeconds: 10, showQr: false },
-  screen2: { label: 'SkÃ¦rm 2', mode: 'standings', rowsPerPage: 12, rotationSeconds: 10, showQr: true }
+  screen1: { label: 'Skærm 1', mode: 'live', rowsPerPage: 12, rotationSeconds: 10, showQr: false },
+  screen2: { label: 'Skærm 2', mode: 'standings', rowsPerPage: 12, rotationSeconds: 10, showQr: true }
 };
 
 const texts = {
   da: {
-    loading: 'IndlÃ¦ser tilskuerskÃ¦rm...',
-    invalidTitle: 'Ugyldigt skÃ¦rmlink',
+    loading: 'Indlæser tilskuerskærm...',
+    invalidTitle: 'Ugyldigt skærmlink',
     invalidBody: 'Dette link er ikke gyldigt eller kunne ikke hentes.',
     betweenRounds: 'Mellem runder',
     roundLive: 'Aktuelle kampe',
     registrationOpen: 'Registrerede deltagere',
-    waitingTitle: 'Venter pÃ¥ turnering',
-    waitingBody: 'Turneringen er ikke startet endnu. SkÃ¦rmen opdaterer automatisk, nÃ¥r arrangÃ¸ren opretter eller opdaterer turneringen.',
+    waitingTitle: 'Venter på turnering',
+    waitingBody: 'Turneringen er ikke startet endnu. Skærmen opdaterer automatisk, når arrangøren opretter eller opdaterer turneringen.',
     standings: 'Stilling',
     finalResults: 'Slutstilling',
     losses: 'Nederlag',
@@ -35,7 +35,7 @@ const texts = {
     winner: 'Vinder',
     onBye: 'Sidder over',
     lane: 'Bane',
-    waitingForLane: 'Venter pÃ¥ bane',
+    waitingForLane: 'Venter på bane',
     temporaryStandings: 'Midlertidig stilling',
     temporaryStandingsHint: 'Live kampe vender tilbage automatisk',
     updated: 'Senest opdateret',
@@ -44,7 +44,7 @@ const texts = {
     polling: 'Backup-opdatering aktiv',
     stale: 'Forbindelse forsinket',
     scanQr: 'Scan QR-kode',
-    scanQrHint: 'Ã…bn skÃ¦rmen pÃ¥ din telefon',
+    scanQrHint: 'Åbn skærmen på din telefon',
     tournamentNotStarted: 'Turneringen er ikke startet',
     fixedTeams: 'Faste makkere',
     changingTeams: 'Skiftende makkere',
@@ -681,7 +681,7 @@ export default function ScreenPage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexWrap: 'wrap', justifyContent: compact ? 'flex-start' : 'flex-end', width: compact ? '100%' : 'auto' }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 9, border: `1px solid ${colors.border}`, borderRadius: 999, background: 'rgba(5, 43, 27, .82)', padding: compact ? '7px 10px' : '9px 14px', color: colors.soft, fontSize: phone ? 11 : 13, fontWeight: 900, maxWidth: '100%' }}>
             <span style={{ width: 10, height: 10, borderRadius: '50%', background: connectionColor, boxShadow: `0 0 16px ${connectionColor}88` }} />
-            {connectionLabel} Â· {t.updated}: {formatUpdatedAt(updatedAt, lang)}
+            {connectionLabel} · {t.updated}: {formatUpdatedAt(updatedAt, lang)}
           </div>
           <FlagButton active={lang === 'da'} label="Dansk" src="https://flagcdn.com/w40/dk.png" onClick={() => setLang('da')} />
           <FlagButton active={lang === 'en'} label="English" src="https://flagcdn.com/w40/gb.png" onClick={() => setLang('en')} />
@@ -794,7 +794,7 @@ export default function ScreenPage() {
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
                     <div>
                       <div style={{ color: colors.muted, fontSize: 12, fontWeight: 900, letterSpacing: '.09em' }}>{t.roundLive}</div>
-                      <h2 style={{ margin: '7px 0 0', fontSize: denseDisplay ? 22 : 26, letterSpacing: '.04em' }}>{t.round} {screenState.currentRound} Â· {filteredMatches.length} {t.matches}</h2>
+                      <h2 style={{ margin: '7px 0 0', fontSize: denseDisplay ? 22 : 26, letterSpacing: '.04em' }}>{t.round} {screenState.currentRound} · {filteredMatches.length} {t.matches}</h2>
                     </div>
                     {indicator}
                   </div>
