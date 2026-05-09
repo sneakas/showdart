@@ -7,8 +7,8 @@ import { buildScreenState } from '../../../lib/tournamentScreenState';
 
 const LANGUAGE_STORAGE_KEY = 'showdart-language';
 const DEFAULT_TV_SCREENS = {
-  screen1: { label: 'Skærm 1', mode: 'live', rowsPerPage: 12, rotationSeconds: 10, showQr: false },
-  screen2: { label: 'Skærm 2', mode: 'standings', rowsPerPage: 12, rotationSeconds: 10, showQr: true }
+  screen1: { label: 'Skærm 1', mode: 'live', rowsPerPage: 12, rotationSeconds: 10, showQr: false, announcement: '', hideHeader: false, autoHideHeader: false, theme: 'classic' },
+  screen2: { label: 'Skærm 2', mode: 'standings', rowsPerPage: 12, rotationSeconds: 10, showQr: true, announcement: '', hideHeader: false, autoHideHeader: false, theme: 'classic' }
 };
 
 const texts = {
@@ -51,7 +51,12 @@ const texts = {
     matches: 'Kampe',
     participants: 'Deltagere',
     lanes: 'Baner',
-    page: 'Side'
+    page: 'Side',
+    announcement: 'Besked fra arrangør',
+    activeLane: 'Aktiv',
+    inactiveLane: 'Inaktiv',
+    noMatch: 'Ingen kamp',
+    compactLaneOverview: 'Baneoversigt'
   },
   en: {
     loading: 'Loading spectator screen...',
@@ -92,7 +97,12 @@ const texts = {
     matches: 'Matches',
     participants: 'Participants',
     lanes: 'Lanes',
-    page: 'Page'
+    page: 'Page',
+    announcement: 'Organizer message',
+    activeLane: 'Active',
+    inactiveLane: 'Inactive',
+    noMatch: 'No match',
+    compactLaneOverview: 'Lane overview'
   }
 };
 
@@ -144,6 +154,42 @@ const pageStyle = {
   textTransform: 'uppercase',
   overflowX: 'hidden'
 };
+
+function getThemeStyles(theme) {
+  if (theme === 'highContrast') {
+    return {
+      page: {
+        background: 'linear-gradient(180deg, #000 0%, #020604 100%)',
+        filter: 'contrast(1.08) saturate(1.05)'
+      },
+      header: 'linear-gradient(90deg, #000, #03140d 46%, #000)',
+      accent: '#ffd34d'
+    };
+  }
+  if (theme === 'light') {
+    return {
+      page: {
+        background: 'radial-gradient(circle at 18% 0%, rgba(241,189,53,.22), transparent 25rem), linear-gradient(180deg, #132015 0%, #07120d 100%)'
+      },
+      header: 'linear-gradient(90deg, #0a1510, #12301f 46%, #0b1711)',
+      accent: '#f7d35a'
+    };
+  }
+  if (theme === 'minimal') {
+    return {
+      page: {
+        background: 'linear-gradient(180deg, #010302 0%, #020705 100%)'
+      },
+      header: 'rgba(1, 5, 3, .96)',
+      accent: colors.gold2
+    };
+  }
+  return {
+    page: {},
+    header: 'linear-gradient(90deg, #020604, #04120c 44%, #02100a)',
+    accent: colors.gold2
+  };
+}
 
 function Brand() {
   return (
@@ -249,12 +295,17 @@ function getScreenConfig(screenState, screenKey) {
   const key = screenKey === 'screen2' ? 'screen2' : 'screen1';
   const defaults = DEFAULT_TV_SCREENS[key];
   const configured = screenState.tvScreens?.[key] || {};
+  const theme = ['classic', 'highContrast', 'light', 'minimal'].includes(configured.theme) ? configured.theme : defaults.theme;
   return {
     ...defaults,
     ...configured,
     rowsPerPage: Math.max(6, Math.min(20, Number(configured.rowsPerPage || defaults.rowsPerPage))),
     rotationSeconds: Math.max(5, Math.min(60, Number(configured.rotationSeconds || defaults.rotationSeconds))),
-    showQr: configured.showQr !== undefined ? configured.showQr !== false : defaults.showQr !== false
+    showQr: configured.showQr !== undefined ? configured.showQr !== false : defaults.showQr !== false,
+    announcement: String(configured.announcement || '').trim().slice(0, 180),
+    hideHeader: !!configured.hideHeader,
+    autoHideHeader: !!configured.autoHideHeader,
+    theme
   };
 }
 
@@ -271,8 +322,7 @@ function getModeContentView(mode, screenState, rotatingView) {
     return screenState.started ? 'standings' : 'info';
   }
   if (mode === 'lanes') {
-    if (screenState.phase === 'round') return 'round';
-    return screenState.started ? 'standings' : 'info';
+    return 'lanes';
   }
   if (mode === 'standings') {
     if (screenState.phase === 'final') return 'final';
@@ -426,6 +476,75 @@ function MatchCard({ match, t, round, compact }) {
   );
 }
 
+function AnnouncementBanner({ message, t, compact }) {
+  if (!message) return null;
+  return (
+    <Card style={{
+      padding: compact ? 16 : 22,
+      borderColor: 'rgba(241, 189, 53, .58)',
+      background: 'linear-gradient(135deg, rgba(241, 189, 53, .18), rgba(5, 43, 27, .94))',
+      marginBottom: compact ? 12 : 16
+    }}>
+      <div style={{ color: colors.gold2, fontSize: 12, fontWeight: 900, letterSpacing: '.1em' }}>{t.announcement}</div>
+      <div style={{ marginTop: 7, fontSize: compact ? 20 : 28, fontWeight: 900, lineHeight: 1.15, overflowWrap: 'anywhere' }}>{message}</div>
+    </Card>
+  );
+}
+
+function LaneOverview({ screenState, matches, selectedLanes, t, compact }) {
+  const selected = Array.isArray(selectedLanes) && selectedLanes.length
+    ? [...selectedLanes].sort((a, b) => a - b)
+    : Array.from({ length: Math.max(1, Number(screenState.laneCount) || 1) }, (_, index) => index + 1);
+  const activeLanes = new Set(Array.isArray(screenState.activeLanes) ? screenState.activeLanes.map(Number) : selected);
+  const matchesByLane = new Map((matches || []).map(match => [Number(match.laneNumber), match]));
+
+  return (
+    <Card style={{ padding: compact ? 16 : 22 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 14, alignItems: 'center', marginBottom: 16, flexWrap: 'wrap' }}>
+        <div>
+          <div style={{ color: colors.muted, fontSize: 12, fontWeight: 900, letterSpacing: '.09em' }}>{t.compactLaneOverview}</div>
+          <h2 style={{ margin: '7px 0 0', fontSize: compact ? 22 : 28, letterSpacing: '.04em' }}>{screenState.laneCount || selected.length} {t.lanes}</h2>
+        </div>
+        <strong style={{ color: colors.gold2 }}>{t.round} {screenState.currentRound || 0}</strong>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: compact ? '1fr' : 'repeat(auto-fit, minmax(250px, 1fr))', gap: 12 }}>
+        {selected.map(lane => {
+          const match = matchesByLane.get(Number(lane));
+          const active = activeLanes.has(Number(lane));
+          const winner = match?.winner === 1 ? match.team1Label : match?.winner === 2 ? match.team2Label : '';
+          return (
+            <div
+              key={lane}
+              style={{
+                border: `1px solid ${active ? colors.border : 'rgba(242, 132, 76, .54)'}`,
+                borderRadius: 12,
+                background: active ? 'rgba(5, 43, 27, .78)' : 'rgba(242, 132, 76, .08)',
+                padding: 16,
+                minHeight: compact ? 120 : 154
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'center' }}>
+                <strong style={{ fontSize: 19 }}>{t.lane} {lane}</strong>
+                <span style={{ color: active ? colors.green : colors.orange, fontWeight: 900, fontSize: 13 }}>{active ? t.activeLane : t.inactiveLane}</span>
+              </div>
+              {match ? (
+                <div style={{ marginTop: 13, display: 'grid', gap: 6, fontWeight: 900 }}>
+                  <span>{match.team1Label}</span>
+                  <span style={{ color: colors.muted, fontSize: 13 }}>{t.vs}</span>
+                  <span>{match.team2Label}</span>
+                  {winner ? <span style={{ color: colors.green, marginTop: 6 }}>{t.winner}: {winner}</span> : null}
+                </div>
+              ) : (
+                <div style={{ marginTop: 16, color: colors.muted, fontWeight: 900 }}>{active ? t.noMatch : t.waitingForLane}</div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </Card>
+  );
+}
+
 export default function ScreenPage() {
   const supabase = useMemo(() => getSupabaseBrowserClient(), []);
   const params = useParams();
@@ -446,6 +565,7 @@ export default function ScreenPage() {
   const [connectionState, setConnectionState] = useState('connecting');
   const [lastFetchMs, setLastFetchMs] = useState(0);
   const [rotatingViewIndex, setRotatingViewIndex] = useState(0);
+  const [headerHidden, setHeaderHidden] = useState(false);
 
   const t = texts[lang] || texts.da;
   const screenState = useMemo(() => buildScreenState(tournamentState), [tournamentState, clockTick]);
@@ -460,6 +580,8 @@ export default function ScreenPage() {
   const contentView = getModeContentView(screenConfig.mode, screenState, rotatingView);
   const compact = viewportWidth < 900;
   const phone = viewportWidth < 620;
+  const themeStyles = getThemeStyles(screenConfig.theme);
+  const hideHeader = screenConfig.hideHeader || headerHidden;
 
   const loadScreen = useCallback(async ({ silent = false } = {}) => {
     if (!token) {
@@ -617,6 +739,13 @@ export default function ScreenPage() {
     return () => window.clearInterval(intervalId);
   }, [screenConfig.mode, screenConfig.rotationSeconds, rotatingViews.length]);
 
+  useEffect(() => {
+    setHeaderHidden(false);
+    if (!screenConfig.autoHideHeader || screenConfig.hideHeader || typeof window === 'undefined') return undefined;
+    const timeoutId = window.setTimeout(() => setHeaderHidden(true), 5000);
+    return () => window.clearTimeout(timeoutId);
+  }, [screenConfig.autoHideHeader, screenConfig.hideHeader, contentView, updatedAt, screenKey]);
+
   if (loading) {
     return <main style={{ ...pageStyle, display: 'grid', placeItems: 'center', padding: 24 }}>{t.loading}</main>;
   }
@@ -641,6 +770,8 @@ export default function ScreenPage() {
   const showQrCode = Boolean(qrSrc) && screenConfig.showQr && (contentView === 'info' || screenState.phase === 'waiting' || screenState.phase === 'registration');
   const activeListSize = contentView === 'round'
     ? filteredMatches.length
+    : contentView === 'lanes'
+      ? Math.max(screenState.laneCount || 0, filteredMatches.length)
     : contentView === 'final'
       ? screenState.finalPlacements.length
       : screenState.standings.length;
@@ -665,8 +796,8 @@ export default function ScreenPage() {
   const connectionColor = connectionState === 'live' ? colors.green : connectionState === 'stale' ? colors.orange : colors.gold2;
 
   return (
-    <main style={pageStyle}>
-      <header style={{
+    <main style={{ ...pageStyle, ...themeStyles.page }}>
+      {!hideHeader ? <header style={{
         minHeight: compact ? 0 : denseDisplay ? 66 : 88,
         display: 'flex',
         flexWrap: compact ? 'wrap' : 'nowrap',
@@ -674,8 +805,8 @@ export default function ScreenPage() {
         alignItems: 'center',
         gap: compact ? 14 : 24,
         padding: compact ? '14px 18px' : denseDisplay ? '5px 34px' : '0 44px',
-        borderBottom: `1px solid ${colors.gold}`,
-        background: 'linear-gradient(90deg, #020604, #04120c 44%, #02100a)'
+        borderBottom: `1px solid ${themeStyles.accent}`,
+        background: themeStyles.header
       }}>
         <Brand />
         <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexWrap: 'wrap', justifyContent: compact ? 'flex-start' : 'flex-end', width: compact ? '100%' : 'auto' }}>
@@ -686,7 +817,7 @@ export default function ScreenPage() {
           <FlagButton active={lang === 'da'} label="Dansk" src="https://flagcdn.com/w40/dk.png" onClick={() => setLang('da')} />
           <FlagButton active={lang === 'en'} label="English" src="https://flagcdn.com/w40/gb.png" onClick={() => setLang('en')} />
         </div>
-      </header>
+      </header> : null}
 
       <section style={{
         minHeight: compact ? 0 : denseDisplay ? 160 : 238,
@@ -727,6 +858,8 @@ export default function ScreenPage() {
       </section>
 
       <section style={{ padding: compact ? '14px 18px 18px' : denseDisplay ? '14px 34px 76px' : '18px 34px 110px' }}>
+        <AnnouncementBanner message={screenConfig.announcement} t={t} compact={compact} />
+
         {contentView === 'info' || contentView === 'waiting' ? (
           <Card style={{ padding: 22, maxWidth: 980 }}>
             <div style={{ color: colors.muted, fontSize: 12, fontWeight: 900, letterSpacing: '.09em' }}>{modeLabel}</div>
@@ -821,6 +954,10 @@ export default function ScreenPage() {
               )}
             </PagedDisplay>
           </div>
+        ) : null}
+
+        {contentView === 'lanes' ? (
+          <LaneOverview screenState={screenState} matches={filteredMatches} selectedLanes={screenConfig.lanes} t={t} compact={compact} />
         ) : null}
 
         {contentView === 'final' ? (

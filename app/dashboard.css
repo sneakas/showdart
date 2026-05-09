@@ -419,13 +419,24 @@
 
 .sd-tv-controls {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
   gap: 10px;
   align-items: end;
 }
 
 .sd-tv-controls .sd-field {
   grid-template-columns: 72px minmax(0, 1fr);
+}
+
+.sd-tv-extra-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 10px;
+  align-items: end;
+}
+
+.sd-tv-extra-controls .sd-field {
+  grid-template-columns: 82px minmax(0, 1fr);
 }
 
 .sd-tv-check {
@@ -1267,6 +1278,7 @@
 
   .sd-tv-grid,
   .sd-tv-controls,
+  .sd-tv-extra-controls,
   .sd-tv-actions {
     grid-template-columns: 1fr;
   }

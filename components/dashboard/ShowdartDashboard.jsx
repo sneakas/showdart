@@ -99,6 +99,15 @@ const texts = {
     tvRows: 'Rækker',
     tvRotation: 'Skift sek.',
     tvQr: 'QR',
+    tvAnnouncement: 'Besked',
+    tvAnnouncementPlaceholder: 'Skriv besked til publikum...',
+    tvHideHeader: 'Skjul top',
+    tvAutoHideHeader: 'Auto-skjul top',
+    tvTheme: 'Tema',
+    themeClassic: 'Klassisk',
+    themeHighContrast: 'Høj kontrast',
+    themeLight: 'Lys',
+    themeMinimal: 'Minimal',
     modeAuto: 'Auto',
     modeLive: 'Kampe',
     modeStandings: 'Stilling',
@@ -252,6 +261,15 @@ const texts = {
     tvRows: 'Rows',
     tvRotation: 'Rotate sec.',
     tvQr: 'QR',
+    tvAnnouncement: 'Message',
+    tvAnnouncementPlaceholder: 'Write message to spectators...',
+    tvHideHeader: 'Hide header',
+    tvAutoHideHeader: 'Auto-hide header',
+    tvTheme: 'Theme',
+    themeClassic: 'Classic',
+    themeHighContrast: 'High contrast',
+    themeLight: 'Light',
+    themeMinimal: 'Minimal',
     modeAuto: 'Auto',
     modeLive: 'Matches',
     modeStandings: 'Standings',
@@ -769,9 +787,30 @@ export function ShowdartDashboard({
                     <Field label={t.tvRotation}>
                       <input className="sd-input" type="number" min="5" max="60" value={config.rotationSeconds || 10} onChange={event => handleTvScreenChange(screenKey, { rotationSeconds: Number(event.target.value) })} />
                     </Field>
+                    <Field label={t.tvTheme}>
+                      <select className="sd-select" value={config.theme || 'classic'} onChange={event => handleTvScreenChange(screenKey, { theme: event.target.value })}>
+                        <option value="classic">{t.themeClassic}</option>
+                        <option value="highContrast">{t.themeHighContrast}</option>
+                        <option value="light">{t.themeLight}</option>
+                        <option value="minimal">{t.themeMinimal}</option>
+                      </select>
+                    </Field>
                     <label className="sd-tv-check">
                       <input type="checkbox" checked={config.showQr !== false} onChange={event => handleTvScreenChange(screenKey, { showQr: event.target.checked })} />
                       {t.tvQr}
+                    </label>
+                  </div>
+                  <div className="sd-tv-extra-controls">
+                    <Field label={t.tvAnnouncement}>
+                      <input className="sd-input" maxLength="180" value={config.announcement || ''} placeholder={t.tvAnnouncementPlaceholder} onChange={event => handleTvScreenChange(screenKey, { announcement: event.target.value })} />
+                    </Field>
+                    <label className="sd-tv-check">
+                      <input type="checkbox" checked={!!config.hideHeader} onChange={event => handleTvScreenChange(screenKey, { hideHeader: event.target.checked })} />
+                      {t.tvHideHeader}
+                    </label>
+                    <label className="sd-tv-check">
+                      <input type="checkbox" checked={!!config.autoHideHeader} onChange={event => handleTvScreenChange(screenKey, { autoHideHeader: event.target.checked })} />
+                      {t.tvAutoHideHeader}
                     </label>
                   </div>
                   <div className="sd-tv-lanes">
