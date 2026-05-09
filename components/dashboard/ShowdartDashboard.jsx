@@ -101,6 +101,8 @@ const texts = {
     tvQr: 'QR',
     tvAnnouncement: 'Besked',
     tvAnnouncementPlaceholder: 'Skriv besked til publikum...',
+    tvPublishAnnouncement: 'Vis besked',
+    tvClearAnnouncement: 'Skjul besked',
     tvHideHeader: 'Skjul top',
     tvAutoHideHeader: 'Auto-skjul top',
     tvTheme: 'Tema',
@@ -263,6 +265,8 @@ const texts = {
     tvQr: 'QR',
     tvAnnouncement: 'Message',
     tvAnnouncementPlaceholder: 'Write message to spectators...',
+    tvPublishAnnouncement: 'Show message',
+    tvClearAnnouncement: 'Hide message',
     tvHideHeader: 'Hide header',
     tvAutoHideHeader: 'Auto-hide header',
     tvTheme: 'Theme',
@@ -393,7 +397,9 @@ export function ShowdartDashboard({
   const [finalRankingIds, setFinalRankingIds] = useState([]);
   const [dialog, setDialog] = useState(null);
   const [rulesOpen, setRulesOpen] = useState(false);
+  const [announcementDrafts, setAnnouncementDrafts] = useState({ screen1: '', screen2: '' });
   const importInputRef = useRef(null);
+  const previousAnnouncementsRef = useRef({ screen1: '', screen2: '' });
 
   const token = session?.access_token;
   const entries = useMemo(() => getEntries(state), [state]);
@@ -501,6 +507,23 @@ export function ShowdartDashboard({
     const timer = window.setTimeout(() => setNotice(''), 2600);
     return () => window.clearTimeout(timer);
   }, [notice]);
+
+  useEffect(() => {
+    setAnnouncementDrafts(previous => {
+      const next = { ...previous };
+      let changed = false;
+      ['screen1', 'screen2'].forEach(screenKey => {
+        const liveAnnouncement = state.tvScreens?.[screenKey]?.announcement || '';
+        const previousLiveAnnouncement = previousAnnouncementsRef.current[screenKey] || '';
+        if ((next[screenKey] || '') === previousLiveAnnouncement && next[screenKey] !== liveAnnouncement) {
+          next[screenKey] = liveAnnouncement;
+          changed = true;
+        }
+        previousAnnouncementsRef.current[screenKey] = liveAnnouncement;
+      });
+      return changed ? next : previous;
+    });
+  }, [state.tvScreens]);
 
   function navButton(key, label, Icon, onClick) {
     return (
@@ -697,6 +720,21 @@ export function ShowdartDashboard({
     commit(previous => updateTvScreen(previous, screenKey, patch));
   }
 
+  function handleAnnouncementDraftChange(screenKey, value) {
+    setAnnouncementDrafts(previous => ({ ...previous, [screenKey]: value }));
+  }
+
+  function publishAnnouncement(screenKey) {
+    const draft = String(announcementDrafts[screenKey] || '').trim();
+    handleTvScreenChange(screenKey, { announcement: draft });
+    setAnnouncementDrafts(previous => ({ ...previous, [screenKey]: draft }));
+  }
+
+  function clearAnnouncement(screenKey) {
+    setAnnouncementDrafts(previous => ({ ...previous, [screenKey]: '' }));
+    handleTvScreenChange(screenKey, { announcement: '' });
+  }
+
   const visibleEntries = standings.filter(entry => entry.name.toLowerCase().includes(search.toLowerCase()));
   const tournamentTitle = state.tournamentName || form.tournamentName || 'Klubmesterskab 2025';
 
@@ -762,6 +800,8 @@ export function ShowdartDashboard({
           <div className="sd-tv-grid">
             {['screen1', 'screen2'].map(screenKey => {
               const config = state.tvScreens?.[screenKey] || {};
+              const announcementDraft = announcementDrafts[screenKey] ?? config.announcement ?? '';
+              const liveAnnouncement = config.announcement || '';
               const url = getScreenUrl(screenKey);
               return (
                 <div className="sd-tv-card" key={screenKey}>
@@ -802,8 +842,14 @@ export function ShowdartDashboard({
                   </div>
                   <div className="sd-tv-extra-controls">
                     <Field label={t.tvAnnouncement}>
-                      <input className="sd-input" maxLength="180" value={config.announcement || ''} placeholder={t.tvAnnouncementPlaceholder} onChange={event => handleTvScreenChange(screenKey, { announcement: event.target.value })} />
+                      <input className="sd-input" maxLength="180" value={announcementDraft} placeholder={t.tvAnnouncementPlaceholder} onChange={event => handleAnnouncementDraftChange(screenKey, event.target.value)} />
                     </Field>
+                    <button type="button" className="sd-button gold full" disabled={!announcementDraft.trim() || announcementDraft.trim() === liveAnnouncement} onClick={() => publishAnnouncement(screenKey)}>
+                      {t.tvPublishAnnouncement}
+                    </button>
+                    <button type="button" className="sd-button full" disabled={!liveAnnouncement && !announcementDraft} onClick={() => clearAnnouncement(screenKey)}>
+                      {t.tvClearAnnouncement}
+                    </button>
                     <label className="sd-tv-check">
                       <input type="checkbox" checked={!!config.hideHeader} onChange={event => handleTvScreenChange(screenKey, { hideHeader: event.target.checked })} />
                       {t.tvHideHeader}
