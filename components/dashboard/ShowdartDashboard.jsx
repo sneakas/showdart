@@ -33,6 +33,7 @@ import {
 } from '../../lib/tournament/reactEngine';
 
 const HERO_VISIBILITY_STORAGE_KEY = 'showdart-hide-admin-hero';
+const TV_CONTROL_VISIBILITY_STORAGE_KEY = 'showdart-hide-tv-control';
 
 const texts = {
   da: {
@@ -143,6 +144,8 @@ const texts = {
     hideStandingsTree: 'Skjul turneringstræ',
     hideWorkspaceHeader: 'Skjul topfelt',
     showWorkspaceHeader: 'Vis topfelt',
+    hideTvControl: 'Skjul TV-skærme',
+    showTvControl: 'Vis TV-skærme',
     startFinal: 'Start finale',
     confirmFinal: 'Bekræft finaleresultat',
     finalRanking: 'Finalerangering',
@@ -309,6 +312,8 @@ const texts = {
     hideStandingsTree: 'Hide tournament tree',
     hideWorkspaceHeader: 'Hide top panel',
     showWorkspaceHeader: 'Show top panel',
+    hideTvControl: 'Hide TV screens',
+    showTvControl: 'Show TV screens',
     startFinal: 'Start final',
     confirmFinal: 'Confirm final results',
     finalRanking: 'Final ranking',
@@ -405,6 +410,7 @@ export function ShowdartDashboard({
   const [rulesOpen, setRulesOpen] = useState(false);
   const [announcementDrafts, setAnnouncementDrafts] = useState({ screen1: '', screen2: '' });
   const [heroHidden, setHeroHidden] = useState(false);
+  const [tvControlHidden, setTvControlHidden] = useState(false);
   const importInputRef = useRef(null);
   const previousAnnouncementsRef = useRef({ screen1: '', screen2: '' });
 
@@ -518,6 +524,7 @@ export function ShowdartDashboard({
   useEffect(() => {
     if (typeof window === 'undefined') return;
     setHeroHidden(window.localStorage.getItem(HERO_VISIBILITY_STORAGE_KEY) === '1');
+    setTvControlHidden(window.localStorage.getItem(TV_CONTROL_VISIBILITY_STORAGE_KEY) === '1');
   }, []);
 
   useEffect(() => {
@@ -757,6 +764,16 @@ export function ShowdartDashboard({
     });
   }
 
+  function toggleTvControlVisibility() {
+    setTvControlHidden(previous => {
+      const next = !previous;
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem(TV_CONTROL_VISIBILITY_STORAGE_KEY, next ? '1' : '0');
+      }
+      return next;
+    });
+  }
+
   const visibleEntries = standings.filter(entry => entry.name.toLowerCase().includes(search.toLowerCase()));
   const tournamentTitle = state.tournamentName || form.tournamentName || 'Klubmesterskab 2025';
 
@@ -816,7 +833,7 @@ export function ShowdartDashboard({
         </div>
       </section> : null}
 
-      <section className="sd-tv-control">
+      {!tvControlHidden ? <section className="sd-tv-control">
         <div className="sd-card sd-panel">
           <h2 className="sd-panel-title">{t.tvControl}</h2>
           <div className="sd-tv-grid">
@@ -914,7 +931,7 @@ export function ShowdartDashboard({
             })}
           </div>
         </div>
-      </section>
+      </section> : null}
 
       <section className="sd-dashboard">
         <div className="sd-stack">
@@ -949,6 +966,7 @@ export function ShowdartDashboard({
               <input ref={importInputRef} type="file" accept=".txt,.csv" style={{ display: 'none' }} onChange={handleImportFile} />
               <button type="button" className="sd-button full" disabled={!canAddEntries} onClick={() => importInputRef.current?.click()}><Upload size={17} /> {t.importParticipants}</button>
               <button type="button" className="sd-button full" onClick={toggleHeroVisibility}>{heroHidden ? <Eye size={17} /> : <EyeOff size={17} />} {heroHidden ? t.showWorkspaceHeader : t.hideWorkspaceHeader}</button>
+              <button type="button" className="sd-button full" onClick={toggleTvControlVisibility}>{tvControlHidden ? <Eye size={17} /> : <EyeOff size={17} />} {tvControlHidden ? t.showTvControl : t.hideTvControl}</button>
               <button type="button" className="sd-button full" onClick={() => setTreeVisible(value => !value)}><GitBranch size={17} /> {treeVisible ? t.hideStandingsTree : t.standingsTree}</button>
               <button type="button" className="sd-button full" disabled={!state.roundHistory?.length} onClick={() => setHistoryVisible(value => !value)}><History size={17} /> {historyVisible ? t.hideHistory : t.history}</button>
               <button type="button" className="sd-button full" onClick={handleResetTournament}><RotateCcw size={17} /> {t.reset}</button>
