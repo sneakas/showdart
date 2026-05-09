@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { ArrowDown, ArrowUp, CalendarDays, Check, Eye, ExternalLink, GitBranch, History, MoreVertical, Plus, QrCode, RefreshCw, RotateCcw, ShieldCheck, Trophy, Upload, UsersRound } from 'lucide-react';
+import { ArrowDown, ArrowUp, CalendarDays, Check, Eye, EyeOff, ExternalLink, GitBranch, History, MoreVertical, Plus, QrCode, RefreshCw, RotateCcw, ShieldCheck, Trophy, Upload, UsersRound } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   addFixedTeam,
@@ -31,6 +31,8 @@ import {
   updateTvScreen,
   updateEntryLosses
 } from '../../lib/tournament/reactEngine';
+
+const HERO_VISIBILITY_STORAGE_KEY = 'showdart-hide-admin-hero';
 
 const texts = {
   da: {
@@ -139,6 +141,8 @@ const texts = {
     hideHistory: 'Skjul historik',
     standingsTree: 'Se turneringstræ',
     hideStandingsTree: 'Skjul turneringstræ',
+    hideWorkspaceHeader: 'Skjul topfelt',
+    showWorkspaceHeader: 'Vis topfelt',
     startFinal: 'Start finale',
     confirmFinal: 'Bekræft finaleresultat',
     finalRanking: 'Finalerangering',
@@ -303,6 +307,8 @@ const texts = {
     hideHistory: 'Hide history',
     standingsTree: 'View tournament tree',
     hideStandingsTree: 'Hide tournament tree',
+    hideWorkspaceHeader: 'Hide top panel',
+    showWorkspaceHeader: 'Show top panel',
     startFinal: 'Start final',
     confirmFinal: 'Confirm final results',
     finalRanking: 'Final ranking',
@@ -398,6 +404,7 @@ export function ShowdartDashboard({
   const [dialog, setDialog] = useState(null);
   const [rulesOpen, setRulesOpen] = useState(false);
   const [announcementDrafts, setAnnouncementDrafts] = useState({ screen1: '', screen2: '' });
+  const [heroHidden, setHeroHidden] = useState(false);
   const importInputRef = useRef(null);
   const previousAnnouncementsRef = useRef({ screen1: '', screen2: '' });
 
@@ -507,6 +514,11 @@ export function ShowdartDashboard({
     const timer = window.setTimeout(() => setNotice(''), 2600);
     return () => window.clearTimeout(timer);
   }, [notice]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    setHeroHidden(window.localStorage.getItem(HERO_VISIBILITY_STORAGE_KEY) === '1');
+  }, []);
 
   useEffect(() => {
     setAnnouncementDrafts(previous => {
@@ -735,6 +747,16 @@ export function ShowdartDashboard({
     handleTvScreenChange(screenKey, { announcement: '' });
   }
 
+  function toggleHeroVisibility() {
+    setHeroHidden(previous => {
+      const next = !previous;
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem(HERO_VISIBILITY_STORAGE_KEY, next ? '1' : '0');
+      }
+      return next;
+    });
+  }
+
   const visibleEntries = standings.filter(entry => entry.name.toLowerCase().includes(search.toLowerCase()));
   const tournamentTitle = state.tournamentName || form.tournamentName || 'Klubmesterskab 2025';
 
@@ -761,7 +783,7 @@ export function ShowdartDashboard({
         </div>
       </header>
 
-      <section className="sd-hero">
+      {!heroHidden ? <section className="sd-hero">
         <div className="sd-hero-inner">
           <div className="sd-card sd-hero-card">
             <h1 className="sd-title">{tournamentTitle}</h1>
@@ -792,7 +814,7 @@ export function ShowdartDashboard({
             </div>
           </div>
         </div>
-      </section>
+      </section> : null}
 
       <section className="sd-tv-control">
         <div className="sd-card sd-panel">
@@ -926,6 +948,7 @@ export function ShowdartDashboard({
               </form>
               <input ref={importInputRef} type="file" accept=".txt,.csv" style={{ display: 'none' }} onChange={handleImportFile} />
               <button type="button" className="sd-button full" disabled={!canAddEntries} onClick={() => importInputRef.current?.click()}><Upload size={17} /> {t.importParticipants}</button>
+              <button type="button" className="sd-button full" onClick={toggleHeroVisibility}>{heroHidden ? <Eye size={17} /> : <EyeOff size={17} />} {heroHidden ? t.showWorkspaceHeader : t.hideWorkspaceHeader}</button>
               <button type="button" className="sd-button full" onClick={() => setTreeVisible(value => !value)}><GitBranch size={17} /> {treeVisible ? t.hideStandingsTree : t.standingsTree}</button>
               <button type="button" className="sd-button full" disabled={!state.roundHistory?.length} onClick={() => setHistoryVisible(value => !value)}><History size={17} /> {historyVisible ? t.hideHistory : t.history}</button>
               <button type="button" className="sd-button full" onClick={handleResetTournament}><RotateCcw size={17} /> {t.reset}</button>
