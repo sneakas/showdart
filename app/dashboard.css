@@ -633,6 +633,19 @@
   box-shadow: 0 14px 28px rgba(0, 0, 0, .28);
 }
 
+.sd-match-card.is-current {
+  border-color: rgba(75, 209, 125, .72);
+}
+
+.sd-match-card.is-queued {
+  border-color: rgba(241, 189, 53, .38);
+  background: linear-gradient(145deg, rgba(44, 39, 13, .58), rgba(3, 17, 11, .9));
+}
+
+.sd-match-card.is-completed {
+  opacity: .78;
+}
+
 .sd-mini-board {
   width: 38px;
   height: 38px;
@@ -806,6 +819,33 @@
   padding: 6px 14px;
   font-size: 13px;
   font-weight: 900;
+}
+
+.sd-pill.is-current {
+  color: #06100b;
+  background: var(--sd-green);
+}
+
+.sd-pill.is-queued {
+  color: #171006;
+  background: var(--sd-gold-2);
+}
+
+.sd-pill.is-completed {
+  color: var(--sd-green);
+  background: rgba(75, 209, 125, .12);
+}
+
+.sd-match-queue-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 42px 42px;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.sd-match-queue-controls .sd-button {
+  min-height: 40px;
+  padding: 6px;
 }
 
 .sd-score-row {

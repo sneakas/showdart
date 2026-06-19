@@ -15,6 +15,7 @@ import {
   generateMatches,
   getActiveEntries,
   getEntries,
+  getMatchLaneStatus,
   getMatchLabel,
   getSkippedEntries,
   getSortedStandings,
@@ -22,6 +23,7 @@ import {
   normalizeTournamentState,
   removeEntry,
   resetTournament,
+  moveMatchInLaneQueue,
   selectWinner,
   setActiveLane,
   showStandingsOverride,
@@ -58,6 +60,7 @@ const texts = {
       'Spillere med "O" tag prioriteres væk fra at sidde over, indtil alle andre aktive spillere har modtaget "O" tags.',
       'Når alle aktive spillere har fået samme tag, nulstilles tag-cyklussen automatisk. Hvis den sidste spiller uden S-tag spiller 1v1 mod en spiller, der allerede har S-tag, beholder begge S-tag, og de øvrige nulstilles.',
       'Baner vælges før næste runde genereres. Efter runden er genereret, kan turneringslederen stadig ændre bane på hver kamp manuelt.',
+      'Hvis der er flere kampe end aktive baner, fordeles de automatisk i banekøer. Den næste kamp på en bane bliver klar, når den tidligere kamp har fået markeret en vinder.',
       'Efter hver runde markeres vinderne, og taberne modtager 1 nederlag.',
       'Når en spiller bliver elimineret, vises elimineringsrunden i spillerens status, f.eks. "Elimineret R3".',
       'Mellem runder kan turneringslederen rette nederlag, gendanne eliminerede spillere ved at sænke nederlag, tilføje spillere, ændre tags og se kamphistorik.',
@@ -76,6 +79,7 @@ const texts = {
       'Hold med "O" tag prioriteres væk fra at sidde over, indtil alle andre aktive hold har modtaget "O" tags.',
       'Når alle aktive hold har fået "O" tag, nulstilles O-tag-cyklussen automatisk.',
       'Baner vælges før næste runde genereres. Efter runden er genereret, kan turneringslederen stadig ændre bane på hver kamp manuelt.',
+      'Hvis der er flere kampe end aktive baner, fordeles de automatisk i banekøer. Den næste kamp på en bane bliver klar, når den tidligere kamp har fået markeret en vinder.',
       'Efter hver runde modtager det tabende hold 1 nederlag.',
       'Når et hold når det maksimale antal nederlag, bliver det elimineret, og elimineringsrunden vises i oversigten.',
       'Mellem runder kan turneringslederen rette nederlag, gendanne eliminerede hold ved at sænke nederlag, tilføje hold, ændre baner og se kamphistorik.',
@@ -165,7 +169,7 @@ const texts = {
     confirmStartFormat: 'Format',
     confirmStartLosses: 'Maks. nederlag',
     confirmStartLanes: 'Baner',
-    confirmDisableLane: 'Bane {lane} er allerede tildelt {count} igangværende kamp(e). Hvis du deaktiverer banen, fjernes banen fra disse kampe. Vil du fortsætte?',
+    confirmDisableLane: 'Bane {lane} har {count} uafsluttede kamp(e). Hvis du deaktiverer banen, flyttes de automatisk til køerne på de øvrige aktive baner. Vil du fortsætte?',
     confirmCompleteRound: 'Er du sikker på, at du vil afslutte runden? Tabere får nederlag, og runden gemmes i historikken.',
     confirmEliminateEntry: 'Er du sikker på, at du vil sætte {name} ud af turneringen?',
     confirmRemoveEntry: 'Er du sikker på, at du vil fjerne {name} fra turneringen?',
@@ -194,6 +198,13 @@ const texts = {
     historyPlaying: 'Spiller',
     historySingles: 'Singlekamp',
     ready: 'Klar til kamp',
+    laneCurrent: 'Spiller nu',
+    laneQueued: 'Næste kamp',
+    laneCompleted: 'Afsluttet',
+    laneUnassigned: 'Venter på bane',
+    queuePosition: 'Køplads',
+    moveQueueUp: 'Flyt frem i køen',
+    moveQueueDown: 'Flyt tilbage i køen',
     winner: 'Vinder',
     selectWinner: 'Markér vinder',
     sitOver: 'Sidder over',
@@ -226,6 +237,7 @@ const texts = {
       'Players with "O" tag are prioritized away from sitting out until all other active players have received "O" tags.',
       'When all active players have received the same tag, that tag cycle resets automatically. If the last player without S tag plays 1v1 against a player who already has S tag, both keep S tag and the others are reset.',
       'Lanes are selected before the next round is generated. After the round is generated, the tournament director can still manually change the lane for each match.',
+      'When there are more matches than active lanes, they are automatically distributed into lane queues. The next match becomes ready when a winner is recorded for the earlier match.',
       'After each round, winners are marked and losers receive 1 loss.',
       'When a player is eliminated, the elimination round is shown in their status, e.g. "Eliminated R3".',
       'Between rounds the tournament director can edit losses, restore eliminated players by lowering losses, add players, change tags and view match history.',
@@ -244,6 +256,7 @@ const texts = {
       'Teams with "O" tag are prioritized away from sitting out until all other active teams have received "O" tags.',
       'When all active teams have received the "O" tag, the O-tag cycle resets automatically.',
       'Lanes are selected before the next round is generated. After the round is generated, the tournament director can still manually change the lane for each match.',
+      'When there are more matches than active lanes, they are automatically distributed into lane queues. The next match becomes ready when a winner is recorded for the earlier match.',
       'After each round, the losing team receives 1 loss.',
       'When a team reaches the maximum number of losses, it is eliminated and its elimination round is shown in the standings.',
       'Between rounds the tournament director can edit losses, restore eliminated teams by lowering losses, add teams, change lanes and view match history.',
@@ -333,7 +346,7 @@ const texts = {
     confirmStartFormat: 'Format',
     confirmStartLosses: 'Max losses',
     confirmStartLanes: 'Lanes',
-    confirmDisableLane: 'Lane {lane} is already assigned to {count} active match(es). If you disable it, the lane will be removed from those matches. Do you want to continue?',
+    confirmDisableLane: 'Lane {lane} has {count} unfinished match(es). If you disable it, they will automatically move to the queues on the remaining active lanes. Do you want to continue?',
     confirmCompleteRound: 'Are you sure you want to complete the round? Losers receive losses and the round is saved to history.',
     confirmEliminateEntry: 'Are you sure you want to eliminate {name} from the tournament?',
     confirmRemoveEntry: 'Are you sure you want to remove {name} from the tournament?',
@@ -362,6 +375,13 @@ const texts = {
     historyPlaying: 'Playing',
     historySingles: 'Singles',
     ready: 'Ready to play',
+    laneCurrent: 'Playing now',
+    laneQueued: 'Next match',
+    laneCompleted: 'Completed',
+    laneUnassigned: 'Waiting for lane',
+    queuePosition: 'Queue position',
+    moveQueueUp: 'Move forward in queue',
+    moveQueueDown: 'Move back in queue',
     winner: 'Winner',
     selectWinner: 'Select winner',
     sitOver: 'Sitting out',
@@ -638,9 +658,27 @@ export function ShowdartDashboard({
     });
   }
 
+  function handleMoveMatchQueue(matchId, direction) {
+    setState(previous => {
+      const next = normalizeTournamentState(moveMatchInLaneQueue(previous, matchId, direction));
+      if (next.lastGenerationError) showDialog(next.lastGenerationError);
+      persist(next).catch(error => showDialog(error instanceof Error ? error.message : 'Save failed'));
+      return next;
+    });
+  }
+
+  function handleSelectWinner(matchId, winner) {
+    setState(previous => {
+      const next = normalizeTournamentState(selectWinner(previous, matchId, winner));
+      if (next.lastGenerationError) showDialog(next.lastGenerationError);
+      persist(next).catch(error => showDialog(error instanceof Error ? error.message : 'Save failed'));
+      return next;
+    });
+  }
+
   function handleToggleLane(lane, active) {
     if (active) {
-      const assignedCount = state.matches.filter(match => match.laneNumber === lane).length;
+      const assignedCount = state.matches.filter(match => match.laneNumber === lane && !match.winner).length;
       if (assignedCount > 0) {
         showConfirm(
           t.confirmDisableLane
@@ -1037,14 +1075,15 @@ export function ShowdartDashboard({
               <FinalRanking ids={finalRankingIds} entries={entries} t={t} onMove={moveFinalist} onConfirm={handleCompleteFinal} />
             ) : isRoundActive ? (
               <>
-                {state.matches.map(match => (
+                {[...state.matches].sort((left, right) => (Number(left.lanePosition) || 999) - (Number(right.lanePosition) || 999) || (Number(left.laneNumber) || 999) - (Number(right.laneNumber) || 999) || left.id - right.id).map(match => (
                   <MatchCard
                     key={match.id}
                     state={state}
                     match={match}
                     t={t}
-                    onWinner={winner => commit(previous => selectWinner(previous, match.id, winner))}
+                    onWinner={winner => handleSelectWinner(match.id, winner)}
                     onLane={lane => handleAssignLane(match.id, lane)}
+                    onMoveQueue={direction => handleMoveMatchQueue(match.id, direction)}
                   />
                 ))}
                 {skippedEntries.length ? <div className="sd-match-card"><div className="sd-match-title">{t.sitOver}</div><div>{skippedEntries.map(entry => entry.name).join(', ')}</div></div> : null}
@@ -1153,26 +1192,43 @@ function Field({ label, children }) {
   return <div className="sd-field"><label>{label}</label>{children}</div>;
 }
 
-function MatchCard({ state, match, t, onWinner, onLane }) {
+function MatchCard({ state, match, t, onWinner, onLane, onMoveQueue }) {
   const team1 = getMatchLabel(state, match, 1);
   const team2 = getMatchLabel(state, match, 2);
+  const laneStatus = getMatchLaneStatus(state, match.id);
+  const laneQueue = Number.isInteger(match.laneNumber)
+    ? state.matches.filter(item => item.laneNumber === match.laneNumber).sort((left, right) => (Number(left.lanePosition) || 999) - (Number(right.lanePosition) || 999) || left.id - right.id)
+    : [];
+  const queueIndex = laneQueue.findIndex(item => item.id === match.id);
+  const statusLabel = laneStatus === 'current'
+    ? t.laneCurrent
+    : laneStatus === 'queued'
+      ? t.laneQueued
+      : laneStatus === 'completed'
+        ? t.laneCompleted
+        : t.laneUnassigned;
+  const winnerEnabled = laneStatus === 'current' || laneStatus === 'completed';
   return (
-    <div className="sd-match-card">
+    <div className={`sd-match-card is-${laneStatus}`}>
       <div className="sd-match-head">
-        <div className="sd-match-title">{t.match} #{match.id} - Bane {match.laneNumber || '-'}</div>
-        <span className="sd-pill">{match.winner ? 'Klar' : t.started}</span>
+        <div className="sd-match-title">{t.match} #{match.id} - Bane {match.laneNumber || '-'}{match.lanePosition ? ` · ${t.queuePosition} ${match.lanePosition}` : ''}</div>
+        <span className={`sd-pill is-${laneStatus}`}>{statusLabel}</span>
       </div>
       <div className="sd-score-row">
         <div className="sd-match-side"><div className="sd-match-name">{team1}</div><div className="sd-match-sub">Seed {match.id * 2 - 1}</div></div>
-        <button className={`sd-score-box ${match.winner === 1 ? 'win' : ''}`} type="button" onClick={() => onWinner(1)}>{match.winner === 1 ? '✓' : '-'}</button>
+        <button className={`sd-score-box ${match.winner === 1 ? 'win' : ''}`} type="button" disabled={!winnerEnabled} onClick={() => onWinner(1)}>{match.winner === 1 ? '✓' : '-'}</button>
         <div style={{ textAlign: 'center', fontWeight: 900 }}>VS</div>
-        <button className={`sd-score-box ${match.winner === 2 ? 'win' : ''}`} type="button" onClick={() => onWinner(2)}>{match.winner === 2 ? '✓' : '-'}</button>
+        <button className={`sd-score-box ${match.winner === 2 ? 'win' : ''}`} type="button" disabled={!winnerEnabled} onClick={() => onWinner(2)}>{match.winner === 2 ? '✓' : '-'}</button>
         <div className="sd-match-side right"><div className="sd-match-name">{team2}</div><div className="sd-match-sub">Seed {match.id * 2}</div></div>
       </div>
-      <select className="sd-select" style={{ marginTop: 10 }} value={match.laneNumber || ''} onChange={event => onLane(event.target.value ? Number(event.target.value) : null)}>
-        <option value="">Venter</option>
-        {state.activeLanes.map(lane => <option key={lane} value={lane}>Bane {lane}</option>)}
-      </select>
+      <div className="sd-match-queue-controls">
+        <select className="sd-select" value={match.laneNumber || ''} disabled={!!match.winner} onChange={event => onLane(event.target.value ? Number(event.target.value) : null)}>
+          <option value="">{t.laneUnassigned}</option>
+          {state.activeLanes.map(lane => <option key={lane} value={lane}>Bane {lane}</option>)}
+        </select>
+        <button type="button" className="sd-button" title={t.moveQueueUp} aria-label={t.moveQueueUp} disabled={!!match.winner || queueIndex <= 0 || !!laneQueue[queueIndex - 1]?.winner} onClick={() => onMoveQueue(-1)}><ArrowUp size={15} /></button>
+        <button type="button" className="sd-button" title={t.moveQueueDown} aria-label={t.moveQueueDown} disabled={!!match.winner || queueIndex < 0 || queueIndex >= laneQueue.length - 1 || !!laneQueue[queueIndex + 1]?.winner} onClick={() => onMoveQueue(1)}><ArrowDown size={15} /></button>
+      </div>
     </div>
   );
 }
@@ -1193,7 +1249,7 @@ function HistoryPanel({ history, t }) {
                     <td>{t.round} {roundEntry.round}</td>
                     <td><span className={`sd-history-badge ${isSingles ? 'is-singles' : 'is-playing'}`}>{isSingles ? t.historySingles : t.historyPlaying}</span></td>
                     <td>{t.match} #{match.id}: {match.team1Label} VS {match.team2Label}</td>
-                    <td>{Number.isInteger(match.laneNumber) && match.laneNumber > 0 ? `Bane ${match.laneNumber}` : '-'}</td>
+                    <td>{Number.isInteger(match.laneNumber) && match.laneNumber > 0 ? `Bane ${match.laneNumber}${Number.isInteger(match.lanePosition) ? ` · ${t.queuePosition} ${match.lanePosition}` : ''}` : '-'}</td>
                     <td>{match.winnerLabel || '-'}</td>
                   </tr>
                 );

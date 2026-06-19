@@ -9,6 +9,8 @@ import {
   createDefaultTournamentState,
   generateMatches,
   getActiveEntries,
+  getMatchLaneStatus,
+  moveMatchInLaneQueue,
   normalizeTournamentState,
   selectWinner,
   showStandingsOverride,
@@ -117,18 +119,19 @@ test('fixed teams use O tags for sit-outs and avoid repeating sit-outs before ot
   assert.notEqual(state.skippedTeamIds[0], firstSkipped);
 });
 
-test('inactive lanes cannot be assigned and disabling a lane clears existing assignments', () => {
+test('inactive lanes cannot be assigned and disabling a lane redistributes unfinished matches', () => {
   let state = startTournament(changingState(4), { teammateMode: 'changing', laneCount: 2 });
   state = generateMatches(state);
   assert.equal(state.matches[0].laneNumber, 1);
 
   state = setActiveLane(state, 1, false);
   assert.deepEqual(state.activeLanes, [2]);
-  assert.equal(state.matches[0].laneNumber, null);
+  assert.equal(state.matches[0].laneNumber, 2);
+  assert.equal(state.matches[0].lanePosition, 1);
 
   state = assignMatchLane(state, state.matches[0].id, 1);
   assert.match(state.lastGenerationError, /inaktiv/i);
-  assert.equal(state.matches[0].laneNumber, null);
+  assert.equal(state.matches[0].laneNumber, 2);
 });
 
 test('final placements include finalists first and earlier eliminated entries sharing the same place', () => {
@@ -171,6 +174,53 @@ test('nineteen changing players generate a valid round with one singles match an
   const usedPlayerIds = new Set(state.matches.flatMap(match => [...match.team1PlayerIds, ...match.team2PlayerIds]));
   state.skippedPlayerIds.forEach(id => usedPlayerIds.add(id));
   assert.equal(usedPlayerIds.size, 19);
+});
+
+test('forty players are distributed across seven lanes with balanced lane queues', () => {
+  let state = startTournament(changingState(40), { teammateMode: 'changing', laneCount: 7 });
+  state = generateMatches(state);
+
+  assert.equal(state.lastGenerationError, '');
+  assert.equal(state.matches.length, 10);
+  assert.deepEqual(state.matches.slice(0, 7).map(match => [match.laneNumber, match.lanePosition]), [
+    [1, 1], [2, 1], [3, 1], [4, 1], [5, 1], [6, 1], [7, 1]
+  ]);
+  assert.deepEqual(state.matches.slice(7).map(match => [match.laneNumber, match.lanePosition]), [
+    [1, 2], [2, 2], [3, 2]
+  ]);
+  assert.equal(getMatchLaneStatus(state, state.matches[0].id), 'current');
+  assert.equal(getMatchLaneStatus(state, state.matches[7].id), 'queued');
+});
+
+test('queued matches cannot finish before the current lane match and are promoted afterwards', () => {
+  let state = startTournament(changingState(40), { teammateMode: 'changing', laneCount: 7 });
+  state = generateMatches(state);
+  const current = state.matches.find(match => match.laneNumber === 1 && match.lanePosition === 1);
+  const queued = state.matches.find(match => match.laneNumber === 1 && match.lanePosition === 2);
+
+  state = selectWinner(state, queued.id, 1);
+  assert.equal(state.matches.find(match => match.id === queued.id).winner, null);
+  assert.match(state.lastGenerationError, /står i kø/i);
+
+  state = selectWinner(state, current.id, 1);
+  assert.equal(getMatchLaneStatus(state, queued.id), 'current');
+  assert.equal(buildScreenState(state).matches.find(match => match.id === queued.id).queueStatus, 'current');
+});
+
+test('matches can share a lane and be manually reordered in its queue', () => {
+  let state = startTournament(changingState(12), { teammateMode: 'changing', laneCount: 3 });
+  state = generateMatches(state);
+  const matchOne = state.matches[0];
+  const matchTwo = state.matches[1];
+
+  state = assignMatchLane(state, matchTwo.id, matchOne.laneNumber);
+  const sharedQueue = state.matches.filter(match => match.laneNumber === matchOne.laneNumber);
+  assert.equal(sharedQueue.length, 2);
+  assert.deepEqual(sharedQueue.map(match => match.lanePosition).sort((a, b) => a - b), [1, 2]);
+
+  state = moveMatchInLaneQueue(state, matchTwo.id, -1);
+  assert.equal(state.matches.find(match => match.id === matchTwo.id).lanePosition, 1);
+  assert.equal(state.matches.find(match => match.id === matchOne.id).lanePosition, 2);
 });
 
 test('manual loss editing can restore an eliminated player between rounds', () => {

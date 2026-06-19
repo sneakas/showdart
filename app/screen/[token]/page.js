@@ -56,7 +56,11 @@ const texts = {
     activeLane: 'Aktiv',
     inactiveLane: 'Inaktiv',
     noMatch: 'Ingen kamp',
-    compactLaneOverview: 'Baneoversigt'
+    compactLaneOverview: 'Baneoversigt',
+    laneCurrent: 'Spiller nu',
+    laneQueued: 'Næste kamp',
+    laneCompleted: 'Afsluttet',
+    queuePosition: 'Køplads'
   },
   en: {
     loading: 'Loading spectator screen...',
@@ -102,7 +106,11 @@ const texts = {
     activeLane: 'Active',
     inactiveLane: 'Inactive',
     noMatch: 'No match',
-    compactLaneOverview: 'Lane overview'
+    compactLaneOverview: 'Lane overview',
+    laneCurrent: 'Playing now',
+    laneQueued: 'Next match',
+    laneCompleted: 'Completed',
+    queuePosition: 'Queue position'
   }
 };
 
@@ -458,12 +466,25 @@ function TeamBox({ active, label }) {
 
 function MatchCard({ match, t, round, compact }) {
   const winner = match.winner === 1 ? match.team1Label : match.winner === 2 ? match.team2Label : '';
-  const laneText = Number.isFinite(Number(match.laneNumber)) ? `${t.lane} ${match.laneNumber}` : t.waitingForLane;
+  const laneText = Number.isFinite(Number(match.laneNumber))
+    ? `${t.lane} ${match.laneNumber}${match.lanePosition ? ` · ${t.queuePosition} ${match.lanePosition}` : ''}`
+    : t.waitingForLane;
+  const statusText = match.queueStatus === 'current'
+    ? t.laneCurrent
+    : match.queueStatus === 'queued'
+      ? t.laneQueued
+      : match.queueStatus === 'completed'
+        ? t.laneCompleted
+        : t.waitingForLane;
+  const statusColor = match.queueStatus === 'current' ? colors.green : match.queueStatus === 'queued' ? colors.gold2 : colors.muted;
 
   return (
-    <Card style={{ padding: 18, borderColor: winner ? colors.green : colors.border }}>
+    <Card style={{ padding: 18, borderColor: winner || match.queueStatus === 'current' ? colors.green : match.queueStatus === 'queued' ? 'rgba(241, 189, 53, .58)' : colors.border }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center', marginBottom: 16 }}>
-        <strong>{t.round} {round} - #{match.id}</strong>
+        <div>
+          <strong>{t.round} {round} - #{match.id}</strong>
+          <div style={{ color: statusColor, fontSize: 12, fontWeight: 900, marginTop: 5 }}>{statusText}</div>
+        </div>
         <span style={{ border: '1px solid rgba(241, 189, 53, .38)', color: colors.gold2, borderRadius: 999, padding: '7px 12px', fontWeight: 900 }}>{laneText}</span>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: compact ? '1fr' : '1fr auto 1fr', gap: compact ? 8 : 14, alignItems: 'center' }}>
@@ -496,7 +517,15 @@ function LaneOverview({ screenState, matches, selectedLanes, t, compact }) {
     ? [...selectedLanes].sort((a, b) => a - b)
     : Array.from({ length: Math.max(1, Number(screenState.laneCount) || 1) }, (_, index) => index + 1);
   const activeLanes = new Set(Array.isArray(screenState.activeLanes) ? screenState.activeLanes.map(Number) : selected);
-  const matchesByLane = new Map((matches || []).map(match => [Number(match.laneNumber), match]));
+  const matchesByLane = new Map();
+  (matches || []).forEach(match => {
+    const lane = Number(match.laneNumber);
+    if (!Number.isInteger(lane)) return;
+    const queue = matchesByLane.get(lane) || [];
+    queue.push(match);
+    matchesByLane.set(lane, queue);
+  });
+  matchesByLane.forEach(queue => queue.sort((left, right) => (Number(left.lanePosition) || 999) - (Number(right.lanePosition) || 999) || left.id - right.id));
 
   return (
     <Card style={{ padding: compact ? 16 : 22 }}>
@@ -509,9 +538,10 @@ function LaneOverview({ screenState, matches, selectedLanes, t, compact }) {
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: compact ? '1fr' : 'repeat(auto-fit, minmax(250px, 1fr))', gap: 12 }}>
         {selected.map(lane => {
-          const match = matchesByLane.get(Number(lane));
+          const queue = matchesByLane.get(Number(lane)) || [];
+          const match = queue.find(item => item.queueStatus === 'current');
+          const nextMatch = queue.find(item => item.queueStatus === 'queued');
           const active = activeLanes.has(Number(lane));
-          const winner = match?.winner === 1 ? match.team1Label : match?.winner === 2 ? match.team2Label : '';
           return (
             <div
               key={lane}
@@ -529,14 +559,20 @@ function LaneOverview({ screenState, matches, selectedLanes, t, compact }) {
               </div>
               {match ? (
                 <div style={{ marginTop: 13, display: 'grid', gap: 6, fontWeight: 900 }}>
+                  <span style={{ color: colors.green, fontSize: 12 }}>{t.laneCurrent}</span>
                   <span>{match.team1Label}</span>
                   <span style={{ color: colors.muted, fontSize: 13 }}>{t.vs}</span>
                   <span>{match.team2Label}</span>
-                  {winner ? <span style={{ color: colors.green, marginTop: 6 }}>{t.winner}: {winner}</span> : null}
                 </div>
               ) : (
                 <div style={{ marginTop: 16, color: colors.muted, fontWeight: 900 }}>{active ? t.noMatch : t.waitingForLane}</div>
               )}
+              {nextMatch ? (
+                <div style={{ marginTop: 14, borderTop: '1px solid rgba(241, 189, 53, .26)', paddingTop: 11, display: 'grid', gap: 4 }}>
+                  <span style={{ color: colors.gold2, fontSize: 12, fontWeight: 900 }}>{t.laneQueued}</span>
+                  <strong style={{ fontSize: 14 }}>{nextMatch.team1Label} {t.vs} {nextMatch.team2Label}</strong>
+                </div>
+              ) : null}
             </div>
           );
         })}
