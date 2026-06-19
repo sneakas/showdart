@@ -449,7 +449,9 @@ const tableCellStyle = {
   fontWeight: 800
 };
 
-function TeamBox({ active, label }) {
+function TeamBox({ outcome = 'neutral', label }) {
+  const isWinner = outcome === 'winner';
+  const isLoser = outcome === 'loser';
   return (
     <div style={{
       padding: '18px 16px',
@@ -457,10 +459,11 @@ function TeamBox({ active, label }) {
       textAlign: 'center',
       fontWeight: 900,
       fontSize: 'clamp(1.1rem, 2.4vw, 1.6rem)',
-      background: active ? 'rgba(75, 209, 125, .18)' : 'rgba(2, 8, 5, .34)',
-      border: active ? `1px solid ${colors.green}` : '1px solid rgba(255,255,255,.08)'
+      background: isWinner ? 'rgba(75, 209, 125, .18)' : isLoser ? 'rgba(73, 91, 104, .12)' : 'rgba(2, 8, 5, .34)',
+      border: isWinner ? `1px solid ${colors.green}` : isLoser ? '1px solid rgba(112, 135, 151, .22)' : '1px solid rgba(255,255,255,.08)',
+      opacity: isLoser ? .52 : 1
     }}>
-      {label}
+      {isWinner ? '✓ ' : ''}{label}
     </div>
   );
 }
@@ -477,23 +480,36 @@ function MatchCard({ match, t, round, compact }) {
       : match.queueStatus === 'completed'
         ? t.laneCompleted
         : t.waitingForLane;
-  const statusColor = match.queueStatus === 'current' ? colors.green : match.queueStatus === 'queued' ? colors.gold2 : colors.muted;
+  const completed = match.queueStatus === 'completed';
+  const statusColor = match.queueStatus === 'current' ? colors.green : match.queueStatus === 'queued' ? colors.gold2 : completed ? '#9fb3c2' : colors.muted;
+  const cardBorder = match.queueStatus === 'current'
+    ? colors.green
+    : match.queueStatus === 'queued'
+      ? 'rgba(241, 189, 53, .58)'
+      : completed
+        ? 'rgba(112, 135, 151, .72)'
+        : colors.border;
 
   return (
-    <Card style={{ padding: 18, borderColor: winner || match.queueStatus === 'current' ? colors.green : match.queueStatus === 'queued' ? 'rgba(241, 189, 53, .58)' : colors.border }}>
+    <Card style={{
+      padding: 18,
+      borderColor: cardBorder,
+      ...(completed ? { background: 'linear-gradient(145deg, rgba(31, 43, 49, .92), rgba(5, 13, 14, .98))' } : {}),
+      ...(match.queueStatus === 'current' ? { boxShadow: '0 0 28px rgba(75, 209, 125, .1)' } : {})
+    }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center', marginBottom: 16 }}>
         <div>
           <strong>{t.round} {round} - #{match.id}</strong>
           <div style={{ color: statusColor, fontSize: 12, fontWeight: 900, marginTop: 5 }}>{statusText}</div>
         </div>
-        <span style={{ border: '1px solid rgba(241, 189, 53, .38)', color: colors.gold2, borderRadius: 999, padding: '7px 12px', fontWeight: 900 }}>{laneText}</span>
+        <span style={{ border: `1px solid ${completed ? 'rgba(112, 135, 151, .5)' : 'rgba(241, 189, 53, .38)'}`, color: completed ? '#b8c7d1' : colors.gold2, borderRadius: 999, padding: '7px 12px', fontWeight: 900 }}>{laneText}</span>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: compact ? '1fr' : '1fr auto 1fr', gap: compact ? 8 : 14, alignItems: 'center' }}>
-        <TeamBox active={match.winner === 1} label={match.team1Label} />
+        <TeamBox outcome={completed ? (match.winner === 1 ? 'winner' : 'loser') : 'neutral'} label={match.team1Label} />
         <div style={{ color: colors.muted, fontWeight: 900, textAlign: 'center' }}>{t.vs}</div>
-        <TeamBox active={match.winner === 2} label={match.team2Label} />
+        <TeamBox outcome={completed ? (match.winner === 2 ? 'winner' : 'loser') : 'neutral'} label={match.team2Label} />
       </div>
-      {winner ? <div style={{ color: colors.green, marginTop: 14, fontWeight: 900 }}>{t.winner}: {winner}</div> : null}
+      {winner ? <div style={{ color: colors.green, marginTop: 14, fontWeight: 900 }}>✓ {t.winner}: {winner}</div> : null}
     </Card>
   );
 }
@@ -542,6 +558,7 @@ function LaneOverview({ screenState, matches, selectedLanes, t, compact }) {
           const queue = matchesByLane.get(Number(lane)) || [];
           const match = queue.find(item => item.queueStatus === 'current');
           const nextMatch = queue.find(item => item.queueStatus === 'queued');
+          const completedMatch = [...queue].reverse().find(item => item.queueStatus === 'completed');
           const active = activeLanes.has(Number(lane));
           return (
             <div
@@ -572,6 +589,12 @@ function LaneOverview({ screenState, matches, selectedLanes, t, compact }) {
                 <div style={{ marginTop: 14, borderTop: '1px solid rgba(241, 189, 53, .26)', paddingTop: 11, display: 'grid', gap: 4 }}>
                   <span style={{ color: colors.gold2, fontSize: 12, fontWeight: 900 }}>{t.laneQueued}</span>
                   <strong style={{ fontSize: 14 }}>{nextMatch.team1Label} {t.vs} {nextMatch.team2Label}</strong>
+                </div>
+              ) : null}
+              {completedMatch ? (
+                <div style={{ marginTop: 14, border: '1px solid rgba(112, 135, 151, .38)', borderRadius: 8, background: 'rgba(66, 82, 92, .16)', padding: 10, display: 'grid', gap: 4 }}>
+                  <span style={{ color: '#9fb3c2', fontSize: 12, fontWeight: 900 }}>{t.laneCompleted}</span>
+                  <strong style={{ color: colors.green, fontSize: 14 }}>✓ {t.winner}: {completedMatch.winner === 1 ? completedMatch.team1Label : completedMatch.team2Label}</strong>
                 </div>
               ) : null}
             </div>
@@ -612,6 +635,15 @@ export default function ScreenPage() {
     if (screenConfig.mode !== 'lanes' || lanes.length === 0) return screenState.matches;
     return screenState.matches.filter(match => lanes.includes(Number(match.laneNumber)));
   }, [screenConfig, screenState.matches]);
+  const orderedMatches = useMemo(() => {
+    const priority = { current: 0, queued: 1, unassigned: 2, completed: 3 };
+    return [...filteredMatches].sort((left, right) => (
+      (priority[left.queueStatus] ?? 2) - (priority[right.queueStatus] ?? 2)
+      || (Number(left.laneNumber) || 999) - (Number(right.laneNumber) || 999)
+      || (Number(left.lanePosition) || 999) - (Number(right.lanePosition) || 999)
+      || left.id - right.id
+    ));
+  }, [filteredMatches]);
   const rotatingViews = useMemo(() => getRotatingViews(screenState), [screenState]);
   const rotatingView = rotatingViews[rotatingViewIndex % Math.max(1, rotatingViews.length)] || 'info';
   const contentView = getModeContentView(screenConfig.mode, screenState, rotatingView);
@@ -959,7 +991,7 @@ export default function ScreenPage() {
         {contentView === 'round' ? (
           <div style={{ display: 'grid', gap: 14 }}>
             <Card style={{ padding: 22 }}>
-              <PagedDisplay items={filteredMatches} pageSize={pageSize} resetKey={pageResetKey} t={t} intervalMs={screenConfig.rotationSeconds * 1000}>
+              <PagedDisplay items={orderedMatches} pageSize={pageSize} resetKey={pageResetKey} t={t} intervalMs={screenConfig.rotationSeconds * 1000}>
                 {({ indicator }) => (
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
                     <div>
@@ -983,7 +1015,7 @@ export default function ScreenPage() {
               </Card>
             ) : null}
 
-            <PagedDisplay items={filteredMatches} pageSize={pageSize} resetKey={pageResetKey} t={t} intervalMs={screenConfig.rotationSeconds * 1000}>
+            <PagedDisplay items={orderedMatches} pageSize={pageSize} resetKey={pageResetKey} t={t} intervalMs={screenConfig.rotationSeconds * 1000}>
               {({ visibleItems }) => (
                 <div style={{ display: 'grid', gridTemplateColumns: compact ? '1fr' : 'repeat(auto-fit, minmax(310px, 1fr))', gap: compact ? 10 : 14 }}>
                   {visibleItems.map(match => <MatchCard key={match.id} match={match} t={t} round={screenState.currentRound} compact={compact} />)}
