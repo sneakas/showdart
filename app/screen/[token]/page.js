@@ -322,6 +322,7 @@ function getAutoContentView(screenState) {
 }
 
 function getModeContentView(mode, screenState, rotatingView) {
+  if (screenState.started && !screenState.roundPublished && mode !== 'info') return 'standings';
   if (mode === 'rotating') return rotatingView;
   if (mode === 'info') return 'info';
   if (mode === 'live') {

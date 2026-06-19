@@ -21,12 +21,14 @@ import {
   getSortedStandings,
   importEntries,
   normalizeTournamentState,
+  publishRound,
   removeEntry,
   resetTournament,
   moveMatchInLaneQueue,
   selectWinner,
   setActiveLane,
   showStandingsOverride,
+  hidePublishedRound,
   startFinalMatch,
   startTournament,
   togglePlayerTag,
@@ -61,6 +63,7 @@ const texts = {
       'Når alle aktive spillere har fået samme tag, nulstilles tag-cyklussen automatisk. Hvis den sidste spiller uden S-tag spiller 1v1 mod en spiller, der allerede har S-tag, beholder begge S-tag, og de øvrige nulstilles.',
       'Baner vælges før næste runde genereres. Efter runden er genereret, kan turneringslederen stadig ændre bane på hver kamp manuelt.',
       'Hvis der er flere kampe end aktive baner, fordeles de automatisk i banekøer. Den næste kamp på en bane bliver klar, når den tidligere kamp har fået markeret en vinder.',
+      'En ny runde oprettes som kladde. Kampe og baner vises først på publikumsskærmene, når turneringslederen offentliggør runden.',
       'Efter hver runde markeres vinderne, og taberne modtager 1 nederlag.',
       'Når en spiller bliver elimineret, vises elimineringsrunden i spillerens status, f.eks. "Elimineret R3".',
       'Mellem runder kan turneringslederen rette nederlag, gendanne eliminerede spillere ved at sænke nederlag, tilføje spillere, ændre tags og se kamphistorik.',
@@ -80,6 +83,7 @@ const texts = {
       'Når alle aktive hold har fået "O" tag, nulstilles O-tag-cyklussen automatisk.',
       'Baner vælges før næste runde genereres. Efter runden er genereret, kan turneringslederen stadig ændre bane på hver kamp manuelt.',
       'Hvis der er flere kampe end aktive baner, fordeles de automatisk i banekøer. Den næste kamp på en bane bliver klar, når den tidligere kamp har fået markeret en vinder.',
+      'En ny runde oprettes som kladde. Kampe og baner vises først på publikumsskærmene, når turneringslederen offentliggør runden.',
       'Efter hver runde modtager det tabende hold 1 nederlag.',
       'Når et hold når det maksimale antal nederlag, bliver det elimineret, og elimineringsrunden vises i oversigten.',
       'Mellem runder kan turneringslederen rette nederlag, gendanne eliminerede hold ved at sænke nederlag, tilføje hold, ændre baner og se kamphistorik.',
@@ -138,6 +142,12 @@ const texts = {
     active: 'I spil',
     start: 'Start turnering',
     generate: 'Generer næste runde',
+    publishRound: 'Offentliggør runde',
+    hideRound: 'Skjul runde',
+    roundDraft: 'Kladde – ikke offentliggjort',
+    roundLive: 'Runden er offentliggjort',
+    confirmPublishRound: 'Er du sikker på, at runden og alle banekøer er korrekte? Når runden offentliggøres, bliver kampe og baner straks vist på publikumsskærmene.',
+    confirmHideRound: 'Vil du skjule runden fra publikumsskærmene igen? Dette kan kun gøres, før en vinder er markeret.',
     complete: 'Afslut runde',
     reset: 'Nulstil turnering',
     showStandings: 'Vis stilling 30 sek.',
@@ -194,6 +204,7 @@ const texts = {
     add: 'Tilføj',
     round: 'Runde',
     match: 'Kamp',
+    matches: 'Kampe',
     historyStatus: 'Status',
     historyPlaying: 'Spiller',
     historySingles: 'Singlekamp',
@@ -238,6 +249,7 @@ const texts = {
       'When all active players have received the same tag, that tag cycle resets automatically. If the last player without S tag plays 1v1 against a player who already has S tag, both keep S tag and the others are reset.',
       'Lanes are selected before the next round is generated. After the round is generated, the tournament director can still manually change the lane for each match.',
       'When there are more matches than active lanes, they are automatically distributed into lane queues. The next match becomes ready when a winner is recorded for the earlier match.',
+      'A new round is created as a draft. Matches and lanes appear on spectator screens only after the tournament director publishes the round.',
       'After each round, winners are marked and losers receive 1 loss.',
       'When a player is eliminated, the elimination round is shown in their status, e.g. "Eliminated R3".',
       'Between rounds the tournament director can edit losses, restore eliminated players by lowering losses, add players, change tags and view match history.',
@@ -257,6 +269,7 @@ const texts = {
       'When all active teams have received the "O" tag, the O-tag cycle resets automatically.',
       'Lanes are selected before the next round is generated. After the round is generated, the tournament director can still manually change the lane for each match.',
       'When there are more matches than active lanes, they are automatically distributed into lane queues. The next match becomes ready when a winner is recorded for the earlier match.',
+      'A new round is created as a draft. Matches and lanes appear on spectator screens only after the tournament director publishes the round.',
       'After each round, the losing team receives 1 loss.',
       'When a team reaches the maximum number of losses, it is eliminated and its elimination round is shown in the standings.',
       'Between rounds the tournament director can edit losses, restore eliminated teams by lowering losses, add teams, change lanes and view match history.',
@@ -315,6 +328,12 @@ const texts = {
     active: 'In play',
     start: 'Start tournament',
     generate: 'Generate next round',
+    publishRound: 'Publish round',
+    hideRound: 'Hide round',
+    roundDraft: 'Draft – not published',
+    roundLive: 'Round is published',
+    confirmPublishRound: 'Are you sure the round and all lane queues are correct? Publishing immediately shows the matches and lanes on the spectator screens.',
+    confirmHideRound: 'Do you want to hide the round from spectator screens again? This is only possible before a winner has been selected.',
     complete: 'Complete round',
     reset: 'Reset tournament',
     showStandings: 'Show standings 30 sec.',
@@ -371,6 +390,7 @@ const texts = {
     add: 'Add',
     round: 'Round',
     match: 'Match',
+    matches: 'Matches',
     historyStatus: 'Status',
     historyPlaying: 'Playing',
     historySingles: 'Singles',
@@ -649,6 +669,38 @@ export function ShowdartDashboard({
     });
   }
 
+  function handlePublishRound() {
+    const queuedCount = state.matches.filter(match => Number(match.lanePosition) > 1).length;
+    showConfirm(
+      [
+        t.confirmPublishRound,
+        '',
+        `${t.matches}: ${state.matches.length}`,
+        `${t.lanes}: ${state.activeLanes.length}`,
+        `${t.laneQueued}: ${queuedCount}`
+      ].join('\n'),
+      () => {
+        setState(previous => {
+          const next = normalizeTournamentState(publishRound(previous));
+          if (next.lastGenerationError) showDialog(next.lastGenerationError);
+          persist(next).catch(error => showDialog(error instanceof Error ? error.message : 'Save failed'));
+          return next;
+        });
+      }
+    );
+  }
+
+  function handleHideRound() {
+    showConfirm(t.confirmHideRound, () => {
+      setState(previous => {
+        const next = normalizeTournamentState(hidePublishedRound(previous));
+        if (next.lastGenerationError) showDialog(next.lastGenerationError);
+        persist(next).catch(error => showDialog(error instanceof Error ? error.message : 'Save failed'));
+        return next;
+      });
+    });
+  }
+
   function handleAssignLane(matchId, lane) {
     setState(previous => {
       const next = normalizeTournamentState(assignMatchLane(previous, matchId, lane));
@@ -863,7 +915,7 @@ export function ShowdartDashboard({
               <button type="button" className="sd-button gold full" disabled={!screenInfo?.screenUrl} onClick={() => screenInfo?.screenUrl && window.open(screenInfo.screenUrl, '_blank', 'noopener,noreferrer')}>
                 {t.openSpectator} <ExternalLink size={15} />
               </button>
-              <button type="button" className="sd-button full" disabled={!isRoundActive || tournamentFinished} onClick={() => commit(previous => showStandingsOverride(previous))}>
+                <button type="button" className="sd-button full" disabled={!isRoundActive || tournamentFinished || !state.roundPublished} onClick={() => commit(previous => showStandingsOverride(previous))}>
                 {t.showStandings} <Eye size={15} />
               </button>
             </div>
@@ -1075,6 +1127,17 @@ export function ShowdartDashboard({
               <FinalRanking ids={finalRankingIds} entries={entries} t={t} onMove={moveFinalist} onConfirm={handleCompleteFinal} />
             ) : isRoundActive ? (
               <>
+                <div className={`sd-round-publish ${state.roundPublished ? 'is-published' : 'is-draft'}`}>
+                  <div>
+                    <strong>{state.roundPublished ? t.roundLive : t.roundDraft}</strong>
+                    <span>{state.matches.length} {t.matches} · {state.activeLanes.length} {t.lanes} · {state.matches.filter(match => Number(match.lanePosition) > 1).length} {t.laneQueued}</span>
+                  </div>
+                  {!state.roundPublished ? (
+                    <button type="button" className="sd-button gold" onClick={handlePublishRound}><Eye size={16} /> {t.publishRound}</button>
+                  ) : !state.matches.some(match => match.winner) ? (
+                    <button type="button" className="sd-button" onClick={handleHideRound}><EyeOff size={16} /> {t.hideRound}</button>
+                  ) : null}
+                </div>
                 {[...state.matches].sort((left, right) => (Number(left.lanePosition) || 999) - (Number(right.lanePosition) || 999) || (Number(left.laneNumber) || 999) - (Number(right.laneNumber) || 999) || left.id - right.id).map(match => (
                   <MatchCard
                     key={match.id}
@@ -1087,7 +1150,7 @@ export function ShowdartDashboard({
                   />
                 ))}
                 {skippedEntries.length ? <div className="sd-match-card"><div className="sd-match-title">{t.sitOver}</div><div>{skippedEntries.map(entry => entry.name).join(', ')}</div></div> : null}
-                <button type="button" className="sd-button gold" onClick={handleComplete}>{t.complete}</button>
+                <button type="button" className="sd-button gold" disabled={!state.roundPublished} onClick={handleComplete}>{t.complete}</button>
               </>
             ) : (
               <>
@@ -1196,23 +1259,26 @@ function MatchCard({ state, match, t, onWinner, onLane, onMoveQueue }) {
   const team1 = getMatchLabel(state, match, 1);
   const team2 = getMatchLabel(state, match, 2);
   const laneStatus = getMatchLaneStatus(state, match.id);
+  const displayStatus = state.roundPublished ? laneStatus : 'draft';
   const laneQueue = Number.isInteger(match.laneNumber)
     ? state.matches.filter(item => item.laneNumber === match.laneNumber).sort((left, right) => (Number(left.lanePosition) || 999) - (Number(right.lanePosition) || 999) || left.id - right.id)
     : [];
   const queueIndex = laneQueue.findIndex(item => item.id === match.id);
-  const statusLabel = laneStatus === 'current'
+  const statusLabel = displayStatus === 'draft'
+    ? t.roundDraft
+    : laneStatus === 'current'
     ? t.laneCurrent
     : laneStatus === 'queued'
       ? t.laneQueued
       : laneStatus === 'completed'
         ? t.laneCompleted
         : t.laneUnassigned;
-  const winnerEnabled = laneStatus === 'current' || laneStatus === 'completed';
+  const winnerEnabled = state.roundPublished && (laneStatus === 'current' || laneStatus === 'completed');
   return (
-    <div className={`sd-match-card is-${laneStatus}`}>
+    <div className={`sd-match-card is-${displayStatus}`}>
       <div className="sd-match-head">
         <div className="sd-match-title">{t.match} #{match.id} - Bane {match.laneNumber || '-'}{match.lanePosition ? ` · ${t.queuePosition} ${match.lanePosition}` : ''}</div>
-        <span className={`sd-pill is-${laneStatus}`}>{statusLabel}</span>
+        <span className={`sd-pill is-${displayStatus}`}>{statusLabel}</span>
       </div>
       <div className="sd-score-row">
         <div className="sd-match-side"><div className="sd-match-name">{team1}</div><div className="sd-match-sub">Seed {match.id * 2 - 1}</div></div>

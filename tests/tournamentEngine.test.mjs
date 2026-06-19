@@ -11,6 +11,8 @@ import {
   getActiveEntries,
   getMatchLaneStatus,
   moveMatchInLaneQueue,
+  publishRound,
+  hidePublishedRound,
   normalizeTournamentState,
   selectWinner,
   showStandingsOverride,
@@ -43,7 +45,8 @@ function fixedState(count, patch = {}) {
 }
 
 function winAllMatches(state) {
-  return state.matches.reduce((next, match) => selectWinner(next, match.id, 1), state);
+  const published = state.roundPublished ? state : publishRound(state);
+  return published.matches.reduce((next, match) => selectWinner(next, match.id, 1), published);
 }
 
 test('changing-teammate tournaments require at least four players', () => {
@@ -192,9 +195,45 @@ test('forty players are distributed across seven lanes with balanced lane queues
   assert.equal(getMatchLaneStatus(state, state.matches[7].id), 'queued');
 });
 
+test('generated rounds stay private until the admin publishes them', () => {
+  let state = startTournament(changingState(8), { teammateMode: 'changing', laneCount: 2 });
+  state = generateMatches(state);
+
+  assert.equal(state.roundPublished, false);
+  assert.equal(state.matches.length, 2);
+  const draftScreen = buildScreenState(state);
+  assert.equal(draftScreen.phase, 'standings');
+  assert.equal(draftScreen.matches.length, 0);
+
+  state = selectWinner(state, state.matches[0].id, 1);
+  assert.equal(state.matches[0].winner, null);
+  assert.match(state.lastGenerationError, /offentliggør runden/i);
+
+  state = publishRound(state);
+  assert.equal(state.roundPublished, true);
+  const liveScreen = buildScreenState(state);
+  assert.equal(liveScreen.phase, 'round');
+  assert.equal(liveScreen.matches.length, 2);
+});
+
+test('a published round can only be hidden before results are entered', () => {
+  let state = startTournament(changingState(8), { teammateMode: 'changing', laneCount: 2 });
+  state = publishRound(generateMatches(state));
+  state = hidePublishedRound(state);
+  assert.equal(state.roundPublished, false);
+  assert.equal(buildScreenState(state).matches.length, 0);
+
+  state = publishRound(state);
+  state = selectWinner(state, state.matches[0].id, 1);
+  state = hidePublishedRound(state);
+  assert.equal(state.roundPublished, true);
+  assert.match(state.lastGenerationError, /kan ikke skjules/i);
+});
+
 test('queued matches cannot finish before the current lane match and are promoted afterwards', () => {
   let state = startTournament(changingState(40), { teammateMode: 'changing', laneCount: 7 });
   state = generateMatches(state);
+  state = publishRound(state);
   const current = state.matches.find(match => match.laneNumber === 1 && match.lanePosition === 1);
   const queued = state.matches.find(match => match.laneNumber === 1 && match.lanePosition === 2);
 
@@ -256,6 +295,7 @@ test('players can be added between rounds and included in the next generated rou
 test('spectator temporary standings override only changes the effective screen phase while active', () => {
   let state = startTournament(changingState(4), { teammateMode: 'changing' });
   state = generateMatches(state);
+  state = publishRound(state);
 
   const liveScreen = buildScreenState(state);
   assert.equal(liveScreen.phase, 'round');

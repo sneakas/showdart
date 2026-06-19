@@ -637,6 +637,11 @@
   border-color: rgba(75, 209, 125, .72);
 }
 
+.sd-match-card.is-draft {
+  border-color: rgba(241, 189, 53, .5);
+  background: linear-gradient(145deg, rgba(54, 42, 12, .58), rgba(3, 17, 11, .9));
+}
+
 .sd-match-card.is-queued {
   border-color: rgba(241, 189, 53, .38);
   background: linear-gradient(145deg, rgba(44, 39, 13, .58), rgba(3, 17, 11, .9));
@@ -826,6 +831,11 @@
   background: var(--sd-green);
 }
 
+.sd-pill.is-draft {
+  color: #171006;
+  background: var(--sd-gold-2);
+}
+
 .sd-pill.is-queued {
   color: #171006;
   background: var(--sd-gold-2);
@@ -846,6 +856,43 @@
 .sd-match-queue-controls .sd-button {
   min-height: 40px;
   padding: 6px;
+}
+
+.sd-round-publish {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  border: 1px solid rgba(241, 189, 53, .5);
+  border-radius: 8px;
+  background: rgba(241, 189, 53, .1);
+  padding: 12px;
+  margin-bottom: 10px;
+}
+
+.sd-round-publish.is-published {
+  border-color: rgba(75, 209, 125, .55);
+  background: rgba(75, 209, 125, .08);
+}
+
+.sd-round-publish > div {
+  display: grid;
+  gap: 4px;
+}
+
+.sd-round-publish strong {
+  color: var(--sd-gold-2);
+  text-transform: uppercase;
+}
+
+.sd-round-publish.is-published strong {
+  color: var(--sd-green);
+}
+
+.sd-round-publish span {
+  color: var(--sd-muted);
+  font-size: 12px;
 }
 
 .sd-score-row {
