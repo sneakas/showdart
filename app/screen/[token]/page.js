@@ -7,8 +7,8 @@ import { buildScreenState } from '../../../lib/tournamentScreenState';
 
 const LANGUAGE_STORAGE_KEY = 'showdart-language';
 const DEFAULT_TV_SCREENS = {
-  screen1: { label: 'Skærm 1', mode: 'live', rowsPerPage: 12, rotationSeconds: 10, showQr: false, announcement: '', hideHeader: false, autoHideHeader: false, theme: 'classic' },
-  screen2: { label: 'Skærm 2', mode: 'standings', rowsPerPage: 12, rotationSeconds: 10, showQr: true, announcement: '', hideHeader: false, autoHideHeader: false, theme: 'classic' }
+  screen1: { label: 'Skærm 1', mode: 'live', rowsPerPage: 12, matchesPerPage: 6, rotationSeconds: 10, showQr: false, announcement: '', hideHeader: false, autoHideHeader: false, theme: 'classic' },
+  screen2: { label: 'Skærm 2', mode: 'standings', rowsPerPage: 12, matchesPerPage: 6, rotationSeconds: 10, showQr: true, announcement: '', hideHeader: false, autoHideHeader: false, theme: 'classic' }
 };
 
 const texts = {
@@ -308,6 +308,7 @@ function getScreenConfig(screenState, screenKey) {
     ...defaults,
     ...configured,
     rowsPerPage: Math.max(6, Math.min(20, Number(configured.rowsPerPage || defaults.rowsPerPage))),
+    matchesPerPage: Math.max(1, Math.min(20, Number(configured.matchesPerPage || defaults.matchesPerPage))),
     rotationSeconds: Math.max(5, Math.min(60, Number(configured.rotationSeconds || defaults.rotationSeconds))),
     showQr: configured.showQr !== undefined ? configured.showQr !== false : defaults.showQr !== false,
     announcement: String(configured.announcement || '').trim().slice(0, 180),
@@ -468,10 +469,10 @@ function TeamBox({ outcome = 'neutral', label }) {
   );
 }
 
-function MatchCard({ match, t, round, compact }) {
+function MatchCard({ match, t, compact }) {
   const winner = match.winner === 1 ? match.team1Label : match.winner === 2 ? match.team2Label : '';
   const laneText = Number.isFinite(Number(match.laneNumber))
-    ? `${t.lane} ${match.laneNumber}${match.lanePosition ? ` · ${t.queuePosition} ${match.lanePosition}` : ''}`
+    ? `${t.lane} ${match.laneNumber}${match.displayQueuePosition ? ` · ${t.queuePosition} ${match.displayQueuePosition}` : ''}`
     : t.waitingForLane;
   const statusText = match.queueStatus === 'current'
     ? t.laneCurrent
@@ -498,10 +499,7 @@ function MatchCard({ match, t, round, compact }) {
       ...(match.queueStatus === 'current' ? { boxShadow: '0 0 28px rgba(75, 209, 125, .1)' } : {})
     }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center', marginBottom: 16 }}>
-        <div>
-          <strong>{t.round} {round} - #{match.id}</strong>
-          <div style={{ color: statusColor, fontSize: 12, fontWeight: 900, marginTop: 5 }}>{statusText}</div>
-        </div>
+        <div style={{ color: statusColor, fontSize: compact ? 18 : 22, fontWeight: 900, letterSpacing: '.06em', lineHeight: 1.05 }}>{statusText}</div>
         <span style={{ border: `1px solid ${completed ? 'rgba(112, 135, 151, .5)' : 'rgba(241, 189, 53, .38)'}`, color: completed ? '#b8c7d1' : colors.gold2, borderRadius: 999, padding: '7px 12px', fontWeight: 900 }}>{laneText}</span>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: compact ? '1fr' : '1fr auto 1fr', gap: compact ? 8 : 14, alignItems: 'center' }}>
@@ -844,8 +842,11 @@ export default function ScreenPage() {
     : contentView === 'final'
       ? screenState.finalPlacements.length
       : screenState.standings.length;
-  const pageSize = contentView === 'round' ? getPageSize('round', viewportWidth) : screenConfig.rowsPerPage;
-  const denseDisplay = !compact && activeListSize > pageSize;
+  const pageSize = contentView === 'round' ? screenConfig.matchesPerPage : screenConfig.rowsPerPage;
+  const denseDisplay = !compact && (
+    activeListSize > pageSize
+    || (contentView === 'round' && pageSize > getPageSize('round', viewportWidth))
+  );
   const pageResetKey = [
     contentView,
     screenConfig.mode,
@@ -1018,7 +1019,7 @@ export default function ScreenPage() {
             <PagedDisplay items={orderedMatches} pageSize={pageSize} resetKey={pageResetKey} t={t} intervalMs={screenConfig.rotationSeconds * 1000}>
               {({ visibleItems }) => (
                 <div style={{ display: 'grid', gridTemplateColumns: compact ? '1fr' : 'repeat(auto-fit, minmax(310px, 1fr))', gap: compact ? 10 : 14 }}>
-                  {visibleItems.map(match => <MatchCard key={match.id} match={match} t={t} round={screenState.currentRound} compact={compact} />)}
+                  {visibleItems.map(match => <MatchCard key={match.id} match={match} t={t} compact={compact} />)}
                 </div>
               )}
             </PagedDisplay>

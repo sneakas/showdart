@@ -19,7 +19,8 @@ import {
   setActiveLane,
   startTournament,
   updateEntryLosses,
-  updateTournamentMaxLosses
+  updateTournamentMaxLosses,
+  updateTvScreen
 } from '../lib/tournament/reactEngine.js';
 import { buildScreenState } from '../lib/tournamentScreenState.js';
 
@@ -237,6 +238,9 @@ test('queued matches cannot finish before the current lane match and are promote
   state = publishRound(state);
   const current = state.matches.find(match => match.laneNumber === 1 && match.lanePosition === 1);
   const queued = state.matches.find(match => match.laneNumber === 1 && match.lanePosition === 2);
+  let screenState = buildScreenState(state);
+  assert.equal(screenState.matches.find(match => match.id === current.id).displayQueuePosition, 1);
+  assert.equal(screenState.matches.find(match => match.id === queued.id).displayQueuePosition, 2);
 
   state = selectWinner(state, queued.id, 1);
   assert.equal(state.matches.find(match => match.id === queued.id).winner, null);
@@ -244,7 +248,10 @@ test('queued matches cannot finish before the current lane match and are promote
 
   state = selectWinner(state, current.id, 1);
   assert.equal(getMatchLaneStatus(state, queued.id), 'current');
-  assert.equal(buildScreenState(state).matches.find(match => match.id === queued.id).queueStatus, 'current');
+  screenState = buildScreenState(state);
+  assert.equal(screenState.matches.find(match => match.id === queued.id).queueStatus, 'current');
+  assert.equal(screenState.matches.find(match => match.id === queued.id).displayQueuePosition, 1);
+  assert.equal(screenState.matches.find(match => match.id === current.id).displayQueuePosition, null);
 });
 
 test('matches can share a lane and be manually reordered in its queue', () => {
@@ -298,6 +305,16 @@ test('loss limit cannot be changed while a round is active', () => {
 
   assert.equal(state.maxLosses, 3);
   assert.match(state.lastGenerationError, /mellem runder/i);
+});
+
+test('spectator match page size is saved independently for each TV screen', () => {
+  let state = createDefaultTournamentState();
+  state = updateTvScreen(state, 'screen1', { mode: 'live', matchesPerPage: 9 });
+  state = updateTvScreen(state, 'screen2', { mode: 'live', matchesPerPage: 30 });
+
+  assert.equal(state.tvScreens.screen1.matchesPerPage, 9);
+  assert.equal(state.tvScreens.screen2.matchesPerPage, 20);
+  assert.equal(state.tvScreens.screen1.rowsPerPage, 12);
 });
 
 test('players can be added between rounds and included in the next generated round', () => {

@@ -425,7 +425,7 @@
 }
 
 .sd-tv-controls .sd-field {
-  grid-template-columns: 72px minmax(0, 1fr);
+  grid-template-columns: 88px minmax(0, 1fr);
 }
 
 .sd-tv-extra-controls {

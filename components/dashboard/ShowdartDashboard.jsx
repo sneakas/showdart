@@ -109,6 +109,7 @@ const texts = {
     screenTwo: 'Skærm 2',
     tvMode: 'Visning',
     tvRows: 'Rækker',
+    tvMatchesPerPage: 'Kampe/side',
     tvRotation: 'Skift sek.',
     tvQr: 'QR',
     tvAnnouncement: 'Besked',
@@ -298,6 +299,7 @@ const texts = {
     screenTwo: 'Screen 2',
     tvMode: 'View',
     tvRows: 'Rows',
+    tvMatchesPerPage: 'Matches/page',
     tvRotation: 'Rotate sec.',
     tvQr: 'QR',
     tvAnnouncement: 'Message',
@@ -978,9 +980,15 @@ export function ShowdartDashboard({
                         <option value="final">{t.modeFinal}</option>
                       </select>
                     </Field>
-                    <Field label={t.tvRows}>
-                      <input className="sd-input" type="number" min="6" max="20" value={config.rowsPerPage || 12} onChange={event => handleTvScreenChange(screenKey, { rowsPerPage: Number(event.target.value) })} />
-                    </Field>
+                    {config.mode === 'live' ? (
+                      <Field label={t.tvMatchesPerPage}>
+                        <input className="sd-input" type="number" min="1" max="20" value={config.matchesPerPage || 6} onChange={event => handleTvScreenChange(screenKey, { matchesPerPage: Number(event.target.value) })} />
+                      </Field>
+                    ) : (
+                      <Field label={t.tvRows}>
+                        <input className="sd-input" type="number" min="6" max="20" value={config.rowsPerPage || 12} onChange={event => handleTvScreenChange(screenKey, { rowsPerPage: Number(event.target.value) })} />
+                      </Field>
+                    )}
                     <Field label={t.tvRotation}>
                       <input className="sd-input" type="number" min="5" max="60" value={config.rotationSeconds || 10} onChange={event => handleTvScreenChange(screenKey, { rotationSeconds: Number(event.target.value) })} />
                     </Field>
