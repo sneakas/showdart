@@ -33,7 +33,8 @@ import {
   startTournament,
   togglePlayerTag,
   updateTvScreen,
-  updateEntryLosses
+  updateEntryLosses,
+  updateTournamentMaxLosses
 } from '../../lib/tournament/reactEngine';
 
 const HERO_VISIBILITY_STORAGE_KEY = 'showdart-hide-admin-hero';
@@ -136,6 +137,9 @@ const texts = {
     participantsCount: 'Antal deltagere',
     lanesCount: 'Antal baner',
     losses: 'Nederlag',
+    saveLossLimit: 'Gem nederlagsgrænse',
+    save: 'Gem',
+    confirmLossLimit: 'Vil du ændre nederlagsgrænsen fra {old} til {next}? Deltagernes aktive eller eliminerede status bliver genberegnet ud fra deres nuværende nederlag.',
     status: 'Status',
     started: 'I gang',
     waiting: 'Venter',
@@ -322,6 +326,9 @@ const texts = {
     participantsCount: 'Participants',
     lanesCount: 'Lanes',
     losses: 'Losses',
+    saveLossLimit: 'Save loss limit',
+    save: 'Save',
+    confirmLossLimit: 'Do you want to change the loss limit from {old} to {next}? Participant eligibility will be recalculated from their current losses.',
     status: 'Status',
     started: 'In progress',
     waiting: 'Waiting',
@@ -658,6 +665,27 @@ export function ShowdartDashboard({
     if (!state.started) {
       commit(previous => configureTournament(previous, nextForm));
     }
+  }
+
+  function handleSaveMaxLosses() {
+    const nextLimit = Math.max(1, Math.min(20, Number(form.maxLosses) || state.maxLosses));
+    if (nextLimit === state.maxLosses) return;
+    showConfirm(
+      t.confirmLossLimit.replace('{old}', String(state.maxLosses)).replace('{next}', String(nextLimit)),
+      () => {
+        setState(previous => {
+          const next = normalizeTournamentState(updateTournamentMaxLosses(previous, nextLimit));
+          if (next.lastGenerationError) {
+            showDialog(next.lastGenerationError);
+            setForm(current => ({ ...current, maxLosses: previous.maxLosses }));
+          } else {
+            setForm(current => ({ ...current, maxLosses: next.maxLosses }));
+          }
+          persist(next).catch(error => showDialog(error instanceof Error ? error.message : 'Save failed'));
+          return next;
+        });
+      }
+    );
   }
 
   function handleGenerate() {
@@ -1034,7 +1062,14 @@ export function ShowdartDashboard({
                   <option value="fixed">{t.fixed}</option>
                 </select>
               </Field>
-              <Field label={t.losses}><input className="sd-input" type="number" min="1" value={form.maxLosses} onChange={event => handleSetupChange({ maxLosses: Number(event.target.value) })} /></Field>
+              <Field label={t.losses}>
+                <div style={{ display: 'grid', gridTemplateColumns: state.started ? 'minmax(0, 1fr) auto' : '1fr', gap: 6 }}>
+                  <input className="sd-input" type="number" min="1" max="20" value={form.maxLosses} disabled={state.started && !canManageEntries} onChange={event => handleSetupChange({ maxLosses: Number(event.target.value) })} />
+                  {state.started && Number(form.maxLosses) !== state.maxLosses ? (
+                    <button type="button" className="sd-button gold" title={t.saveLossLimit} onClick={handleSaveMaxLosses}><Check size={15} /> {t.save}</button>
+                  ) : null}
+                </div>
+              </Field>
               <Field label={t.lanesCount}><input className="sd-input" type="number" min="1" max="32" value={form.laneCount} disabled={state.started} onChange={event => handleSetupChange({ laneCount: Number(event.target.value) })} /></Field>
               <Field label={t.status}><span className="sd-green-text">{state.started ? t.started : t.waiting}</span></Field>
               {!state.started ? <button type="button" className="sd-button gold full" onClick={handleStart}>{t.start}</button> : null}

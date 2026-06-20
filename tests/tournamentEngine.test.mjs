@@ -18,7 +18,8 @@ import {
   showStandingsOverride,
   setActiveLane,
   startTournament,
-  updateEntryLosses
+  updateEntryLosses,
+  updateTournamentMaxLosses
 } from '../lib/tournament/reactEngine.js';
 import { buildScreenState } from '../lib/tournamentScreenState.js';
 
@@ -274,6 +275,29 @@ test('manual loss editing can restore an eliminated player between rounds', () =
   const restored = state.players.find(player => player.id === eliminated.id);
   assert.equal(restored.active, true);
   assert.equal(restored.eliminationRound, null);
+});
+
+test('loss limit can be changed between rounds and recalculates eligibility', () => {
+  let state = startTournament(changingState(4), { teammateMode: 'changing', maxLosses: 3 });
+  state = updateEntryLosses(state, 1, 2);
+
+  state = updateTournamentMaxLosses(state, 2);
+  assert.equal(state.maxLosses, 2);
+  assert.equal(state.players.find(player => player.id === 1).active, false);
+
+  state = updateTournamentMaxLosses(state, 3);
+  assert.equal(state.maxLosses, 3);
+  assert.equal(state.players.find(player => player.id === 1).active, true);
+  assert.equal(state.players.find(player => player.id === 1).eliminationRound, null);
+});
+
+test('loss limit cannot be changed while a round is active', () => {
+  let state = startTournament(changingState(8), { teammateMode: 'changing', maxLosses: 3 });
+  state = generateMatches(state);
+  state = updateTournamentMaxLosses(state, 2);
+
+  assert.equal(state.maxLosses, 3);
+  assert.match(state.lastGenerationError, /mellem runder/i);
 });
 
 test('players can be added between rounds and included in the next generated round', () => {
