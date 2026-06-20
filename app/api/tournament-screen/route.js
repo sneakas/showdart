@@ -15,6 +15,7 @@ export async function GET(request) {
     userId: auth.user.id,
     tournamentKey
   });
+  const screenRoute = tournamentKey === 'showdart-championship' ? 'championship-screen' : 'screen';
 
   return NextResponse.json(
     {
@@ -24,7 +25,7 @@ export async function GET(request) {
         userId: auth.user.id,
         tournamentKey
       }),
-      screenUrl: `${request.nextUrl.origin}/screen/${encodeURIComponent(token)}`
+      screenUrl: `${request.nextUrl.origin}/${screenRoute}/${encodeURIComponent(token)}`
     },
     { status: 200 }
   );

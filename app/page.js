@@ -412,6 +412,7 @@ export default function Page() {
       screenError={screenError ? t.screenError : ''}
       onCopyScreenLink={handleCopyScreenLink}
       onOpenAdmin={() => { window.location.href = '/admin'; }}
+      onOpenChampionship={() => { window.location.href = '/championship'; }}
       onOpenRules={() => {}}
       onLogout={handleLogout}
       onLanguageChange={changeLanguage}

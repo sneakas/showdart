@@ -234,6 +234,10 @@ export default function AdminPage() {
 
   function handleNavigate(target) {
     if (target === 'admin') return;
+    if (target === 'championship') {
+      window.location.href = '/championship';
+      return;
+    }
     window.location.href = `/?nav=${target}`;
   }
 
