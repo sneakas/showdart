@@ -499,8 +499,8 @@ function MatchCard({ match, t, compact }) {
       ...(match.queueStatus === 'current' ? { boxShadow: '0 0 28px rgba(75, 209, 125, .1)' } : {})
     }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center', marginBottom: 16 }}>
-        <div style={{ color: statusColor, fontSize: compact ? 18 : 22, fontWeight: 900, letterSpacing: '.06em', lineHeight: 1.05 }}>{statusText}</div>
-        <span style={{ border: `1px solid ${completed ? 'rgba(112, 135, 151, .5)' : 'rgba(241, 189, 53, .38)'}`, color: completed ? '#b8c7d1' : colors.gold2, borderRadius: 999, padding: '7px 12px', fontWeight: 900 }}>{laneText}</span>
+        <div style={{ color: statusColor, fontSize: compact ? 16 : 18, fontWeight: 900, letterSpacing: '.04em', lineHeight: 1.05, whiteSpace: 'nowrap', flexShrink: 0 }}>{statusText}</div>
+        <span style={{ border: `1px solid ${completed ? 'rgba(112, 135, 151, .5)' : 'rgba(241, 189, 53, .38)'}`, color: completed ? '#b8c7d1' : colors.gold2, borderRadius: 999, padding: '7px 11px', fontSize: 13, lineHeight: 1, whiteSpace: 'nowrap', fontWeight: 900 }}>{laneText}</span>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: compact ? '1fr' : '1fr auto 1fr', gap: compact ? 8 : 14, alignItems: 'center' }}>
         <TeamBox outcome={completed ? (match.winner === 1 ? 'winner' : 'loser') : 'neutral'} label={match.team1Label} />
