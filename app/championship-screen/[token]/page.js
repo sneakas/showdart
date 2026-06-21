@@ -13,7 +13,7 @@ const texts = {
     teams: 'Hold', groups: 'Grupper', lanes: 'Baner', round: 'Runde', currentMatches: 'Aktuelle kampe', betweenRounds: 'Mellem spillerunder',
     playing: 'Spiller nu', queued: 'Næste kamp', completed: 'Afsluttet', lane: 'Bane', queue: 'Køplads', winner: 'Vinder',
     standings: 'Stilling', played: 'Spillet', wins: 'Sejre', losses: 'Nederlag', points: 'Point', page: 'Side',
-    aPlayoffs: 'A-slutspil', bPlayoffs: 'B-slutspil', champion: 'Mester', runnerUp: '2. plads', third: '3. plads', waiting: 'Venter på næste offentliggjorte spillerunde', tieBreak: 'Tie-break', advancing: 'går videre', qualifyingPlaces: 'pladser'
+    aPlayoffs: 'A-slutspil', bPlayoffs: 'B-slutspil', champion: 'Mester', runnerUp: '2. plads', third: '3. plads', waiting: 'Venter på næste offentliggjorte spillerunde', tieBreak: 'Tie-break', advancing: 'går videre', qualifyingPlaces: 'pladser', quarterFinal: 'Kvartfinale', semiFinal: 'Semifinale', final: 'Finale', awaitingTeams: 'Afventer hold'
   },
   en: {
     loading: 'Loading championship screen...', invalid: 'Invalid screen link', live: 'Live', polling: 'Backup updates', delayed: 'Connection delayed',
@@ -21,7 +21,7 @@ const texts = {
     teams: 'Teams', groups: 'Groups', lanes: 'Lanes', round: 'Round', currentMatches: 'Current matches', betweenRounds: 'Between rounds',
     playing: 'Playing now', queued: 'Next match', completed: 'Completed', lane: 'Lane', queue: 'Queue position', winner: 'Winner',
     standings: 'Standings', played: 'Played', wins: 'Wins', losses: 'Losses', points: 'Points', page: 'Page',
-    aPlayoffs: 'A playoffs', bPlayoffs: 'B playoffs', champion: 'Champion', runnerUp: 'Runner-up', third: '3rd place', waiting: 'Waiting for the next published round', tieBreak: 'Tie-break', advancing: 'advancing', qualifyingPlaces: 'places'
+    aPlayoffs: 'A playoffs', bPlayoffs: 'B playoffs', champion: 'Champion', runnerUp: 'Runner-up', third: '3rd place', waiting: 'Waiting for the next published round', tieBreak: 'Tie-break', advancing: 'advancing', qualifyingPlaces: 'places', quarterFinal: 'Quarter-final', semiFinal: 'Semi-final', final: 'Final', awaitingTeams: 'Awaiting teams'
   }
 };
 
@@ -41,7 +41,7 @@ export default function ChampionshipScreenPage() {
   const t = texts[lang] || texts.da;
 
   const currentMatches = useMemo(() => state.roundPublished ? getCurrentMatches(state) : [], [state]);
-  const visibleGroups = useMemo(() => state.groups.filter(group => state.phase === 'initial_groups' ? group.division === 'INITIAL' : ['ab_groups', 'playoffs', 'finished'].includes(state.phase) ? ['A', 'B'].includes(group.division) : false), [state.groups, state.phase]);
+  const visibleGroups = useMemo(() => state.groups.filter(group => state.phase === 'initial_groups' ? group.division === 'INITIAL' : state.phase === 'ab_groups' ? ['A', 'B'].includes(group.division) : false), [state.groups, state.phase]);
   const teamsById = useMemo(() => new Map(state.teams.map(team => [team.id, team])), [state.teams]);
   const groupPages = useMemo(() => chunk(visibleGroups, 4), [visibleGroups]);
   const matchPages = useMemo(() => chunk(orderMatches(currentMatches), 10), [currentMatches]);
@@ -154,7 +154,39 @@ function GroupTable({ group, standings, t }) {
 
 function Bracket({ bracket, teamsById, title, t }) {
   if (!bracket) return null;
-  return <section className="chs-card chs-bracket"><h2>{title}</h2><div>{bracket.rounds.map(round => <section key={round.number}><h3>{t.round} {round.number}</h3>{round.matches.map(match => <div className="chs-bracket-match" key={match.id}><span>{teamsById.get(match.team1Id)?.name || 'BYE'}</span><b>{match.matchType === 'third' ? t.third : 'VS'}</b><span>{teamsById.get(match.team2Id)?.name || 'BYE'}</span>{match.winnerId ? <em>✓ {teamsById.get(match.winnerId)?.name}</em> : null}</div>)}</section>)}</div></section>;
+  const totalRounds = Math.max(1, Math.log2(bracket.bracketSize || 2));
+  const firstRoundMatches = Math.max(1, (bracket.bracketSize || 2) / 2);
+  const unit = 104;
+  const treeHeight = firstRoundMatches * unit;
+  const rounds = Array.from({ length: totalRounds }, (_, index) => {
+    const number = index + 1;
+    const expectedMatches = Math.max(1, firstRoundMatches / (2 ** index));
+    const existing = bracket.rounds.find(round => round.number === number)?.matches.filter(match => match.matchType !== 'third') || [];
+    return {
+      number,
+      matches: Array.from({ length: expectedMatches }, (_, slotIndex) => existing.find(match => match.bracketSlot === slotIndex + 1) || { id: `placeholder-${number}-${slotIndex}`, bracketSlot: slotIndex + 1, placeholder: true })
+    };
+  });
+  const thirdPlaceMatch = bracket.rounds.flatMap(round => round.matches).find(match => match.matchType === 'third');
+  const treeWidth = totalRounds * 224 + Math.max(0, totalRounds - 1) * 48;
+  return <section className="chs-card chs-bracket"><h2>{title}</h2><div className="chs-tree-scroll"><div className="chs-bracket-tree" style={{ '--tree-height': `${treeHeight + 46}px`, minWidth: `${treeWidth}px`, gridTemplateColumns: `repeat(${totalRounds}, minmax(224px, 1fr))` }}>{rounds.map((round, roundIndex) => <section className="chs-tree-round" key={round.number}><h3>{bracketRoundLabel(round.number, totalRounds, t)}</h3>{round.matches.map(match => {
+    const center = 46 + (match.bracketSlot - 0.5) * unit * (2 ** roundIndex);
+    const connectorHeight = unit * (2 ** Math.max(0, roundIndex - 1));
+    return <div className={`chs-tree-match ${match.placeholder ? 'is-placeholder' : ''}`} style={{ top: `${center}px`, '--connector-height': `${connectorHeight}px` }} key={match.id}>{roundIndex > 0 ? <i /> : null}<BracketTeam teamId={match.team1Id} winnerId={match.winnerId} teamsById={teamsById} placeholder={match.placeholder} t={t} /><b>VS</b><BracketTeam teamId={match.team2Id} winnerId={match.winnerId} teamsById={teamsById} placeholder={match.placeholder} t={t} />{match.winnerId ? <em>✓ {teamsById.get(match.winnerId)?.name}</em> : null}</div>;
+  })}</section>)}</div></div>{thirdPlaceMatch ? <div className="chs-third-place"><h3>{t.third}</h3><div className="chs-tree-match is-third"><BracketTeam teamId={thirdPlaceMatch.team1Id} winnerId={thirdPlaceMatch.winnerId} teamsById={teamsById} t={t} /><b>VS</b><BracketTeam teamId={thirdPlaceMatch.team2Id} winnerId={thirdPlaceMatch.winnerId} teamsById={teamsById} t={t} />{thirdPlaceMatch.winnerId ? <em>✓ {teamsById.get(thirdPlaceMatch.winnerId)?.name}</em> : null}</div></div> : null}</section>;
+}
+
+function BracketTeam({ teamId, winnerId, teamsById, placeholder, t }) {
+  const name = teamId ? teamsById.get(teamId)?.name : placeholder ? t.awaitingTeams : 'BYE';
+  return <span className={winnerId === teamId ? 'is-winner' : winnerId && teamId ? 'is-loser' : ''}>{winnerId === teamId ? '✓ ' : ''}{name || '-'}</span>;
+}
+
+function bracketRoundLabel(number, totalRounds, t) {
+  const remaining = totalRounds - number;
+  if (remaining === 0) return t.final;
+  if (remaining === 1) return t.semiFinal;
+  if (remaining === 2) return t.quarterFinal;
+  return `${t.round} ${number}`;
 }
 
 function Podium({ bracket, teamsById, title, t }) {
