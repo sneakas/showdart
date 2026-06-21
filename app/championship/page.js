@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowDown, ArrowUp, Check, ExternalLink, Eye, EyeOff, History, Medal, Plus, RefreshCw, RotateCcw, Trophy, UsersRound, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, Check, ChevronDown, ChevronUp, ExternalLink, Eye, EyeOff, History, LayoutGrid, Medal, Plus, RotateCcw, Trophy, UsersRound, X } from 'lucide-react';
 import { getSupabaseBrowserClient } from '../../lib/supabaseBrowser';
 import {
   addChampionshipTeam,
@@ -37,6 +37,20 @@ import './championship.css';
 
 const TOURNAMENT_ID = 'showdart-championship';
 const LANGUAGE_STORAGE_KEY = 'showdart-language';
+const DEFAULT_WORKSPACE_PREFERENCES = {
+  hero: true,
+  spectator: true,
+  setup: true,
+  teams: true,
+  swap: true,
+  lanes: true,
+  standings: true,
+  currentRound: true,
+  stageActions: true,
+  brackets: true,
+  corrections: true,
+  bottomBar: true
+};
 
 const texts = {
   da: {
@@ -57,7 +71,7 @@ const texts = {
     withdraw: 'Træk hold', keepResults: 'Behold færdige resultater', voidResults: 'Annuller alle resultater', cancel: 'Annuller',
     withdrawQuestion: 'Hvordan skal allerede spillede resultater behandles?', activeLanes: 'Aktive baner', audit: 'Ændringslog',
     aBracket: 'A-slutspil', bBracket: 'B-slutspil', champion: 'Mester', third: '3. plads', replace: 'Erstat hold', noMatches: 'Ingen aktuelle kampe', qualifyingPlaces: 'kvalifikationspladser', selectQualifiers: 'Vælg de hold, der går videre',
-    confirm: 'Bekræft handling', publishConfirm: 'Offentliggør kampe og baner på publikumsskærmen?', completeConfirm: 'Afslut spillerunden og gå videre?', reset: 'Nulstil mesterskab', resetConfirm: 'Nulstil hele mesterskabet og slet alle hold og resultater?'
+    confirm: 'Bekræft handling', publishConfirm: 'Offentliggør kampe og baner på publikumsskærmen?', completeConfirm: 'Afslut spillerunden og gå videre?', reset: 'Nulstil mesterskab', resetConfirm: 'Nulstil hele mesterskabet og slet alle hold og resultater?', workspace: 'Arbejdsområde', showAll: 'Vis alle', recommended: 'Anbefalet layout', tournamentBanner: 'Turneringsbanner', spectatorControls: 'Publikumsskærm', teamSwap: 'Holdbytning', bottomBar: 'Statuslinje'
   },
   en: {
     loading: 'Loading championship...', login: 'Log in on the front page to continue', championship: 'Championship', tournament: 'Tournament', admin: 'Admin', logout: 'Logout',
@@ -77,7 +91,7 @@ const texts = {
     withdraw: 'Withdraw team', keepResults: 'Keep completed results', voidResults: 'Void all results', cancel: 'Cancel',
     withdrawQuestion: 'How should completed results be handled?', activeLanes: 'Active lanes', audit: 'Audit log',
     aBracket: 'A playoffs', bBracket: 'B playoffs', champion: 'Champion', third: '3rd place', replace: 'Replace team', noMatches: 'No current matches', qualifyingPlaces: 'qualification places', selectQualifiers: 'Select the teams that advance',
-    confirm: 'Confirm action', publishConfirm: 'Publish matches and lanes to spectator screens?', completeConfirm: 'Complete this round and continue?', reset: 'Reset championship', resetConfirm: 'Reset the championship and delete all teams and results?'
+    confirm: 'Confirm action', publishConfirm: 'Publish matches and lanes to spectator screens?', completeConfirm: 'Complete this round and continue?', reset: 'Reset championship', resetConfirm: 'Reset the championship and delete all teams and results?', workspace: 'Workspace', showAll: 'Show all', recommended: 'Recommended layout', tournamentBanner: 'Tournament banner', spectatorControls: 'Spectator controls', teamSwap: 'Team swapping', bottomBar: 'Status bar'
   }
 };
 
@@ -107,6 +121,9 @@ export default function ChampionshipPage() {
   const [manualSeeds, setManualSeeds] = useState({ A: [], B: [] });
   const [replacementForm, setReplacementForm] = useState({ division: 'A', oldTeamId: '', newTeamId: '' });
   const [showAudit, setShowAudit] = useState(false);
+  const [showWorkspaceControls, setShowWorkspaceControls] = useState(false);
+  const [workspacePreferences, setWorkspacePreferences] = useState(DEFAULT_WORKSPACE_PREFERENCES);
+  const [workspacePreferencesReady, setWorkspacePreferencesReady] = useState(false);
   const channelRef = useRef(null);
   const t = texts[lang] || texts.da;
 
@@ -120,6 +137,24 @@ export default function ChampionshipPage() {
     setLang(initial);
     document.documentElement.lang = initial;
   }, []);
+
+  useEffect(() => {
+    const userId = session?.user?.id;
+    if (!userId) return;
+    try {
+      const saved = JSON.parse(localStorage.getItem(`showdart-championship-workspace-${userId}`) || '{}');
+      setWorkspacePreferences({ ...DEFAULT_WORKSPACE_PREFERENCES, ...(saved && typeof saved === 'object' ? saved : {}) });
+    } catch {
+      setWorkspacePreferences(DEFAULT_WORKSPACE_PREFERENCES);
+    }
+    setWorkspacePreferencesReady(true);
+  }, [session?.user?.id]);
+
+  useEffect(() => {
+    const userId = session?.user?.id;
+    if (!userId || !workspacePreferencesReady) return;
+    localStorage.setItem(`showdart-championship-workspace-${userId}`, JSON.stringify(workspacePreferences));
+  }, [session?.user?.id, workspacePreferences, workspacePreferencesReady]);
 
   useEffect(() => {
     if (!supabase) {
@@ -259,13 +294,40 @@ export default function ChampionshipPage() {
     });
   }
 
+  function toggleWorkspacePanel(key) {
+    setWorkspacePreferences(previous => ({ ...previous, [key]: !previous[key] }));
+  }
+
+  function showAllWorkspacePanels() {
+    setWorkspacePreferences({ ...DEFAULT_WORKSPACE_PREFERENCES });
+  }
+
+  function applyRecommendedWorkspace() {
+    setWorkspacePreferences(getRecommendedWorkspacePreferences(state.phase));
+  }
+
   if (loading) return <main className="sd-page ch-center">{t.loading}</main>;
   if (!session) return <main className="sd-page ch-center"><a className="sd-button gold" href="/">{t.login}</a></main>;
 
   const phaseLabel = state.phase === 'registration' ? t.registration : state.phase === 'initial_groups' ? t.initialStage : state.phase === 'ab_groups' ? t.abStage : state.phase === 'playoffs' ? t.playoffs : t.finished;
+  const workspaceOptions = [
+    ['hero', t.tournamentBanner],
+    ['spectator', t.spectatorControls],
+    ['setup', t.setup],
+    ['teams', t.teams],
+    ['swap', t.teamSwap],
+    ['lanes', t.activeLanes],
+    ['standings', t.standings],
+    ['currentRound', t.currentRound],
+    ['stageActions', t.stageActions],
+    ['brackets', t.playoffs],
+    ['corrections', t.corrections],
+    ['bottomBar', t.bottomBar]
+  ];
+  const sidebarVisible = workspacePreferences.setup || workspacePreferences.teams || workspacePreferences.swap || workspacePreferences.lanes;
 
   return (
-    <main className="sd-page ch-page">
+    <main className={`sd-page ch-page ${!workspacePreferences.bottomBar ? 'without-bottom-bar' : ''}`}>
       <header className="sd-topbar">
         <div className="sd-brand"><div className="sd-logo-mark" /><div><div className="sd-brand-title">Showdart</div><div className="sd-brand-subtitle">Turnering</div></div></div>
         <nav className="sd-nav">
@@ -281,20 +343,29 @@ export default function ChampionshipPage() {
         </div>
       </header>
 
-      <section className="ch-hero">
-        <div><span>{phaseLabel}</span><h1>{state.tournamentName || t.championship}</h1><p>{state.teams.filter(team => !team.withdrawn).length} {t.teams} · {state.activeLanes.length} {t.lanes}</p></div>
-        <div className="ch-hero-actions">
+      <section className="ch-viewbar">
+        <button type="button" className={`sd-button ${showWorkspaceControls ? 'gold' : ''}`} onClick={() => setShowWorkspaceControls(value => !value)}><LayoutGrid size={16} /> {t.workspace}</button>
+        <span>{phaseLabel}</span>
+        <button type="button" className="sd-button danger" onClick={() => confirm(t.resetConfirm, () => commit(createDefaultChampionshipState()))}><RotateCcw size={16} /> {t.reset}</button>
+        {showWorkspaceControls ? <div className="ch-workspace-controls">
+          <div className="ch-workspace-control-actions"><button type="button" className="sd-button gold" onClick={applyRecommendedWorkspace}>{t.recommended}</button><button type="button" className="sd-button" onClick={showAllWorkspacePanels}>{t.showAll}</button></div>
+          <div className="ch-workspace-options">{workspaceOptions.map(([key, label]) => <label key={key} className={workspacePreferences[key] ? 'is-visible' : ''}><input type="checkbox" checked={workspacePreferences[key]} onChange={() => toggleWorkspacePanel(key)} /><span>{label}</span></label>)}</div>
+        </div> : null}
+      </section>
+
+      {workspacePreferences.hero || workspacePreferences.spectator ? <section className={`ch-hero ${!workspacePreferences.hero ? 'is-actions-only' : ''}`}>
+        {workspacePreferences.hero ? <div><span>{phaseLabel}</span><h1>{state.tournamentName || t.championship}</h1><p>{state.teams.filter(team => !team.withdrawn).length} {t.teams} · {state.activeLanes.length} {t.lanes}</p></div> : null}
+        {workspacePreferences.spectator ? <div className="ch-hero-actions">
           <button type="button" className="sd-button gold" disabled={!screenInfo?.screenUrl} onClick={() => window.open(screenInfo.screenUrl, '_blank', 'noopener,noreferrer')}><ExternalLink size={16} /> {t.openScreen}</button>
           <button type="button" className="sd-button" disabled={!screenInfo?.screenUrl} onClick={async () => { await navigator.clipboard.writeText(screenInfo.screenUrl); setMessage(t.copied); }}>{t.copyLink}</button>
-          <button type="button" className="sd-button danger" onClick={() => confirm(t.resetConfirm, () => commit(createDefaultChampionshipState()))}><RotateCcw size={16} /> {t.reset}</button>
-        </div>
-      </section>
+        </div> : null}
+      </section> : null}
 
       {message ? <div className="ch-toast">{message}</div> : null}
 
-      <section className="ch-workspace">
-        <aside className="ch-column">
-          <Card title={t.setup}>
+      <section className={`ch-workspace ${!sidebarVisible ? 'without-sidebar' : ''}`}>
+        {sidebarVisible ? <aside className="ch-column">
+          {workspacePreferences.setup ? <Card title={t.setup}>
             <div className="ch-form">
               <Field label={t.name}><input className="sd-input" value={state.tournamentName} disabled={state.started} onChange={event => commit(previous => configureChampionship(previous, { tournamentName: event.target.value }))} /></Field>
               <Field label={t.initialGroups}><NumberInput value={state.config.initialGroupCount} disabled={state.started} onChange={value => commit(previous => configureChampionship(previous, { initialGroupCount: value }))} /></Field>
@@ -306,9 +377,9 @@ export default function ChampionshipPage() {
               <Field label={t.allocation}><select className="sd-select" value={state.config.allocationMode} disabled={state.started} onChange={event => commit(previous => configureChampionship(previous, { allocationMode: event.target.value }))}><option value="seeded">{t.seeded}</option><option value="random">{t.random}</option><option value="manual">{t.manual}</option></select></Field>
               <Field label={t.lanes}><NumberInput value={state.config.laneCount} disabled={state.started} onChange={value => commit(previous => configureChampionship(previous, { laneCount: value }))} /></Field>
             </div>
-          </Card>
+          </Card> : null}
 
-          <Card title={`${t.teams} (${state.teams.length})`}>
+          {workspacePreferences.teams ? <Card title={`${t.teams} (${state.teams.length})`}>
             <form className="ch-form" onSubmit={handleAddTeam}>
               <input className="sd-input" placeholder={t.memberOne} value={teamForm.memberOne} onChange={event => setTeamForm(previous => ({ ...previous, memberOne: event.target.value }))} />
               <input className="sd-input" placeholder={t.memberTwo} value={teamForm.memberTwo} onChange={event => setTeamForm(previous => ({ ...previous, memberTwo: event.target.value }))} />
@@ -320,19 +391,19 @@ export default function ChampionshipPage() {
               {state.teams.map(team => <div key={team.id} className={`ch-team-row ${team.withdrawn ? 'is-out' : ''}`}><span className="sd-seed">{team.seed}</span><strong>{team.name}</strong><button type="button" className="sd-button" disabled={team.withdrawn} onClick={() => setWithdrawTeam(team)}><X size={14} /> {t.withdraw}</button></div>)}
             </div>
             {!state.started ? <button type="button" className="sd-button gold full" onClick={() => commit(previous => allocateInitialGroups(previous, previous.config.allocationMode))}>{t.createGroups}</button> : null}
-          </Card>
+          </Card> : null}
 
-          {state.started && GROUP_PHASE_OPTIONS(state).length ? <Card title={t.swapTeams}>
+          {workspacePreferences.swap && state.started && GROUP_PHASE_OPTIONS(state).length ? <Card title={t.swapTeams}>
             <div className="ch-form"><select className="sd-select" value={swapForm.first} onChange={event => setSwapForm(previous => ({ ...previous, first: event.target.value }))}><option value="">{t.firstTeam}</option>{GROUP_PHASE_OPTIONS(state).flatMap(group => group.teamIds.map(id => <option key={`${group.id}-${id}`} value={id}>{group.name}: {teamsById.get(id)?.name}</option>))}</select><select className="sd-select" value={swapForm.second} onChange={event => setSwapForm(previous => ({ ...previous, second: event.target.value }))}><option value="">{t.secondTeam}</option>{GROUP_PHASE_OPTIONS(state).flatMap(group => group.teamIds.map(id => <option key={`${group.id}-${id}`} value={id}>{group.name}: {teamsById.get(id)?.name}</option>))}</select><button type="button" className="sd-button" onClick={() => commit(previous => swapTeamsBetweenGroups(previous, Number(swapForm.first), Number(swapForm.second)))}>{t.swap}</button></div>
           </Card> : null}
 
-          <Card title={t.activeLanes}><div className="ch-lanes">{Array.from({ length: state.config.laneCount }, (_, index) => index + 1).map(lane => <button type="button" key={lane} className={`sd-lane-toggle ${state.activeLanes.includes(lane) ? 'is-active' : 'is-inactive'}`} onClick={() => commit(previous => setChampionshipActiveLane(previous, lane, !previous.activeLanes.includes(lane)))}><span className="sd-mini-board" /><span><strong>Bane {lane}</strong><small>{state.activeLanes.includes(lane) ? 'Aktiv' : 'Inaktiv'}</small></span></button>)}</div></Card>
-        </aside>
+          {workspacePreferences.lanes ? <Card title={t.activeLanes}><div className="ch-lanes">{Array.from({ length: state.config.laneCount }, (_, index) => index + 1).map(lane => <button type="button" key={lane} className={`sd-lane-toggle ${state.activeLanes.includes(lane) ? 'is-active' : 'is-inactive'}`} onClick={() => commit(previous => setChampionshipActiveLane(previous, lane, !previous.activeLanes.includes(lane)))}><span className="sd-mini-board" /><span><strong>Bane {lane}</strong><small>{state.activeLanes.includes(lane) ? 'Aktiv' : 'Inaktiv'}</small></span></button>)}</div></Card> : null}
+        </aside> : null}
 
         <div className="ch-main">
-          {currentGroups.length ? <section className="ch-group-grid">{currentGroups.map(group => <GroupCard key={group.id} group={group} standings={getGroupStandings(state, group.id)} t={t} />)}</section> : null}
+          {workspacePreferences.standings && currentGroups.length ? <section className="ch-group-grid">{currentGroups.map(group => <GroupCard key={group.id} group={group} standings={getGroupStandings(state, group.id)} t={t} />)}</section> : null}
 
-          {state.started && !['finished'].includes(state.phase) ? <Card title={`${t.currentRound} ${state.stageRound || ''}`} action={<span className={`ch-status ${state.roundPublished ? 'is-live' : ''}`}>{state.roundPublished ? t.live : t.draft}</span>}>
+          {workspacePreferences.currentRound && state.started && !['finished'].includes(state.phase) ? <Card title={`${t.currentRound} ${state.stageRound || ''}`} action={<span className={`ch-status ${state.roundPublished ? 'is-live' : ''}`}>{state.roundPublished ? t.live : t.draft}</span>}>
             <div className="ch-round-actions">
               {!state.roundPublished && currentMatches.length ? <button type="button" className="sd-button gold" onClick={() => confirm(t.publishConfirm, () => commit(publishChampionshipRound))}><Eye size={16} /> {t.publish}</button> : null}
               {state.roundPublished && !currentMatches.some(match => match.winnerId) ? <button type="button" className="sd-button" onClick={() => commit(hideChampionshipRound)}><EyeOff size={16} /> {t.hide}</button> : null}
@@ -341,7 +412,7 @@ export default function ChampionshipPage() {
             <div className="ch-match-grid">{currentMatches.map(match => <ChampionshipMatch key={match.id} match={match} state={state} teamsById={teamsById} t={t} onWinner={winnerId => commit(previous => setChampionshipWinner(previous, match.id, winnerId))} onTieQualifiers={qualifierIds => commit(previous => setChampionshipTieBreakQualifiers(previous, match.id, qualifierIds))} onLane={lane => commit(previous => assignChampionshipMatchLane(previous, match.id, lane))} onMove={direction => commit(previous => moveChampionshipMatchInQueue(previous, match.id, direction))} />)}</div>
           </Card> : null}
 
-          {state.stageComplete && state.phase !== 'finished' ? <Card title={t.stageActions}>
+          {workspacePreferences.stageActions && state.stageComplete && state.phase !== 'finished' ? <Card title={t.stageActions}>
             <div className="ch-action-row">
               {requiresTieBreak ? <button type="button" className="sd-button" onClick={() => commit(generateRequiredTieBreaks)}>{t.tieBreak}</button> : null}
               {state.phase === 'initial_groups' ? <button type="button" className="sd-button gold" onClick={() => commit(advanceToABGroups)}>{t.createAB}</button> : null}
@@ -352,9 +423,9 @@ export default function ChampionshipPage() {
             </div> : null}
           </Card> : null}
 
-          {['playoffs', 'finished'].includes(state.phase) ? <section className="ch-brackets"><BracketCard bracket={getDivisionBracket(state, 'A')} teamsById={teamsById} title={t.aBracket} t={t} /><BracketCard bracket={getDivisionBracket(state, 'B')} teamsById={teamsById} title={t.bBracket} t={t} /></section> : null}
+          {workspacePreferences.brackets && ['playoffs', 'finished'].includes(state.phase) ? <section className="ch-brackets"><BracketCard bracket={getDivisionBracket(state, 'A')} teamsById={teamsById} title={t.aBracket} t={t} /><BracketCard bracket={getDivisionBracket(state, 'B')} teamsById={teamsById} title={t.bBracket} t={t} /></section> : null}
 
-          {state.phase === 'playoffs' ? <Card title={t.replace}>
+          {workspacePreferences.brackets && state.phase === 'playoffs' ? <Card title={t.replace}>
             <div className="ch-replacement">
               <select className="sd-select" value={replacementForm.division} onChange={event => setReplacementForm(previous => ({ ...previous, division: event.target.value, oldTeamId: '' }))}><option value="A">A</option><option value="B">B</option></select>
               <select className="sd-select" value={replacementForm.oldTeamId} onChange={event => setReplacementForm(previous => ({ ...previous, oldTeamId: event.target.value }))}><option value="">{t.team}</option>{(state.brackets[replacementForm.division]?.seedTeamIds || []).map(id => <option key={id} value={id}>{teamsById.get(id)?.name}</option>)}</select>
@@ -363,7 +434,7 @@ export default function ChampionshipPage() {
             </div>
           </Card> : null}
 
-          {state.started ? <Card title={t.corrections} action={<button type="button" className="sd-button" onClick={() => setShowSchedule(value => !value)}><History size={15} /> {showSchedule ? t.hideSchedule : t.showSchedule}</button>}>
+          {workspacePreferences.corrections && state.started ? <Card title={t.corrections} action={<button type="button" className="sd-button" onClick={() => setShowSchedule(value => !value)}><History size={15} /> {showSchedule ? t.hideSchedule : t.showSchedule}</button>}>
             <div className="ch-corrections"><input className="sd-input" placeholder={t.correctionReason} value={correctionReason} onChange={event => setCorrectionReason(event.target.value)} /><div className="ch-adjustment"><select className="sd-select" value={adjustmentForm.groupId} onChange={event => setAdjustmentForm(previous => ({ ...previous, groupId: event.target.value }))}><option value="">{t.group}</option>{state.groups.map(group => <option key={group.id} value={group.id}>{group.name}</option>)}</select><select className="sd-select" value={adjustmentForm.teamId} onChange={event => setAdjustmentForm(previous => ({ ...previous, teamId: event.target.value }))}><option value="">{t.team}</option>{state.teams.map(team => <option key={team.id} value={team.id}>{team.name}</option>)}</select><input className="sd-input" type="number" value={adjustmentForm.points} onChange={event => setAdjustmentForm(previous => ({ ...previous, points: Number(event.target.value) }))} /><input className="sd-input" placeholder={t.reason} value={adjustmentForm.reason} onChange={event => setAdjustmentForm(previous => ({ ...previous, reason: event.target.value }))} /><button type="button" className="sd-button" onClick={() => commit(previous => addPointsAdjustment(previous, Number(adjustmentForm.teamId), adjustmentForm.groupId, adjustmentForm.points, adjustmentForm.reason))}>{t.addAdjustment}</button></div></div>
             {showSchedule ? <div className="ch-schedule"><table className="sd-table"><thead><tr><th>{t.round}</th><th>{t.group}</th><th>{t.match}</th><th>{t.winner}</th></tr></thead><tbody>{state.matches.filter(match => !match.isBye).map(match => <tr key={match.id}><td>{match.round}</td><td>{match.groupId || match.bracketDivision || '-'}</td><td>{match.isMultiTeamTieBreak ? match.participantIds.map(id => teamsById.get(id)?.name).join(' · ') : `${teamsById.get(match.team1Id)?.name || '-'} VS ${teamsById.get(match.team2Id)?.name || '-'}`}</td><td>{match.isMultiTeamTieBreak ? <select multiple size={Math.min(5, match.participantIds.length)} className="sd-select ch-multi-correction" value={match.qualifierIds.map(String)} disabled={!correctionReason.trim()} onChange={event => commit(previous => setChampionshipTieBreakQualifiers(previous, match.id, [...event.target.selectedOptions].map(option => Number(option.value)), correctionReason))}>{match.participantIds.map(id => <option key={id} value={id}>{teamsById.get(id)?.name}</option>)}</select> : <select className="sd-select" value={match.winnerId || ''} disabled={!correctionReason.trim()} onChange={event => commit(previous => setChampionshipWinner(previous, match.id, Number(event.target.value), correctionReason))}><option value="">-</option>{[match.team1Id, match.team2Id].filter(Boolean).map(id => <option key={id} value={id}>{teamsById.get(id)?.name}</option>)}</select>}</td></tr>)}</tbody></table></div> : null}
             <button type="button" className="sd-button ch-audit-toggle" onClick={() => setShowAudit(value => !value)}>{t.audit} ({state.auditLog.length})</button>
@@ -372,7 +443,7 @@ export default function ChampionshipPage() {
         </div>
       </section>
 
-      <footer className="sd-bottom"><Bottom label={t.championship} value={phaseLabel} /><Bottom label={t.teams} value={state.teams.filter(team => !team.withdrawn).length} /><Bottom label={t.round} value={state.stageRound || 0} /><Bottom label={t.match} value={state.matches.filter(match => match.winnerId && !match.isBye).length} /><Bottom label={t.lanes} value={`${state.activeLanes.length}/${state.config.laneCount}`} /><Bottom label={t.audit} value={state.auditLog.length} /></footer>
+      {workspacePreferences.bottomBar ? <footer className="sd-bottom"><Bottom label={t.championship} value={phaseLabel} /><Bottom label={t.teams} value={state.teams.filter(team => !team.withdrawn).length} /><Bottom label={t.round} value={state.stageRound || 0} /><Bottom label={t.match} value={state.matches.filter(match => match.winnerId && !match.isBye).length} /><Bottom label={t.lanes} value={`${state.activeLanes.length}/${state.config.laneCount}`} /><Bottom label={t.audit} value={state.auditLog.length} /></footer> : null}
 
       {withdrawTeam ? <div className="sd-dialog-backdrop"><div className="sd-dialog ch-dialog"><div className="sd-dialog-mark">!</div><div><h2 className="sd-dialog-title">{t.withdraw}: {withdrawTeam.name}</h2><p className="sd-dialog-message">{t.withdrawQuestion}</p></div><div className="sd-dialog-actions"><button className="sd-button" onClick={() => setWithdrawTeam(null)}>{t.cancel}</button><button className="sd-button" onClick={() => { commit(previous => withdrawChampionshipTeam(previous, withdrawTeam.id, 'keep')); setWithdrawTeam(null); }}>{t.keepResults}</button><button className="sd-button danger" onClick={() => { commit(previous => withdrawChampionshipTeam(previous, withdrawTeam.id, 'void')); setWithdrawTeam(null); }}>{t.voidResults}</button></div></div></div> : null}
       {dialog ? <div className="sd-dialog-backdrop"><div className="sd-dialog ch-dialog"><div className="sd-dialog-mark">!</div><div><h2 className="sd-dialog-title">{t.confirm}</h2><p className="sd-dialog-message">{dialog.message}</p></div><div className="sd-dialog-actions">{dialog.confirm ? <button className="sd-button" onClick={() => setDialog(null)}>{t.cancel}</button> : null}<button className="sd-button gold" onClick={() => { const action = dialog.confirm; setDialog(null); action?.(); }}>{dialog.confirm ? t.confirm : 'OK'}</button></div></div></div> : null}
@@ -385,7 +456,16 @@ function GROUP_PHASE_OPTIONS(state) {
 }
 
 function Card({ title, action, children }) {
-  return <section className="sd-card sd-panel ch-card"><div className="ch-card-head"><h2 className="sd-panel-title">{title}</h2>{action}</div>{children}</section>;
+  const [collapsed, setCollapsed] = useState(false);
+  return <section className={`sd-card sd-panel ch-card ${collapsed ? 'is-collapsed' : ''}`}><div className="ch-card-head"><h2 className="sd-panel-title">{title}</h2><div className="ch-card-actions">{action}<button type="button" className="ch-collapse-button" aria-label={`${collapsed ? 'Vis' : 'Skjul'} ${title}`} onClick={() => setCollapsed(value => !value)}>{collapsed ? <ChevronDown size={17} /> : <ChevronUp size={17} />}</button></div></div>{collapsed ? null : children}</section>;
+}
+
+function getRecommendedWorkspacePreferences(phase) {
+  const base = Object.fromEntries(Object.keys(DEFAULT_WORKSPACE_PREFERENCES).map(key => [key, false]));
+  if (phase === 'registration') return { ...base, hero: true, spectator: true, setup: true, teams: true, lanes: true, bottomBar: true };
+  if (['initial_groups', 'ab_groups'].includes(phase)) return { ...base, hero: true, spectator: true, lanes: true, standings: true, currentRound: true, stageActions: true, bottomBar: true };
+  if (phase === 'playoffs') return { ...base, hero: true, spectator: true, lanes: true, currentRound: true, stageActions: true, brackets: true, bottomBar: true };
+  return { ...base, hero: true, spectator: true, brackets: true, corrections: true, bottomBar: true };
 }
 
 function Field({ label, children }) {

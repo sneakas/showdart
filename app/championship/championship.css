@@ -7,6 +7,82 @@
   place-items: center;
 }
 
+.ch-viewbar {
+  position: relative;
+  z-index: 25;
+  min-height: 54px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid var(--sd-border);
+  background: rgba(3, 18, 12, .96);
+  padding: 8px 24px;
+}
+
+.ch-viewbar > span {
+  color: var(--sd-muted);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.ch-viewbar .sd-button {
+  min-height: 36px;
+  padding: 7px 11px;
+}
+
+.ch-workspace-controls {
+  position: absolute;
+  top: calc(100% + 7px);
+  left: 24px;
+  width: min(650px, calc(100vw - 48px));
+  display: grid;
+  gap: 12px;
+  border: 1px solid rgba(65, 122, 91, .95);
+  border-radius: 9px;
+  background: linear-gradient(145deg, rgba(5, 43, 27, .99), rgba(2, 15, 10, .99));
+  box-shadow: 0 22px 48px rgba(0,0,0,.58);
+  padding: 14px;
+}
+
+.ch-workspace-control-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ch-workspace-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.ch-workspace-options label {
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(65, 101, 81, .75);
+  border-radius: 7px;
+  background: rgba(0,0,0,.2);
+  color: var(--sd-muted);
+  padding: 7px 9px;
+  cursor: pointer;
+}
+
+.ch-workspace-options label.is-visible {
+  border-color: rgba(241, 189, 53, .55);
+  color: var(--sd-text);
+  background: rgba(241, 189, 53, .08);
+}
+
+.ch-workspace-options input {
+  accent-color: var(--sd-gold-2);
+}
+
 .ch-hero {
   min-height: 180px;
   display: flex;
@@ -18,6 +94,11 @@
   background:
     linear-gradient(90deg, rgba(3, 8, 6, .78), rgba(3, 8, 6, .18) 52%, rgba(3, 8, 6, .82)),
     url('/assets/showdart-banner.png') center 44% / cover;
+}
+
+.ch-hero.is-actions-only {
+  min-height: 90px;
+  justify-content: flex-end;
 }
 
 .ch-hero span,
@@ -50,6 +131,14 @@
   padding: 16px 24px 104px;
 }
 
+.ch-workspace.without-sidebar {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.ch-page.without-bottom-bar .ch-workspace {
+  padding-bottom: 24px;
+}
+
 .ch-column,
 .ch-main {
   display: grid;
@@ -66,6 +155,38 @@
   justify-content: space-between;
   align-items: center;
   gap: 12px;
+}
+
+.ch-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ch-collapse-button {
+  width: 32px;
+  height: 32px;
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border: 1px solid rgba(65, 101, 81, .8);
+  border-radius: 6px;
+  background: rgba(0,0,0,.2);
+  color: var(--sd-muted);
+  cursor: pointer;
+}
+
+.ch-collapse-button:hover {
+  border-color: var(--sd-gold-2);
+  color: var(--sd-gold-2);
+}
+
+.ch-card.is-collapsed {
+  padding-bottom: 8px;
+}
+
+.ch-card.is-collapsed .ch-card-head .sd-panel-title {
+  margin-bottom: 0;
 }
 
 .ch-card-head .sd-panel-title {
@@ -537,6 +658,24 @@
 }
 
 @media (max-width: 900px) {
+  .ch-viewbar {
+    grid-template-columns: 1fr auto;
+    padding: 8px 14px;
+  }
+
+  .ch-viewbar > span {
+    display: none;
+  }
+
+  .ch-workspace-controls {
+    left: 14px;
+    width: calc(100vw - 28px);
+  }
+
+  .ch-workspace-options {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .ch-workspace {
     grid-template-columns: 1fr;
     padding: 12px 14px 36px;
@@ -562,5 +701,26 @@
 
   .ch-page .sd-bottom {
     position: static;
+  }
+}
+
+@media (max-width: 560px) {
+  .ch-workspace-options {
+    grid-template-columns: 1fr;
+    max-height: 55vh;
+    overflow-y: auto;
+  }
+
+  .ch-viewbar .sd-button {
+    font-size: 11px;
+  }
+
+  .ch-card-head {
+    align-items: flex-start;
+  }
+
+  .ch-card-actions {
+    flex-wrap: wrap;
+    justify-content: flex-end;
   }
 }
