@@ -14,6 +14,7 @@ import {
   getDivisionBracket,
   getGroupStandings,
   publishChampionshipRound,
+  setChampionshipTieBreakQualifiers,
   setChampionshipWinner,
   swapTeamsBetweenGroups,
   withdrawChampionshipTeam
@@ -140,7 +141,7 @@ test('six qualifiers create eight-slot A and B brackets with byes', () => {
   assert.ok(getDivisionBracket(state, 'B').championId);
 });
 
-test('three-way boundary ties schedule without duplicating a team in one round', () => {
+test('three-way boundary ties use one simultaneous event and unlock progression', () => {
   let state = stateWithTeams(6, {
     initialGroupCount: 2,
     initialAQualifiersPerGroup: 1,
@@ -167,11 +168,63 @@ test('three-way boundary ties schedule without duplicating a team in one round',
 
   state = generateRequiredTieBreaks(state);
   assert.equal(state.lastError, '');
-  for (const group of state.groups) {
-    const active = getCurrentMatches(state).filter(match => match.groupId === group.id);
-    const appearances = active.flatMap(match => [match.team1Id, match.team2Id]);
-    assert.equal(new Set(appearances).size, appearances.length);
+  const tieBreaks = getCurrentMatches(state);
+  assert.equal(tieBreaks.length, 2);
+  assert.ok(tieBreaks.every(match => match.isMultiTeamTieBreak && match.participantIds.length === 3 && match.qualifierCount === 1));
+
+  state = publishChampionshipRound(state);
+  for (const match of getCurrentMatches(state)) {
+    state = setChampionshipTieBreakQualifiers(state, match.id, [match.participantIds[0]]);
   }
+  state = completeChampionshipRound(state);
+  assert.equal(state.stageComplete, true);
+
+  const repeated = generateRequiredTieBreaks(state);
+  assert.match(repeated.lastError, /ingen uløste/i);
+  state = advanceToABGroups(state);
+  assert.equal(state.phase, 'ab_groups');
+  assert.equal(state.lastError, '');
+});
+
+test('a simultaneous tie-break can select multiple qualifying teams', () => {
+  let state = stateWithTeams(4, {
+    initialGroupCount: 1,
+    initialAQualifiersPerGroup: 3,
+    aGroupCount: 1,
+    bGroupCount: 1,
+    laneCount: 2
+  });
+  state = allocateInitialGroups(state, 'seeded');
+  const [first, second, third, fourth] = [...state.groups[0].teamIds].sort((a, b) => a - b);
+
+  while (!state.stageComplete) {
+    state = publishChampionshipRound(state);
+    for (const match of getCurrentMatches(state)) {
+      const pair = new Set([match.team1Id, match.team2Id]);
+      let winnerId = first;
+      if (!pair.has(first)) {
+        if (pair.has(second) && pair.has(third)) winnerId = second;
+        else if (pair.has(third) && pair.has(fourth)) winnerId = third;
+        else winnerId = fourth;
+      }
+      state = setChampionshipWinner(state, match.id, winnerId);
+    }
+    state = completeChampionshipRound(state);
+  }
+
+  state = generateRequiredTieBreaks(state);
+  const tieBreak = getCurrentMatches(state)[0];
+  assert.equal(tieBreak.participantIds.length, 3);
+  assert.equal(tieBreak.qualifierCount, 2);
+  state = publishChampionshipRound(state);
+  state = setChampionshipTieBreakQualifiers(state, tieBreak.id, [tieBreak.participantIds[0]]);
+  const incomplete = completeChampionshipRound(state);
+  assert.match(incomplete.lastError, /afgjort/i);
+  state = setChampionshipTieBreakQualifiers(state, tieBreak.id, tieBreak.participantIds.slice(0, 2));
+  state = completeChampionshipRound(state);
+  state = advanceToABGroups(state);
+  assert.equal(state.phase, 'ab_groups');
+  assert.equal(state.lastError, '');
 });
 
 test('withdrawal supports retaining or voiding completed results', () => {

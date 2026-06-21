@@ -236,6 +236,53 @@
   text-align: center;
 }
 
+.ch-match.is-multi-tiebreak {
+  border-color: rgba(241, 189, 53, .72);
+}
+
+.ch-tiebreak > p {
+  margin: 0 0 10px;
+  color: var(--sd-muted);
+  font-size: 13px;
+}
+
+.ch-tiebreak > p strong {
+  color: var(--sd-gold-2);
+}
+
+.ch-tiebreak > div {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 7px;
+}
+
+.ch-tiebreak button {
+  min-height: 48px;
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  align-items: center;
+  gap: 7px;
+  border: 1px solid rgba(99, 128, 109, .5);
+  border-radius: 7px;
+  background: rgba(2, 8, 5, .5);
+  color: var(--sd-text);
+  padding: 8px 10px;
+  text-align: left;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.ch-tiebreak button.is-winner {
+  border-color: var(--sd-green);
+  background: rgba(75, 209, 125, .18);
+}
+
+.ch-tiebreak button span {
+  color: var(--sd-green);
+  font-size: 18px;
+  text-align: center;
+}
+
 .ch-match-controls {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 40px 40px;
@@ -331,6 +378,11 @@
 .ch-schedule {
   max-height: 520px;
   margin-top: 12px;
+}
+
+.ch-multi-correction {
+  min-width: 220px;
+  height: auto;
 }
 
 .ch-bracket-rounds {

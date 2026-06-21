@@ -13,7 +13,7 @@ const texts = {
     teams: 'Hold', groups: 'Grupper', lanes: 'Baner', round: 'Runde', currentMatches: 'Aktuelle kampe', betweenRounds: 'Mellem spillerunder',
     playing: 'Spiller nu', queued: 'Næste kamp', completed: 'Afsluttet', lane: 'Bane', queue: 'Køplads', winner: 'Vinder',
     standings: 'Stilling', played: 'Spillet', wins: 'Sejre', losses: 'Nederlag', points: 'Point', page: 'Side',
-    aPlayoffs: 'A-slutspil', bPlayoffs: 'B-slutspil', champion: 'Mester', runnerUp: '2. plads', third: '3. plads', waiting: 'Venter på næste offentliggjorte spillerunde'
+    aPlayoffs: 'A-slutspil', bPlayoffs: 'B-slutspil', champion: 'Mester', runnerUp: '2. plads', third: '3. plads', waiting: 'Venter på næste offentliggjorte spillerunde', tieBreak: 'Tie-break', advancing: 'går videre', qualifyingPlaces: 'pladser'
   },
   en: {
     loading: 'Loading championship screen...', invalid: 'Invalid screen link', live: 'Live', polling: 'Backup updates', delayed: 'Connection delayed',
@@ -21,7 +21,7 @@ const texts = {
     teams: 'Teams', groups: 'Groups', lanes: 'Lanes', round: 'Round', currentMatches: 'Current matches', betweenRounds: 'Between rounds',
     playing: 'Playing now', queued: 'Next match', completed: 'Completed', lane: 'Lane', queue: 'Queue position', winner: 'Winner',
     standings: 'Standings', played: 'Played', wins: 'Wins', losses: 'Losses', points: 'Points', page: 'Page',
-    aPlayoffs: 'A playoffs', bPlayoffs: 'B playoffs', champion: 'Champion', runnerUp: 'Runner-up', third: '3rd place', waiting: 'Waiting for the next published round'
+    aPlayoffs: 'A playoffs', bPlayoffs: 'B playoffs', champion: 'Champion', runnerUp: 'Runner-up', third: '3rd place', waiting: 'Waiting for the next published round', tieBreak: 'Tie-break', advancing: 'advancing', qualifyingPlaces: 'places'
   }
 };
 
@@ -140,12 +140,12 @@ export default function ChampionshipScreenPage() {
 }
 
 function MatchCard({ match, allMatches, teamsById, t }) {
-  const unfinished = allMatches.filter(item => item.laneNumber === match.laneNumber && !item.winnerId && !item.voided).sort((a, b) => (a.lanePosition || 999) - (b.lanePosition || 999));
+  const unfinished = allMatches.filter(item => item.laneNumber === match.laneNumber && !isResolved(item) && !item.voided).sort((a, b) => (a.lanePosition || 999) - (b.lanePosition || 999));
   const queueIndex = unfinished.findIndex(item => item.id === match.id);
-  const status = match.winnerId ? 'completed' : queueIndex === 0 ? 'current' : 'queued';
+  const status = isResolved(match) ? 'completed' : queueIndex === 0 ? 'current' : 'queued';
   const label = status === 'current' ? t.playing : status === 'queued' ? t.queued : t.completed;
   const displayQueue = queueIndex >= 0 ? queueIndex + 1 : null;
-  return <article className={`chs-match is-${status}`}><div className="chs-match-head"><strong>{label}</strong><span>{t.lane} {match.laneNumber || '-'}{displayQueue ? ` · ${t.queue} ${displayQueue}` : ''}</span></div><div className="chs-teams"><div className={match.winnerId === match.team1Id ? 'is-winner' : match.winnerId ? 'is-loser' : ''}>{match.winnerId === match.team1Id ? '✓ ' : ''}{teamsById.get(match.team1Id)?.name || '-'}</div><b>VS</b><div className={match.winnerId === match.team2Id ? 'is-winner' : match.winnerId ? 'is-loser' : ''}>{match.winnerId === match.team2Id ? '✓ ' : ''}{teamsById.get(match.team2Id)?.name || '-'}</div></div></article>;
+  return <article className={`chs-match is-${status} ${match.isMultiTeamTieBreak ? 'is-multi-tiebreak' : ''}`}><div className="chs-match-head"><strong>{match.isMultiTeamTieBreak ? `${t.tieBreak} · ${label}` : label}</strong><span>{t.lane} {match.laneNumber || '-'}{displayQueue ? ` · ${t.queue} ${displayQueue}` : ''}</span></div>{match.isMultiTeamTieBreak ? <div className="chs-multi-tiebreak"><p><strong>{match.qualifierIds.length}/{match.qualifierCount}</strong> {t.qualifyingPlaces} {t.advancing}</p><div>{match.participantIds.map(teamId => <div key={teamId} className={match.qualifierIds.includes(teamId) ? 'is-winner' : isResolved(match) ? 'is-loser' : ''}><span>{match.qualifierIds.includes(teamId) ? '✓' : ''}</span>{teamsById.get(teamId)?.name || '-'}</div>)}</div></div> : <div className="chs-teams"><div className={match.winnerId === match.team1Id ? 'is-winner' : match.winnerId ? 'is-loser' : ''}>{match.winnerId === match.team1Id ? '✓ ' : ''}{teamsById.get(match.team1Id)?.name || '-'}</div><b>VS</b><div className={match.winnerId === match.team2Id ? 'is-winner' : match.winnerId ? 'is-loser' : ''}>{match.winnerId === match.team2Id ? '✓ ' : ''}{teamsById.get(match.team2Id)?.name || '-'}</div></div>}</article>;
 }
 
 function GroupTable({ group, standings, t }) {
@@ -174,10 +174,16 @@ function chunk(items, size) {
 
 function orderMatches(matches) {
   return [...matches].sort((left, right) => {
-    const leftStatus = left.winnerId ? 2 : 0;
-    const rightStatus = right.winnerId ? 2 : 0;
+    const leftStatus = isResolved(left) ? 2 : 0;
+    const rightStatus = isResolved(right) ? 2 : 0;
     return leftStatus - rightStatus || (left.lanePosition || 999) - (right.lanePosition || 999) || (left.laneNumber || 999) - (right.laneNumber || 999);
   });
+}
+
+function isResolved(match) {
+  return match.isMultiTeamTieBreak
+    ? match.qualifierCount > 0 && match.qualifierIds.length === match.qualifierCount
+    : !!match.winnerId;
 }
 
 function formatTime(value) {

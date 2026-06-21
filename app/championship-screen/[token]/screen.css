@@ -218,6 +218,55 @@
   color: #9fb3c2;
 }
 
+.chs-match.is-multi-tiebreak {
+  border-color: rgba(241,189,53,.72);
+}
+
+.chs-multi-tiebreak > p {
+  margin: 0 0 10px;
+  color: #aab9ae;
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.chs-multi-tiebreak > p strong {
+  color: #f1bd35;
+}
+
+.chs-multi-tiebreak > div {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 8px;
+}
+
+.chs-multi-tiebreak > div > div {
+  min-height: 52px;
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 8px;
+  background: rgba(0,0,0,.28);
+  padding: 9px 11px;
+  font-weight: 900;
+}
+
+.chs-multi-tiebreak > div > div.is-winner {
+  border-color: #4bd17d;
+  background: rgba(75,209,125,.17);
+}
+
+.chs-multi-tiebreak > div > div.is-loser {
+  opacity: .48;
+}
+
+.chs-multi-tiebreak > div > div > span {
+  color: #4bd17d;
+  font-size: 18px;
+}
+
 .chs-match-head span {
   border: 1px solid rgba(241,189,53,.4);
   border-radius: 999px;

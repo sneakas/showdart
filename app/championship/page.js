@@ -18,12 +18,14 @@ import {
   getCurrentMatches,
   getDivisionBracket,
   getGroupStandings,
+  hasRequiredChampionshipTieBreaks,
   hideChampionshipRound,
   moveChampionshipMatchInQueue,
   normalizeChampionshipState,
   publishChampionshipRound,
   replacePlayoffTeam,
   setChampionshipActiveLane,
+  setChampionshipTieBreakQualifiers,
   setChampionshipWinner,
   setPlayoffSeedOrder,
   swapTeamsBetweenGroups,
@@ -54,7 +56,7 @@ const texts = {
     addAdjustment: 'Tilføj pointjustering', reason: 'Begrundelse', value: 'Point +/-', group: 'Gruppe', team: 'Hold',
     withdraw: 'Træk hold', keepResults: 'Behold færdige resultater', voidResults: 'Annuller alle resultater', cancel: 'Annuller',
     withdrawQuestion: 'Hvordan skal allerede spillede resultater behandles?', activeLanes: 'Aktive baner', audit: 'Ændringslog',
-    aBracket: 'A-slutspil', bBracket: 'B-slutspil', champion: 'Mester', third: '3. plads', replace: 'Erstat hold', noMatches: 'Ingen aktuelle kampe',
+    aBracket: 'A-slutspil', bBracket: 'B-slutspil', champion: 'Mester', third: '3. plads', replace: 'Erstat hold', noMatches: 'Ingen aktuelle kampe', qualifyingPlaces: 'kvalifikationspladser', selectQualifiers: 'Vælg de hold, der går videre',
     confirm: 'Bekræft handling', publishConfirm: 'Offentliggør kampe og baner på publikumsskærmen?', completeConfirm: 'Afslut spillerunden og gå videre?', reset: 'Nulstil mesterskab', resetConfirm: 'Nulstil hele mesterskabet og slet alle hold og resultater?'
   },
   en: {
@@ -74,7 +76,7 @@ const texts = {
     addAdjustment: 'Add points adjustment', reason: 'Reason', value: 'Points +/-', group: 'Group', team: 'Team',
     withdraw: 'Withdraw team', keepResults: 'Keep completed results', voidResults: 'Void all results', cancel: 'Cancel',
     withdrawQuestion: 'How should completed results be handled?', activeLanes: 'Active lanes', audit: 'Audit log',
-    aBracket: 'A playoffs', bBracket: 'B playoffs', champion: 'Champion', third: '3rd place', replace: 'Replace team', noMatches: 'No current matches',
+    aBracket: 'A playoffs', bBracket: 'B playoffs', champion: 'Champion', third: '3rd place', replace: 'Replace team', noMatches: 'No current matches', qualifyingPlaces: 'qualification places', selectQualifiers: 'Select the teams that advance',
     confirm: 'Confirm action', publishConfirm: 'Publish matches and lanes to spectator screens?', completeConfirm: 'Complete this round and continue?', reset: 'Reset championship', resetConfirm: 'Reset the championship and delete all teams and results?'
   }
 };
@@ -110,6 +112,7 @@ export default function ChampionshipPage() {
 
   const teamsById = useMemo(() => new Map(state.teams.map(team => [team.id, team])), [state.teams]);
   const currentMatches = useMemo(() => getCurrentMatches(state), [state]);
+  const requiresTieBreak = useMemo(() => hasRequiredChampionshipTieBreaks(state), [state]);
   const currentGroups = useMemo(() => state.groups.filter(group => state.phase === 'initial_groups' ? group.division === 'INITIAL' : state.phase === 'ab_groups' ? ['A', 'B'].includes(group.division) : ['A', 'B'].includes(group.division)), [state.groups, state.phase]);
 
   useEffect(() => {
@@ -335,12 +338,12 @@ export default function ChampionshipPage() {
               {state.roundPublished && !currentMatches.some(match => match.winnerId) ? <button type="button" className="sd-button" onClick={() => commit(hideChampionshipRound)}><EyeOff size={16} /> {t.hide}</button> : null}
               {currentMatches.length ? <button type="button" className="sd-button gold" disabled={!state.roundPublished} onClick={() => confirm(t.completeConfirm, () => commit(completeChampionshipRound))}><Check size={16} /> {t.completeRound}</button> : <span className="sd-small-label">{t.noMatches}</span>}
             </div>
-            <div className="ch-match-grid">{currentMatches.map(match => <ChampionshipMatch key={match.id} match={match} state={state} teamsById={teamsById} t={t} onWinner={winnerId => commit(previous => setChampionshipWinner(previous, match.id, winnerId))} onLane={lane => commit(previous => assignChampionshipMatchLane(previous, match.id, lane))} onMove={direction => commit(previous => moveChampionshipMatchInQueue(previous, match.id, direction))} />)}</div>
+            <div className="ch-match-grid">{currentMatches.map(match => <ChampionshipMatch key={match.id} match={match} state={state} teamsById={teamsById} t={t} onWinner={winnerId => commit(previous => setChampionshipWinner(previous, match.id, winnerId))} onTieQualifiers={qualifierIds => commit(previous => setChampionshipTieBreakQualifiers(previous, match.id, qualifierIds))} onLane={lane => commit(previous => assignChampionshipMatchLane(previous, match.id, lane))} onMove={direction => commit(previous => moveChampionshipMatchInQueue(previous, match.id, direction))} />)}</div>
           </Card> : null}
 
           {state.stageComplete && state.phase !== 'finished' ? <Card title={t.stageActions}>
             <div className="ch-action-row">
-              <button type="button" className="sd-button" onClick={() => commit(generateRequiredTieBreaks)}>{t.tieBreak}</button>
+              {requiresTieBreak ? <button type="button" className="sd-button" onClick={() => commit(generateRequiredTieBreaks)}>{t.tieBreak}</button> : null}
               {state.phase === 'initial_groups' ? <button type="button" className="sd-button gold" onClick={() => commit(advanceToABGroups)}>{t.createAB}</button> : null}
               {state.phase === 'ab_groups' ? <button type="button" className="sd-button gold" onClick={handleGeneratePlayoffs}>{t.createPlayoffs}</button> : null}
             </div>
@@ -362,7 +365,7 @@ export default function ChampionshipPage() {
 
           {state.started ? <Card title={t.corrections} action={<button type="button" className="sd-button" onClick={() => setShowSchedule(value => !value)}><History size={15} /> {showSchedule ? t.hideSchedule : t.showSchedule}</button>}>
             <div className="ch-corrections"><input className="sd-input" placeholder={t.correctionReason} value={correctionReason} onChange={event => setCorrectionReason(event.target.value)} /><div className="ch-adjustment"><select className="sd-select" value={adjustmentForm.groupId} onChange={event => setAdjustmentForm(previous => ({ ...previous, groupId: event.target.value }))}><option value="">{t.group}</option>{state.groups.map(group => <option key={group.id} value={group.id}>{group.name}</option>)}</select><select className="sd-select" value={adjustmentForm.teamId} onChange={event => setAdjustmentForm(previous => ({ ...previous, teamId: event.target.value }))}><option value="">{t.team}</option>{state.teams.map(team => <option key={team.id} value={team.id}>{team.name}</option>)}</select><input className="sd-input" type="number" value={adjustmentForm.points} onChange={event => setAdjustmentForm(previous => ({ ...previous, points: Number(event.target.value) }))} /><input className="sd-input" placeholder={t.reason} value={adjustmentForm.reason} onChange={event => setAdjustmentForm(previous => ({ ...previous, reason: event.target.value }))} /><button type="button" className="sd-button" onClick={() => commit(previous => addPointsAdjustment(previous, Number(adjustmentForm.teamId), adjustmentForm.groupId, adjustmentForm.points, adjustmentForm.reason))}>{t.addAdjustment}</button></div></div>
-            {showSchedule ? <div className="ch-schedule"><table className="sd-table"><thead><tr><th>{t.round}</th><th>{t.group}</th><th>{t.match}</th><th>{t.winner}</th></tr></thead><tbody>{state.matches.filter(match => !match.isBye).map(match => <tr key={match.id}><td>{match.round}</td><td>{match.groupId || match.bracketDivision || '-'}</td><td>{teamsById.get(match.team1Id)?.name || '-'} VS {teamsById.get(match.team2Id)?.name || '-'}</td><td><select className="sd-select" value={match.winnerId || ''} disabled={!correctionReason.trim()} onChange={event => commit(previous => setChampionshipWinner(previous, match.id, Number(event.target.value), correctionReason))}><option value="">-</option>{[match.team1Id, match.team2Id].filter(Boolean).map(id => <option key={id} value={id}>{teamsById.get(id)?.name}</option>)}</select></td></tr>)}</tbody></table></div> : null}
+            {showSchedule ? <div className="ch-schedule"><table className="sd-table"><thead><tr><th>{t.round}</th><th>{t.group}</th><th>{t.match}</th><th>{t.winner}</th></tr></thead><tbody>{state.matches.filter(match => !match.isBye).map(match => <tr key={match.id}><td>{match.round}</td><td>{match.groupId || match.bracketDivision || '-'}</td><td>{match.isMultiTeamTieBreak ? match.participantIds.map(id => teamsById.get(id)?.name).join(' · ') : `${teamsById.get(match.team1Id)?.name || '-'} VS ${teamsById.get(match.team2Id)?.name || '-'}`}</td><td>{match.isMultiTeamTieBreak ? <select multiple size={Math.min(5, match.participantIds.length)} className="sd-select ch-multi-correction" value={match.qualifierIds.map(String)} disabled={!correctionReason.trim()} onChange={event => commit(previous => setChampionshipTieBreakQualifiers(previous, match.id, [...event.target.selectedOptions].map(option => Number(option.value)), correctionReason))}>{match.participantIds.map(id => <option key={id} value={id}>{teamsById.get(id)?.name}</option>)}</select> : <select className="sd-select" value={match.winnerId || ''} disabled={!correctionReason.trim()} onChange={event => commit(previous => setChampionshipWinner(previous, match.id, Number(event.target.value), correctionReason))}><option value="">-</option>{[match.team1Id, match.team2Id].filter(Boolean).map(id => <option key={id} value={id}>{teamsById.get(id)?.name}</option>)}</select>}</td></tr>)}</tbody></table></div> : null}
             <button type="button" className="sd-button ch-audit-toggle" onClick={() => setShowAudit(value => !value)}>{t.audit} ({state.auditLog.length})</button>
             {showAudit ? <div className="ch-audit-list">{[...state.auditLog].reverse().map(entry => <div key={entry.id}><time>{new Date(entry.createdAt).toLocaleString(lang === 'da' ? 'da-DK' : 'en-GB')}</time><strong>{entry.action}</strong><span>{JSON.stringify(entry.details)}</span></div>)}</div> : null}
           </Card> : null}
@@ -397,13 +400,18 @@ function GroupCard({ group, standings, t }) {
   return <Card title={group.name}><div className="ch-table-wrap"><table className="sd-table"><thead><tr><th>#</th><th>{t.team}</th><th>{t.played}</th><th>{t.wins}</th><th>{t.losses}</th><th>{t.points}</th></tr></thead><tbody>{standings.map(entry => <tr key={entry.teamId} className={entry.unresolvedTie ? 'is-tied' : ''}><td><span className="sd-seed">{entry.rank}</span></td><td>{entry.name}</td><td>{entry.played}</td><td>{entry.wins}</td><td>{entry.losses}</td><td><strong>{entry.points}</strong>{entry.adjustment ? <small> ({entry.adjustment > 0 ? '+' : ''}{entry.adjustment})</small> : null}</td></tr>)}</tbody></table></div></Card>;
 }
 
-function ChampionshipMatch({ match, state, teamsById, t, onWinner, onLane, onMove }) {
+function ChampionshipMatch({ match, state, teamsById, t, onWinner, onTieQualifiers, onLane, onMove }) {
   const status = getChampionshipMatchStatus(state, match.id);
   const label = status === 'current' ? t.playing : status === 'queued' ? t.queued : status === 'completed' ? t.completed : t.waitingLane;
   const canScore = state.roundPublished && ['current', 'completed'].includes(status);
   const queue = getCurrentMatches(state).filter(item => item.laneNumber === match.laneNumber);
   const index = queue.findIndex(item => item.id === match.id);
-  return <article className={`ch-match is-${status}`}><div className="ch-match-head"><strong>{label}</strong><span>Bane {match.laneNumber || '-'} · #{match.lanePosition || '-'}</span></div><div className="ch-versus"><button type="button" disabled={!canScore} className={match.winnerId === match.team1Id ? 'is-winner' : ''} onClick={() => onWinner(match.team1Id)}>{teamsById.get(match.team1Id)?.name || '-'}</button><b>VS</b><button type="button" disabled={!canScore} className={match.winnerId === match.team2Id ? 'is-winner' : ''} onClick={() => onWinner(match.team2Id)}>{teamsById.get(match.team2Id)?.name || '-'}</button></div><div className="ch-match-controls"><select className="sd-select" value={match.laneNumber || ''} disabled={!!match.winnerId} onChange={event => onLane(Number(event.target.value))}>{state.activeLanes.map(lane => <option key={lane} value={lane}>Bane {lane}</option>)}</select><button className="sd-button" disabled={index <= 0 || !!match.winnerId} onClick={() => onMove(-1)}><ArrowUp size={14} /></button><button className="sd-button" disabled={index < 0 || index >= queue.length - 1 || !!match.winnerId} onClick={() => onMove(1)}><ArrowDown size={14} /></button></div></article>;
+  const resolved = match.isMultiTeamTieBreak ? match.qualifierIds.length === match.qualifierCount : !!match.winnerId;
+  const toggleQualifier = teamId => {
+    const selected = match.qualifierIds || [];
+    onTieQualifiers(selected.includes(teamId) ? selected.filter(id => id !== teamId) : [...selected, teamId]);
+  };
+  return <article className={`ch-match is-${status} ${match.isMultiTeamTieBreak ? 'is-multi-tiebreak' : ''}`}><div className="ch-match-head"><strong>{match.isMultiTeamTieBreak ? 'TIE-BREAK' : label}</strong><span>Bane {match.laneNumber || '-'} · #{match.lanePosition || '-'}</span></div>{match.isMultiTeamTieBreak ? <div className="ch-tiebreak"><p>{t.selectQualifiers}: <strong>{match.qualifierIds.length}/{match.qualifierCount}</strong> {t.qualifyingPlaces}</p><div>{match.participantIds.map(teamId => <button type="button" key={teamId} disabled={!canScore} className={match.qualifierIds.includes(teamId) ? 'is-winner' : ''} onClick={() => toggleQualifier(teamId)}><span>{match.qualifierIds.includes(teamId) ? '✓' : ''}</span>{teamsById.get(teamId)?.name || '-'}</button>)}</div></div> : <div className="ch-versus"><button type="button" disabled={!canScore} className={match.winnerId === match.team1Id ? 'is-winner' : ''} onClick={() => onWinner(match.team1Id)}>{teamsById.get(match.team1Id)?.name || '-'}</button><b>VS</b><button type="button" disabled={!canScore} className={match.winnerId === match.team2Id ? 'is-winner' : ''} onClick={() => onWinner(match.team2Id)}>{teamsById.get(match.team2Id)?.name || '-'}</button></div>}<div className="ch-match-controls"><select className="sd-select" value={match.laneNumber || ''} disabled={resolved} onChange={event => onLane(Number(event.target.value))}>{state.activeLanes.map(lane => <option key={lane} value={lane}>Bane {lane}</option>)}</select><button className="sd-button" disabled={index <= 0 || resolved} onClick={() => onMove(-1)}><ArrowUp size={14} /></button><button className="sd-button" disabled={index < 0 || index >= queue.length - 1 || resolved} onClick={() => onMove(1)}><ArrowDown size={14} /></button></div></article>;
 }
 
 function BracketCard({ bracket, teamsById, title, t }) {
