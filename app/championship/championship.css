@@ -137,6 +137,62 @@
 
 .ch-table-wrap {
   max-height: 420px;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.ch-group-grid .ch-card {
+  padding: 14px 14px 12px;
+}
+
+.ch-group-grid .ch-card-head .sd-panel-title {
+  margin-bottom: 11px;
+  font-size: 17px;
+}
+
+.ch-group-grid .sd-table {
+  min-width: 0;
+  font-size: 13px;
+}
+
+.ch-group-grid .sd-table th,
+.ch-group-grid .sd-table td {
+  padding: 6px 7px;
+}
+
+.ch-group-grid .sd-table th {
+  font-size: 10px;
+  letter-spacing: .05em;
+}
+
+.ch-group-grid .sd-table th:first-child,
+.ch-group-grid .sd-table td:first-child {
+  width: 38px;
+}
+
+.ch-group-grid .sd-table th:nth-child(3),
+.ch-group-grid .sd-table td:nth-child(3) {
+  width: 62px;
+}
+
+.ch-group-grid .sd-table th:nth-child(4),
+.ch-group-grid .sd-table td:nth-child(4) {
+  width: 55px;
+}
+
+.ch-group-grid .sd-table th:nth-child(5),
+.ch-group-grid .sd-table td:nth-child(5) {
+  width: 66px;
+}
+
+.ch-group-grid .sd-table th:last-child,
+.ch-group-grid .sd-table td:last-child {
+  width: 52px;
+}
+
+.ch-group-grid .sd-seed {
+  width: 23px;
+  height: 23px;
 }
 
 .ch-table-wrap .is-tied {
@@ -444,6 +500,21 @@
 
 .ch-dialog {
   max-width: 720px;
+}
+
+.ch-page .sd-bottom-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+.ch-page .sd-bottom-item > span {
+  color: var(--sd-muted);
+}
+
+.ch-page .sd-bottom-item > strong {
+  color: var(--sd-text);
 }
 
 @media (max-width: 1350px) {
