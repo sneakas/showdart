@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowDown, ArrowUp, Check, ChevronDown, ChevronUp, ExternalLink, Eye, EyeOff, History, LayoutGrid, Medal, Plus, RotateCcw, Trophy, UsersRound, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, Check, ChevronDown, ChevronUp, Copy, ExternalLink, Eye, EyeOff, History, LayoutGrid, Medal, Monitor, Plus, RotateCcw, Trophy, UsersRound, X } from 'lucide-react';
 import { getSupabaseBrowserClient } from '../../lib/supabaseBrowser';
 import {
   addChampionshipTeam,
@@ -30,6 +30,7 @@ import {
   setPlayoffSeedOrder,
   swapTeamsBetweenGroups,
   updateChampionshipQualificationSettings,
+  updateChampionshipPublicScreen,
   withdrawChampionshipTeam
 } from '../../lib/championship/engine';
 import '../dashboard.css';
@@ -40,6 +41,7 @@ const LANGUAGE_STORAGE_KEY = 'showdart-language';
 const DEFAULT_WORKSPACE_PREFERENCES = {
   hero: true,
   spectator: true,
+  publicScreens: true,
   setup: true,
   teams: true,
   swap: true,
@@ -71,7 +73,7 @@ const texts = {
     withdraw: 'Træk hold', keepResults: 'Behold færdige resultater', voidResults: 'Annuller alle resultater', cancel: 'Annuller',
     withdrawQuestion: 'Hvordan skal allerede spillede resultater behandles?', activeLanes: 'Aktive baner', audit: 'Ændringslog',
     aBracket: 'A-slutspil', bBracket: 'B-slutspil', champion: 'Mester', third: '3. plads', replace: 'Erstat hold', noMatches: 'Ingen aktuelle kampe', qualifyingPlaces: 'kvalifikationspladser', selectQualifiers: 'Vælg de hold, der går videre',
-    confirm: 'Bekræft handling', publishConfirm: 'Offentliggør kampe og baner på publikumsskærmen?', completeConfirm: 'Afslut spillerunden og gå videre?', reset: 'Nulstil mesterskab', resetConfirm: 'Nulstil hele mesterskabet og slet alle hold og resultater?', workspace: 'Arbejdsområde', showAll: 'Vis alle', recommended: 'Anbefalet layout', tournamentBanner: 'Turneringsbanner', spectatorControls: 'Publikumsskærm', teamSwap: 'Holdbytning', bottomBar: 'Statuslinje'
+    confirm: 'Bekræft handling', publishConfirm: 'Offentliggør kampe og baner på publikumsskærmen?', completeConfirm: 'Afslut spillerunden og gå videre?', reset: 'Nulstil mesterskab', resetConfirm: 'Nulstil hele mesterskabet og slet alle hold og resultater?', workspace: 'Arbejdsområde', showAll: 'Vis alle', recommended: 'Anbefalet layout', tournamentBanner: 'Turneringsbanner', spectatorControls: 'Publikumsskærm', teamSwap: 'Holdbytning', bottomBar: 'Statuslinje', publicScreenControl: 'Styring af publikumsskærme', screenOne: 'Skærm 1', screenTwo: 'Skærm 2', displayMode: 'Visning', modeAuto: 'Automatisk', modeRegistration: 'Registrering', modeMatches: 'Aktuelle kampe', modeInitial: 'Første gruppestilling', modeAStandings: 'A-grupper', modeBStandings: 'B-grupper', modeABracket: 'A-slutspil', modeBBracket: 'B-slutspil', modeBrackets: 'Begge slutspil', modePodium: 'Podier', modeAnnouncement: 'Kun besked', rowsPerPage: 'Rækker pr. side', matchesPerPage: 'Kampe pr. side', groupsPerPage: 'Grupper pr. side', rotationSeconds: 'Skift sek.', resumeAuto: 'Genoptag automatisk', announcementPlaceholder: 'Skriv besked til publikum...', publishMessage: 'Vis besked', clearMessage: 'Skjul besked', hideTopBar: 'Skjul topbjælke', hideBanner: 'Skjul banner', hideConnection: 'Skjul forbindelsesstatus', hidePageIndicator: 'Skjul sidetal', hideLaneInfo: 'Skjul baneinfo', hideFooter: 'Skjul statuslinje', laneFilter: 'Banefilter', allLanes: 'Alle baner'
   },
   en: {
     loading: 'Loading championship...', login: 'Log in on the front page to continue', championship: 'Championship', tournament: 'Tournament', admin: 'Admin', logout: 'Logout',
@@ -91,7 +93,7 @@ const texts = {
     withdraw: 'Withdraw team', keepResults: 'Keep completed results', voidResults: 'Void all results', cancel: 'Cancel',
     withdrawQuestion: 'How should completed results be handled?', activeLanes: 'Active lanes', audit: 'Audit log',
     aBracket: 'A playoffs', bBracket: 'B playoffs', champion: 'Champion', third: '3rd place', replace: 'Replace team', noMatches: 'No current matches', qualifyingPlaces: 'qualification places', selectQualifiers: 'Select the teams that advance',
-    confirm: 'Confirm action', publishConfirm: 'Publish matches and lanes to spectator screens?', completeConfirm: 'Complete this round and continue?', reset: 'Reset championship', resetConfirm: 'Reset the championship and delete all teams and results?', workspace: 'Workspace', showAll: 'Show all', recommended: 'Recommended layout', tournamentBanner: 'Tournament banner', spectatorControls: 'Spectator controls', teamSwap: 'Team swapping', bottomBar: 'Status bar'
+    confirm: 'Confirm action', publishConfirm: 'Publish matches and lanes to spectator screens?', completeConfirm: 'Complete this round and continue?', reset: 'Reset championship', resetConfirm: 'Reset the championship and delete all teams and results?', workspace: 'Workspace', showAll: 'Show all', recommended: 'Recommended layout', tournamentBanner: 'Tournament banner', spectatorControls: 'Spectator controls', teamSwap: 'Team swapping', bottomBar: 'Status bar', publicScreenControl: 'Public screen controls', screenOne: 'Screen 1', screenTwo: 'Screen 2', displayMode: 'Display', modeAuto: 'Automatic', modeRegistration: 'Registration', modeMatches: 'Current matches', modeInitial: 'Initial standings', modeAStandings: 'A groups', modeBStandings: 'B groups', modeABracket: 'A playoffs', modeBBracket: 'B playoffs', modeBrackets: 'Both playoffs', modePodium: 'Podiums', modeAnnouncement: 'Announcement only', rowsPerPage: 'Rows per page', matchesPerPage: 'Matches per page', groupsPerPage: 'Groups per page', rotationSeconds: 'Rotate sec.', resumeAuto: 'Resume automatic', announcementPlaceholder: 'Write a message for spectators...', publishMessage: 'Show message', clearMessage: 'Hide message', hideTopBar: 'Hide top bar', hideBanner: 'Hide banner', hideConnection: 'Hide connection status', hidePageIndicator: 'Hide page counter', hideLaneInfo: 'Hide lane details', hideFooter: 'Hide status bar', laneFilter: 'Lane filter', allLanes: 'All lanes'
   }
 };
 
@@ -121,6 +123,7 @@ export default function ChampionshipPage() {
   const [manualSeeds, setManualSeeds] = useState({ A: [], B: [] });
   const [replacementForm, setReplacementForm] = useState({ division: 'A', oldTeamId: '', newTeamId: '' });
   const [showAudit, setShowAudit] = useState(false);
+  const [announcementDrafts, setAnnouncementDrafts] = useState({ screen1: '', screen2: '' });
   const [showWorkspaceControls, setShowWorkspaceControls] = useState(false);
   const [workspacePreferences, setWorkspacePreferences] = useState(DEFAULT_WORKSPACE_PREFERENCES);
   const [workspacePreferencesReady, setWorkspacePreferencesReady] = useState(false);
@@ -233,6 +236,13 @@ export default function ChampionshipPage() {
     setManualSeeds(next);
   }, [state.phase, state.stageComplete, state.config.aPlayoffQualifiersPerGroup, state.config.bPlayoffQualifiersPerGroup, state.groups, state.matches]);
 
+  useEffect(() => {
+    setAnnouncementDrafts(previous => ({
+      screen1: previous.screen1 || state.publicScreens?.screen1?.announcement || '',
+      screen2: previous.screen2 || state.publicScreens?.screen2?.announcement || ''
+    }));
+  }, [state.publicScreens?.screen1?.announcement, state.publicScreens?.screen2?.announcement]);
+
   async function persist(next) {
     if (!session?.access_token) return;
     const updatedAt = new Date().toISOString();
@@ -275,6 +285,25 @@ export default function ChampionshipPage() {
     setTeamForm(previous => ({ ...previous, memberOne: '', memberTwo: '', seed: state.teams.length + 2 }));
   }
 
+  function getPublicScreenUrl(screenKey) {
+    if (!screenInfo?.screenUrl) return '';
+    return `${screenInfo.screenUrl}${screenInfo.screenUrl.includes('?') ? '&' : '?'}view=${encodeURIComponent(screenKey)}`;
+  }
+
+  function updatePublicScreen(screenKey, patch) {
+    commit(previous => updateChampionshipPublicScreen(previous, screenKey, patch));
+  }
+
+  function publishAnnouncement(screenKey) {
+    const announcement = String(announcementDrafts[screenKey] || '').trim();
+    updatePublicScreen(screenKey, { announcement });
+  }
+
+  function clearAnnouncement(screenKey) {
+    setAnnouncementDrafts(previous => ({ ...previous, [screenKey]: '' }));
+    updatePublicScreen(screenKey, { announcement: '' });
+  }
+
   function handleGeneratePlayoffs() {
     commit(previous => {
       let next = previous;
@@ -313,6 +342,7 @@ export default function ChampionshipPage() {
   const workspaceOptions = [
     ['hero', t.tournamentBanner],
     ['spectator', t.spectatorControls],
+    ['publicScreens', t.publicScreenControl],
     ['setup', t.setup],
     ['teams', t.teams],
     ['swap', t.teamSwap],
@@ -362,6 +392,8 @@ export default function ChampionshipPage() {
       </section> : null}
 
       {message ? <div className="ch-toast">{message}</div> : null}
+
+      {workspacePreferences.publicScreens ? <section className="ch-public-screen-control"><Card title={t.publicScreenControl} action={<Monitor size={18} />}><div className="ch-public-screen-grid">{['screen1', 'screen2'].map(screenKey => <PublicScreenCard key={screenKey} screenKey={screenKey} config={state.publicScreens?.[screenKey] || {}} laneCount={state.config.laneCount} draft={announcementDrafts[screenKey] || ''} t={t} url={getPublicScreenUrl(screenKey)} onChange={patch => updatePublicScreen(screenKey, patch)} onDraftChange={value => setAnnouncementDrafts(previous => ({ ...previous, [screenKey]: value }))} onPublish={() => publishAnnouncement(screenKey)} onClear={() => clearAnnouncement(screenKey)} onCopied={() => setMessage(t.copied)} />)}</div></Card></section> : null}
 
       <section className={`ch-workspace ${!sidebarVisible ? 'without-sidebar' : ''}`}>
         {sidebarVisible ? <aside className="ch-column">
@@ -455,6 +487,35 @@ function GROUP_PHASE_OPTIONS(state) {
   return state.groups.filter(group => state.phase === 'initial_groups' ? group.division === 'INITIAL' : state.phase === 'ab_groups' ? ['A', 'B'].includes(group.division) : false);
 }
 
+function PublicScreenCard({ screenKey, config, laneCount, draft, t, url, onChange, onDraftChange, onPublish, onClear, onCopied }) {
+  const modes = [
+    ['auto', t.modeAuto], ['registration', t.modeRegistration], ['matches', t.modeMatches],
+    ['initialStandings', t.modeInitial], ['aStandings', t.modeAStandings], ['bStandings', t.modeBStandings],
+    ['aBracket', t.modeABracket], ['bBracket', t.modeBBracket], ['brackets', t.modeBrackets],
+    ['podium', t.modePodium], ['announcement', t.modeAnnouncement]
+  ];
+  const checkboxes = [
+    ['hideHeader', t.hideTopBar], ['hideHero', t.hideBanner], ['hideConnection', t.hideConnection],
+    ['hidePageIndicator', t.hidePageIndicator], ['hideLaneInfo', t.hideLaneInfo], ['hideFooter', t.hideFooter]
+  ];
+  const lanes = Array.isArray(config.lanes) ? config.lanes : [];
+  const liveAnnouncement = config.announcement || '';
+  return <article className="ch-public-screen-card">
+    <div className="ch-public-screen-head"><strong>{screenKey === 'screen1' ? t.screenOne : t.screenTwo}</strong><span className={config.mode === 'auto' ? 'is-auto' : 'is-manual'}>{config.mode === 'auto' ? t.modeAuto : modes.find(([value]) => value === config.mode)?.[1]}</span></div>
+    <div className="ch-public-screen-fields">
+      <Field label={t.displayMode}><select className="sd-select" value={config.mode || 'auto'} onChange={event => onChange({ mode: event.target.value })}>{modes.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></Field>
+      <Field label={t.rowsPerPage}><input className="sd-input" type="number" min="4" max="24" value={config.rowsPerPage || 12} onChange={event => onChange({ rowsPerPage: Number(event.target.value) })} /></Field>
+      <Field label={t.matchesPerPage}><input className="sd-input" type="number" min="1" max="24" value={config.matchesPerPage || 8} onChange={event => onChange({ matchesPerPage: Number(event.target.value) })} /></Field>
+      <Field label={t.groupsPerPage}><input className="sd-input" type="number" min="1" max="6" value={config.groupsPerPage || 2} onChange={event => onChange({ groupsPerPage: Number(event.target.value) })} /></Field>
+      <Field label={t.rotationSeconds}><input className="sd-input" type="number" min="5" max="120" value={config.rotationSeconds || 10} onChange={event => onChange({ rotationSeconds: Number(event.target.value) })} /></Field>
+    </div>
+    <div className="ch-public-screen-checks">{checkboxes.map(([key, label]) => <label key={key}><input type="checkbox" checked={!!config[key]} onChange={event => onChange({ [key]: event.target.checked })} />{label}</label>)}</div>
+    <div className="ch-public-screen-lanes"><span>{t.laneFilter}: {lanes.length ? '' : t.allLanes}</span><div>{Array.from({ length: laneCount }, (_, index) => index + 1).map(lane => <button type="button" key={lane} className={lanes.includes(lane) ? 'is-selected' : ''} onClick={() => onChange({ lanes: lanes.includes(lane) ? lanes.filter(value => value !== lane) : [...lanes, lane] })}>Bane {lane}</button>)}</div></div>
+    <div className="ch-public-screen-message"><input className="sd-input" maxLength="240" value={draft} placeholder={t.announcementPlaceholder} onChange={event => onDraftChange(event.target.value)} /><button type="button" className="sd-button gold" disabled={!draft.trim() || draft.trim() === liveAnnouncement} onClick={onPublish}>{t.publishMessage}</button><button type="button" className="sd-button" disabled={!liveAnnouncement && !draft} onClick={onClear}>{t.clearMessage}</button></div>
+    <div className="ch-public-screen-actions"><button type="button" className="sd-button gold" disabled={config.mode === 'auto'} onClick={() => onChange({ mode: 'auto' })}>{t.resumeAuto}</button><button type="button" className="sd-button" disabled={!url} onClick={() => window.open(url, '_blank', 'noopener,noreferrer')}><ExternalLink size={14} /> {t.openScreen}</button><button type="button" className="sd-button" disabled={!url} onClick={async () => { await navigator.clipboard.writeText(url); onCopied(); }}><Copy size={14} /> {t.copyLink}</button></div>
+  </article>;
+}
+
 function Card({ title, action, children }) {
   const [collapsed, setCollapsed] = useState(false);
   return <section className={`sd-card sd-panel ch-card ${collapsed ? 'is-collapsed' : ''}`}><div className="ch-card-head"><h2 className="sd-panel-title">{title}</h2><div className="ch-card-actions">{action}<button type="button" className="ch-collapse-button" aria-label={`${collapsed ? 'Vis' : 'Skjul'} ${title}`} onClick={() => setCollapsed(value => !value)}>{collapsed ? <ChevronDown size={17} /> : <ChevronUp size={17} />}</button></div></div>{collapsed ? null : children}</section>;
@@ -462,10 +523,10 @@ function Card({ title, action, children }) {
 
 function getRecommendedWorkspacePreferences(phase) {
   const base = Object.fromEntries(Object.keys(DEFAULT_WORKSPACE_PREFERENCES).map(key => [key, false]));
-  if (phase === 'registration') return { ...base, hero: true, spectator: true, setup: true, teams: true, lanes: true, bottomBar: true };
-  if (['initial_groups', 'ab_groups'].includes(phase)) return { ...base, hero: true, spectator: true, lanes: true, standings: true, currentRound: true, stageActions: true, bottomBar: true };
-  if (phase === 'playoffs') return { ...base, hero: true, spectator: true, lanes: true, currentRound: true, stageActions: true, brackets: true, bottomBar: true };
-  return { ...base, hero: true, spectator: true, brackets: true, corrections: true, bottomBar: true };
+  if (phase === 'registration') return { ...base, hero: true, spectator: true, publicScreens: true, setup: true, teams: true, lanes: true, bottomBar: true };
+  if (['initial_groups', 'ab_groups'].includes(phase)) return { ...base, hero: true, spectator: true, publicScreens: true, lanes: true, standings: true, currentRound: true, stageActions: true, bottomBar: true };
+  if (phase === 'playoffs') return { ...base, hero: true, spectator: true, publicScreens: true, lanes: true, currentRound: true, stageActions: true, brackets: true, bottomBar: true };
+  return { ...base, hero: true, spectator: true, publicScreens: true, brackets: true, corrections: true, bottomBar: true };
 }
 
 function Field({ label, children }) {

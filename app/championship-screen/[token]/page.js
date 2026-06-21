@@ -1,10 +1,15 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { getSupabaseBrowserClient } from '../../../lib/supabaseBrowser';
 import { getCurrentMatches, getDivisionBracket, getGroupStandings, normalizeChampionshipState } from '../../../lib/championship/engine';
 import './screen.css';
+
+const DEFAULT_PUBLIC_SCREENS = {
+  screen1: { label: 'Skærm 1', mode: 'auto', rowsPerPage: 12, matchesPerPage: 8, groupsPerPage: 2, rotationSeconds: 10, announcement: '', hideHeader: false, hideHero: false, hideConnection: false, hidePageIndicator: false, hideLaneInfo: false, hideFooter: false, lanes: [] },
+  screen2: { label: 'Skærm 2', mode: 'auto', rowsPerPage: 12, matchesPerPage: 8, groupsPerPage: 2, rotationSeconds: 10, announcement: '', hideHeader: false, hideHero: false, hideConnection: false, hidePageIndicator: false, hideLaneInfo: false, hideFooter: false, lanes: [] }
+};
 
 const texts = {
   da: {
@@ -13,7 +18,7 @@ const texts = {
     teams: 'Hold', groups: 'Grupper', lanes: 'Baner', round: 'Runde', currentMatches: 'Aktuelle kampe', betweenRounds: 'Mellem spillerunder',
     playing: 'Spiller nu', queued: 'Næste kamp', completed: 'Afsluttet', lane: 'Bane', queue: 'Køplads', winner: 'Vinder',
     standings: 'Stilling', played: 'Spillet', wins: 'Sejre', losses: 'Nederlag', points: 'Point', page: 'Side',
-    aPlayoffs: 'A-slutspil', bPlayoffs: 'B-slutspil', champion: 'Mester', runnerUp: '2. plads', third: '3. plads', waiting: 'Venter på næste offentliggjorte spillerunde', tieBreak: 'Tie-break', advancing: 'går videre', qualifyingPlaces: 'pladser', quarterFinal: 'Kvartfinale', semiFinal: 'Semifinale', final: 'Finale', awaitingTeams: 'Afventer hold'
+    aPlayoffs: 'A-slutspil', bPlayoffs: 'B-slutspil', champion: 'Mester', runnerUp: '2. plads', third: '3. plads', waiting: 'Venter på næste offentliggjorte spillerunde', tieBreak: 'Tie-break', advancing: 'går videre', qualifyingPlaces: 'pladser', quarterFinal: 'Kvartfinale', semiFinal: 'Semifinale', final: 'Finale', awaitingTeams: 'Afventer hold', registeredTeams: 'Tilmeldte hold', announcement: 'Besked fra arrangør', updated: 'Senest opdateret'
   },
   en: {
     loading: 'Loading championship screen...', invalid: 'Invalid screen link', live: 'Live', polling: 'Backup updates', delayed: 'Connection delayed',
@@ -21,13 +26,15 @@ const texts = {
     teams: 'Teams', groups: 'Groups', lanes: 'Lanes', round: 'Round', currentMatches: 'Current matches', betweenRounds: 'Between rounds',
     playing: 'Playing now', queued: 'Next match', completed: 'Completed', lane: 'Lane', queue: 'Queue position', winner: 'Winner',
     standings: 'Standings', played: 'Played', wins: 'Wins', losses: 'Losses', points: 'Points', page: 'Page',
-    aPlayoffs: 'A playoffs', bPlayoffs: 'B playoffs', champion: 'Champion', runnerUp: 'Runner-up', third: '3rd place', waiting: 'Waiting for the next published round', tieBreak: 'Tie-break', advancing: 'advancing', qualifyingPlaces: 'places', quarterFinal: 'Quarter-final', semiFinal: 'Semi-final', final: 'Final', awaitingTeams: 'Awaiting teams'
+    aPlayoffs: 'A playoffs', bPlayoffs: 'B playoffs', champion: 'Champion', runnerUp: 'Runner-up', third: '3rd place', waiting: 'Waiting for the next published round', tieBreak: 'Tie-break', advancing: 'advancing', qualifyingPlaces: 'places', quarterFinal: 'Quarter-final', semiFinal: 'Semi-final', final: 'Final', awaitingTeams: 'Awaiting teams', registeredTeams: 'Registered teams', announcement: 'Organizer message', updated: 'Last updated'
   }
 };
 
 export default function ChampionshipScreenPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const token = decodeURIComponent(Array.isArray(params?.token) ? params.token[0] : params?.token || '');
+  const screenKey = searchParams.get('view') === 'screen2' ? 'screen2' : 'screen1';
   const supabase = useMemo(() => getSupabaseBrowserClient(), []);
   const [state, setState] = useState(() => normalizeChampionshipState(null));
   const [loading, setLoading] = useState(true);
@@ -36,15 +43,20 @@ export default function ChampionshipScreenPage() {
   const [updatedAt, setUpdatedAt] = useState(null);
   const [connection, setConnection] = useState('polling');
   const [lang, setLang] = useState('da');
-  const [groupPage, setGroupPage] = useState(0);
-  const [matchPage, setMatchPage] = useState(0);
+  const [frameIndex, setFrameIndex] = useState(0);
   const t = texts[lang] || texts.da;
 
-  const currentMatches = useMemo(() => state.roundPublished ? getCurrentMatches(state) : [], [state]);
-  const visibleGroups = useMemo(() => state.groups.filter(group => state.phase === 'initial_groups' ? group.division === 'INITIAL' : state.phase === 'ab_groups' ? ['A', 'B'].includes(group.division) : false), [state.groups, state.phase]);
+  const screenConfig = useMemo(() => normalizePublicScreenConfig(state.publicScreens?.[screenKey], screenKey), [screenKey, state.publicScreens]);
+  const currentMatches = useMemo(() => {
+    if (!state.roundPublished) return [];
+    const lanes = screenConfig.lanes.length ? new Set(screenConfig.lanes) : null;
+    return getCurrentMatches(state).filter(match => !lanes || lanes.has(match.laneNumber));
+  }, [screenConfig.lanes, state]);
   const teamsById = useMemo(() => new Map(state.teams.map(team => [team.id, team])), [state.teams]);
-  const groupPages = useMemo(() => chunk(visibleGroups, 4), [visibleGroups]);
-  const matchPages = useMemo(() => chunk(orderMatches(currentMatches), 10), [currentMatches]);
+  const automaticViews = useMemo(() => getAutomaticViews(state, currentMatches.length), [currentMatches.length, state]);
+  const requestedViews = screenConfig.mode === 'auto' ? automaticViews : [screenConfig.mode];
+  const frames = useMemo(() => buildDisplayFrames({ state, views: requestedViews, currentMatches, screenConfig }), [currentMatches, requestedViews.join('|'), screenConfig, state]);
+  const frame = frames[frameIndex % Math.max(1, frames.length)] || { view: 'announcement', page: 0, pages: 1 };
 
   const load = useCallback(async ({ silent = false } = {}) => {
     if (!token) return;
@@ -93,59 +105,54 @@ export default function ChampionshipScreenPage() {
   }, [meta?.realtimeChannel, supabase]);
 
   useEffect(() => {
-    setGroupPage(0);
-    if (groupPages.length <= 1) return undefined;
-    const interval = window.setInterval(() => setGroupPage(page => (page + 1) % groupPages.length), 10000);
+    setFrameIndex(0);
+    if (frames.length <= 1) return undefined;
+    const interval = window.setInterval(() => setFrameIndex(index => (index + 1) % frames.length), screenConfig.rotationSeconds * 1000);
     return () => window.clearInterval(interval);
-  }, [groupPages.length, state.phase, state.stageRound]);
-
-  useEffect(() => {
-    setMatchPage(0);
-    if (matchPages.length <= 1) return undefined;
-    const interval = window.setInterval(() => setMatchPage(page => (page + 1) % matchPages.length), 10000);
-    return () => window.clearInterval(interval);
-  }, [matchPages.length, state.stageRound]);
+  }, [frames.length, screenConfig.mode, screenConfig.rotationSeconds, screenKey, state.phase, state.stageRound]);
 
   if (loading) return <main className="chs-page chs-center">{t.loading}</main>;
   if (error) return <main className="chs-page chs-center"><section className="chs-card"><h1>{t.invalid}</h1><p>{error}</p></section></main>;
 
   const phaseLabel = state.phase === 'registration' ? t.registration : state.phase === 'initial_groups' ? t.initial : state.phase === 'ab_groups' ? t.ab : state.phase === 'playoffs' ? t.playoffs : t.finished;
-  const currentGroupPage = groupPages[groupPage] || [];
-  const currentMatchPage = matchPages[matchPage] || [];
   const aBracket = getDivisionBracket(state, 'A');
   const bBracket = getDivisionBracket(state, 'B');
 
-  return <main className="chs-page">
-    <header className="chs-header">
-      <div className="chs-brand"><img src="/assets/small-logo.png" alt="Showdart" /><div><strong>Showdart</strong><span>Championship</span></div></div>
-      <div className={`chs-connection is-${connection}`}><i />{connection === 'live' ? t.live : connection === 'polling' ? t.polling : t.delayed} · {formatTime(updatedAt)}</div>
-      <div className="chs-flags"><button aria-label="Dansk" onClick={() => { setLang('da'); localStorage.setItem('showdart-language', 'da'); }}>🇩🇰</button><button aria-label="English" onClick={() => { setLang('en'); localStorage.setItem('showdart-language', 'en'); }}>🇬🇧</button></div>
-    </header>
+  const pageIndicator = !screenConfig.hidePageIndicator && frame.pages > 1 ? `${t.page} ${frame.page + 1}/${frame.pages}` : '';
+  const activeGroupCount = state.groups.filter(group => state.phase === 'initial_groups' ? group.division === 'INITIAL' : ['A', 'B'].includes(group.division)).length;
 
-    <section className="chs-hero">
-      <div><span>{phaseLabel}</span><h1>{state.tournamentName || t.initial}</h1><p>{state.teams.filter(team => !team.withdrawn).length} {t.teams} · {visibleGroups.length} {t.groups} · {state.activeLanes.length} {t.lanes}</p></div>
+  return <main className={`chs-page ${screenConfig.hideFooter ? '' : 'has-footer'}`}>
+    {!screenConfig.hideHeader ? <header className="chs-header">
+      <div className="chs-brand"><img src="/assets/small-logo.png" alt="Showdart" /><div><strong>Showdart</strong><span>Championship</span></div></div>
+      {!screenConfig.hideConnection ? <div className={`chs-connection is-${connection}`}><i />{connection === 'live' ? t.live : connection === 'polling' ? t.polling : t.delayed} · {formatTime(updatedAt)}</div> : null}
+      <div className="chs-flags"><button aria-label="Dansk" onClick={() => { setLang('da'); localStorage.setItem('showdart-language', 'da'); }}>🇩🇰</button><button aria-label="English" onClick={() => { setLang('en'); localStorage.setItem('showdart-language', 'en'); }}>🇬🇧</button></div>
+    </header> : null}
+
+    {!screenConfig.hideHero ? <section className="chs-hero">
+      <div><span>{phaseLabel}</span><h1>{state.tournamentName || t.initial}</h1><p>{state.teams.filter(team => !team.withdrawn).length} {t.teams} · {activeGroupCount} {t.groups} · {state.activeLanes.length} {t.lanes}</p></div>
       <strong>{t.round} {state.stageRound || 0}</strong>
-    </section>
+    </section> : null}
 
     <section className="chs-content">
-      {state.phase === 'finished' ? <section className="chs-podium-grid"><Podium bracket={aBracket} teamsById={teamsById} title={t.aPlayoffs} t={t} /><Podium bracket={bBracket} teamsById={teamsById} title={t.bPlayoffs} t={t} /></section> : null}
-
-      {currentMatches.length ? <section><SectionTitle title={t.currentMatches} page={matchPages.length > 1 ? `${t.page} ${matchPage + 1}/${matchPages.length}` : ''} /><div className="chs-match-grid">{currentMatchPage.map(match => <MatchCard key={match.id} match={match} allMatches={currentMatches} teamsById={teamsById} t={t} />)}</div></section> : state.started && state.phase !== 'finished' ? <section className="chs-waiting"><span>{t.betweenRounds}</span><h2>{t.waiting}</h2></section> : null}
-
-      {currentGroupPage.length ? <section><SectionTitle title={t.standings} page={groupPages.length > 1 ? `${t.page} ${groupPage + 1}/${groupPages.length}` : ''} /><div className="chs-group-grid">{currentGroupPage.map(group => <GroupTable key={group.id} group={group} standings={getGroupStandings(state, group.id)} t={t} />)}</div></section> : null}
-
-      {state.phase === 'playoffs' ? <section className="chs-bracket-grid"><Bracket bracket={aBracket} teamsById={teamsById} title={t.aPlayoffs} t={t} /><Bracket bracket={bBracket} teamsById={teamsById} title={t.bPlayoffs} t={t} /></section> : null}
+      {screenConfig.announcement && frame.view !== 'announcement' ? <AnnouncementPanel message={screenConfig.announcement} t={t} /> : null}
+      {frame.view === 'announcement' ? <AnnouncementPanel message={screenConfig.announcement || '-'} t={t} full /> : null}
+      {frame.view === 'registration' ? <section><SectionTitle title={t.registeredTeams} page={pageIndicator} /><div className="chs-registration-grid">{frame.items.map((team, index) => <div className="chs-registration-team" key={team.id}><span>{frame.startIndex + index + 1}</span><strong>{team.name}</strong></div>)}</div></section> : null}
+      {frame.view === 'matches' ? frame.items.length ? <section><SectionTitle title={t.currentMatches} page={pageIndicator} /><div className="chs-match-grid">{frame.items.map(match => <MatchCard key={match.id} match={match} allMatches={currentMatches} teamsById={teamsById} t={t} hideLaneInfo={screenConfig.hideLaneInfo} />)}</div></section> : <section className="chs-waiting"><span>{t.betweenRounds}</span><h2>{t.waiting}</h2></section> : null}
+      {['initialStandings', 'aStandings', 'bStandings'].includes(frame.view) ? <section><SectionTitle title={t.standings} page={pageIndicator} /><div className="chs-group-grid">{frame.groups.map(item => <GroupTable key={item.group.id} group={item.group} standings={item.standings} t={t} />)}</div></section> : null}
+      {['aBracket', 'bBracket', 'brackets'].includes(frame.view) ? <section className="chs-bracket-grid">{frame.view !== 'bBracket' ? <Bracket bracket={aBracket} teamsById={teamsById} title={t.aPlayoffs} t={t} /> : null}{frame.view !== 'aBracket' ? <Bracket bracket={bBracket} teamsById={teamsById} title={t.bPlayoffs} t={t} /> : null}</section> : null}
+      {frame.view === 'podium' ? <section className="chs-podium-grid"><Podium bracket={aBracket} teamsById={teamsById} title={t.aPlayoffs} t={t} /><Podium bracket={bBracket} teamsById={teamsById} title={t.bPlayoffs} t={t} /></section> : null}
     </section>
+    {!screenConfig.hideFooter ? <footer className="chs-footer"><span>{screenConfig.label}</span><strong>{phaseLabel}</strong><span>{pageIndicator || `${t.round} ${state.stageRound || 0}`}</span><span>{t.updated}: {formatTime(updatedAt)}</span></footer> : null}
   </main>;
 }
 
-function MatchCard({ match, allMatches, teamsById, t }) {
+function MatchCard({ match, allMatches, teamsById, t, hideLaneInfo }) {
   const unfinished = allMatches.filter(item => item.laneNumber === match.laneNumber && !isResolved(item) && !item.voided).sort((a, b) => (a.lanePosition || 999) - (b.lanePosition || 999));
   const queueIndex = unfinished.findIndex(item => item.id === match.id);
   const status = isResolved(match) ? 'completed' : queueIndex === 0 ? 'current' : 'queued';
   const label = status === 'current' ? t.playing : status === 'queued' ? t.queued : t.completed;
   const displayQueue = queueIndex >= 0 ? queueIndex + 1 : null;
-  return <article className={`chs-match is-${status} ${match.isMultiTeamTieBreak ? 'is-multi-tiebreak' : ''}`}><div className="chs-match-head"><strong>{match.isMultiTeamTieBreak ? `${t.tieBreak} · ${label}` : label}</strong><span>{t.lane} {match.laneNumber || '-'}{displayQueue ? ` · ${t.queue} ${displayQueue}` : ''}</span></div>{match.isMultiTeamTieBreak ? <div className="chs-multi-tiebreak"><p><strong>{match.qualifierIds.length}/{match.qualifierCount}</strong> {t.qualifyingPlaces} {t.advancing}</p><div>{match.participantIds.map(teamId => <div key={teamId} className={match.qualifierIds.includes(teamId) ? 'is-winner' : isResolved(match) ? 'is-loser' : ''}><span>{match.qualifierIds.includes(teamId) ? '✓' : ''}</span>{teamsById.get(teamId)?.name || '-'}</div>)}</div></div> : <div className="chs-teams"><div className={match.winnerId === match.team1Id ? 'is-winner' : match.winnerId ? 'is-loser' : ''}>{match.winnerId === match.team1Id ? '✓ ' : ''}{teamsById.get(match.team1Id)?.name || '-'}</div><b>VS</b><div className={match.winnerId === match.team2Id ? 'is-winner' : match.winnerId ? 'is-loser' : ''}>{match.winnerId === match.team2Id ? '✓ ' : ''}{teamsById.get(match.team2Id)?.name || '-'}</div></div>}</article>;
+  return <article className={`chs-match is-${status} ${match.isMultiTeamTieBreak ? 'is-multi-tiebreak' : ''}`}><div className="chs-match-head"><strong>{match.isMultiTeamTieBreak ? `${t.tieBreak} · ${label}` : label}</strong>{!hideLaneInfo ? <span>{t.lane} {match.laneNumber || '-'}{displayQueue ? ` · ${t.queue} ${displayQueue}` : ''}</span> : null}</div>{match.isMultiTeamTieBreak ? <div className="chs-multi-tiebreak"><p><strong>{match.qualifierIds.length}/{match.qualifierCount}</strong> {t.qualifyingPlaces} {t.advancing}</p><div>{match.participantIds.map(teamId => <div key={teamId} className={match.qualifierIds.includes(teamId) ? 'is-winner' : isResolved(match) ? 'is-loser' : ''}><span>{match.qualifierIds.includes(teamId) ? '✓' : ''}</span>{teamsById.get(teamId)?.name || '-'}</div>)}</div></div> : <div className="chs-teams"><div className={match.winnerId === match.team1Id ? 'is-winner' : match.winnerId ? 'is-loser' : ''}>{match.winnerId === match.team1Id ? '✓ ' : ''}{teamsById.get(match.team1Id)?.name || '-'}</div><b>VS</b><div className={match.winnerId === match.team2Id ? 'is-winner' : match.winnerId ? 'is-loser' : ''}>{match.winnerId === match.team2Id ? '✓ ' : ''}{teamsById.get(match.team2Id)?.name || '-'}</div></div>}</article>;
 }
 
 function GroupTable({ group, standings, t }) {
@@ -198,10 +205,72 @@ function SectionTitle({ title, page }) {
   return <div className="chs-section-title"><h2>{title}</h2>{page ? <span>{page}</span> : null}</div>;
 }
 
+function AnnouncementPanel({ message, t, full = false }) {
+  return <section className={`chs-announcement ${full ? 'is-full' : ''}`}><span>{t.announcement}</span><strong>{message}</strong></section>;
+}
+
+function getAutomaticViews(state, currentMatchCount) {
+  if (state.phase === 'registration') return ['registration'];
+  if (state.phase === 'initial_groups') return currentMatchCount ? ['matches', 'initialStandings'] : ['initialStandings'];
+  if (state.phase === 'ab_groups') return currentMatchCount ? ['matches', 'aStandings', 'bStandings'] : ['aStandings', 'bStandings'];
+  if (state.phase === 'playoffs') return currentMatchCount ? ['matches', 'brackets'] : ['brackets'];
+  return ['podium'];
+}
+
+function buildDisplayFrames({ state, views, currentMatches, screenConfig }) {
+  const frames = [];
+  for (const view of views) {
+    let viewFrames = [];
+    if (view === 'registration') {
+      viewFrames = chunk(state.teams.filter(team => !team.withdrawn), screenConfig.rowsPerPage).map((items, page) => ({ view, items, startIndex: page * screenConfig.rowsPerPage }));
+    } else if (view === 'matches') {
+      viewFrames = chunk(orderMatches(currentMatches), screenConfig.matchesPerPage).map(items => ({ view, items }));
+    } else if (['initialStandings', 'aStandings', 'bStandings'].includes(view)) {
+      const division = view === 'initialStandings' ? 'INITIAL' : view === 'aStandings' ? 'A' : 'B';
+      const groups = state.groups.filter(group => group.division === division);
+      for (const groupChunk of chunk(groups, screenConfig.groupsPerPage)) {
+        const standings = groupChunk.map(group => ({ group, standings: getGroupStandings(state, group.id) }));
+        const rowPageCount = Math.max(1, ...standings.map(item => Math.ceil(item.standings.length / screenConfig.rowsPerPage)));
+        for (let rowPage = 0; rowPage < rowPageCount; rowPage += 1) {
+          viewFrames.push({
+            view,
+            groups: standings.map(item => ({ ...item, standings: item.standings.slice(rowPage * screenConfig.rowsPerPage, (rowPage + 1) * screenConfig.rowsPerPage) }))
+          });
+        }
+      }
+    } else {
+      viewFrames = [{ view }];
+    }
+    if (!viewFrames.length) viewFrames = [{ view, items: [], groups: [] }];
+    frames.push(...viewFrames.map((item, page) => ({ ...item, page, pages: viewFrames.length })));
+  }
+  return frames.length ? frames : [{ view: 'announcement', page: 0, pages: 1 }];
+}
+
+function normalizePublicScreenConfig(value, screenKey) {
+  const defaults = DEFAULT_PUBLIC_SCREENS[screenKey] || DEFAULT_PUBLIC_SCREENS.screen1;
+  const configured = value && typeof value === 'object' ? value : {};
+  return {
+    ...defaults,
+    ...configured,
+    rowsPerPage: clampNumber(configured.rowsPerPage, 4, 24, defaults.rowsPerPage),
+    matchesPerPage: clampNumber(configured.matchesPerPage, 1, 24, defaults.matchesPerPage),
+    groupsPerPage: clampNumber(configured.groupsPerPage, 1, 6, defaults.groupsPerPage),
+    rotationSeconds: clampNumber(configured.rotationSeconds, 5, 120, defaults.rotationSeconds),
+    announcement: String(configured.announcement || '').trim().slice(0, 240),
+    lanes: Array.isArray(configured.lanes) ? configured.lanes.map(Number).filter(Number.isInteger) : []
+  };
+}
+
 function chunk(items, size) {
   const pages = [];
   for (let index = 0; index < items.length; index += size) pages.push(items.slice(index, index + size));
   return pages.length ? pages : [[]];
+}
+
+function clampNumber(value, min, max, fallback) {
+  const number = Number(value);
+  return Number.isFinite(number) ? Math.max(min, Math.min(max, Math.round(number))) : fallback;
 }
 
 function orderMatches(matches) {

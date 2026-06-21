@@ -17,6 +17,7 @@ import {
   setChampionshipTieBreakQualifiers,
   setChampionshipWinner,
   swapTeamsBetweenGroups,
+  updateChampionshipPublicScreen,
   withdrawChampionshipTeam
 } from '../lib/championship/engine.js';
 
@@ -248,6 +249,27 @@ test('manual points adjustments change standings and require a reason', () => {
   state = addPointsAdjustment(state, teamId, group.id, 2, 'Organizer correction');
   assert.equal(getGroupStandings(state, group.id).find(entry => entry.teamId === teamId).points, 2);
   assert.equal(state.auditLog.at(-1).action, 'points_adjusted');
+});
+
+test('championship public screen settings are independent and normalized', () => {
+  let state = createDefaultChampionshipState();
+  state = updateChampionshipPublicScreen(state, 'screen1', {
+    mode: 'matches', matchesPerPage: 18, rotationSeconds: 4, lanes: [1, 3], hideHeader: true
+  });
+  state = updateChampionshipPublicScreen(state, 'screen2', {
+    mode: 'aBracket', rowsPerPage: 20, groupsPerPage: 5, announcement: 'Finalen starter snart'
+  });
+
+  assert.equal(state.publicScreens.screen1.mode, 'matches');
+  assert.equal(state.publicScreens.screen1.matchesPerPage, 18);
+  assert.equal(state.publicScreens.screen1.rotationSeconds, 5);
+  assert.deepEqual(state.publicScreens.screen1.lanes, [1, 3]);
+  assert.equal(state.publicScreens.screen1.hideHeader, true);
+  assert.equal(state.publicScreens.screen2.mode, 'aBracket');
+  assert.equal(state.publicScreens.screen2.rowsPerPage, 20);
+  assert.equal(state.publicScreens.screen2.groupsPerPage, 5);
+  assert.equal(state.publicScreens.screen2.announcement, 'Finalen starter snart');
+  assert.notEqual(state.publicScreens.screen2.matchesPerPage, 18);
 });
 
 let failures = 0;

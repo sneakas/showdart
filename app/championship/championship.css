@@ -101,6 +101,125 @@
   justify-content: flex-end;
 }
 
+.ch-public-screen-control {
+  padding: 14px 24px 0;
+}
+
+.ch-public-screen-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.ch-public-screen-card {
+  display: grid;
+  gap: 12px;
+  border: 1px solid rgba(43, 91, 70, .8);
+  border-radius: 8px;
+  background: rgba(1, 13, 8, .42);
+  padding: 13px;
+}
+
+.ch-public-screen-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--sd-text);
+  text-transform: uppercase;
+}
+
+.ch-public-screen-head > span {
+  border: 1px solid var(--sd-border);
+  border-radius: 999px;
+  color: var(--sd-gold-2);
+  padding: 4px 8px;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.ch-public-screen-head > span.is-auto {
+  border-color: rgba(75, 209, 125, .45);
+  color: var(--sd-green);
+}
+
+.ch-public-screen-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 12px;
+}
+
+.ch-public-screen-checks {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.ch-public-screen-checks label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--sd-muted);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.ch-public-screen-checks input {
+  accent-color: var(--sd-gold-2);
+}
+
+.ch-public-screen-lanes {
+  display: grid;
+  gap: 7px;
+}
+
+.ch-public-screen-lanes > span {
+  color: var(--sd-muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.ch-public-screen-lanes > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.ch-public-screen-lanes button {
+  border: 1px solid rgba(65, 101, 81, .8);
+  border-radius: 999px;
+  background: rgba(0,0,0,.2);
+  color: var(--sd-muted);
+  padding: 5px 9px;
+  font-size: 11px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.ch-public-screen-lanes button.is-selected {
+  border-color: var(--sd-gold-2);
+  color: var(--sd-gold-2);
+  background: rgba(241, 189, 53, .1);
+}
+
+.ch-public-screen-message {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 7px;
+}
+
+.ch-public-screen-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.ch-public-screen-message .sd-button,
+.ch-public-screen-actions .sd-button {
+  min-height: 38px;
+  padding: 7px 10px;
+}
+
 .ch-hero span,
 .ch-hero p {
   color: var(--sd-muted);
@@ -655,6 +774,10 @@
   .ch-adjustment {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .ch-public-screen-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 900px) {
@@ -679,6 +802,10 @@
   .ch-workspace {
     grid-template-columns: 1fr;
     padding: 12px 14px 36px;
+  }
+
+  .ch-public-screen-control {
+    padding: 12px 14px 0;
   }
 
   .ch-hero {
@@ -722,5 +849,11 @@
   .ch-card-actions {
     flex-wrap: wrap;
     justify-content: flex-end;
+  }
+
+  .ch-public-screen-fields,
+  .ch-public-screen-checks,
+  .ch-public-screen-message {
+    grid-template-columns: 1fr;
   }
 }

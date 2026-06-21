@@ -137,6 +137,96 @@
   padding: 20px 28px 40px;
 }
 
+.chs-page.has-footer .chs-content {
+  padding-bottom: 88px;
+}
+
+.chs-announcement {
+  display: grid;
+  gap: 7px;
+  border: 1px solid rgba(241,189,53,.65);
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(97, 65, 5, .36), rgba(5, 43, 27, .96));
+  padding: 16px 20px;
+  box-shadow: 0 14px 32px rgba(0,0,0,.28);
+}
+
+.chs-announcement > span {
+  color: #f1bd35;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .1em;
+}
+
+.chs-announcement > strong {
+  overflow-wrap: anywhere;
+  font-size: clamp(1.25rem, 2.2vw, 2rem);
+}
+
+.chs-announcement.is-full {
+  min-height: 48vh;
+  place-content: center;
+  text-align: center;
+}
+
+.chs-announcement.is-full > strong {
+  font-size: clamp(2rem, 5vw, 5rem);
+}
+
+.chs-registration-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 9px;
+}
+
+.chs-registration-team {
+  min-height: 58px;
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  border: 1px solid rgba(43, 99, 73, .9);
+  border-radius: 8px;
+  background: rgba(4, 31, 20, .88);
+  padding: 9px 12px;
+}
+
+.chs-registration-team > span {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #78a96f;
+  color: #06100b;
+  font-weight: 900;
+}
+
+.chs-footer {
+  position: fixed;
+  inset: auto 0 0;
+  z-index: 20;
+  min-height: 58px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: center;
+  gap: 14px;
+  border-top: 1px solid #275b43;
+  background: rgba(3, 24, 15, .97);
+  padding: 9px 28px;
+  box-shadow: 0 -14px 34px rgba(0,0,0,.4);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.chs-footer > span {
+  color: #aab9ae;
+}
+
+.chs-footer > *:not(:first-child) {
+  text-align: right;
+}
+
 .chs-section-title {
   display: flex;
   justify-content: space-between;
@@ -526,6 +616,15 @@
 
   .chs-content {
     padding: 14px;
+  }
+
+  .chs-page.has-footer .chs-content {
+    padding-bottom: 78px;
+  }
+
+  .chs-footer {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: 8px 14px;
   }
 
   .chs-group-grid,
