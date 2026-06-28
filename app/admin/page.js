@@ -238,6 +238,10 @@ export default function AdminPage() {
       window.location.href = '/championship';
       return;
     }
+    if (target === 'game') {
+      window.location.href = '/spil';
+      return;
+    }
     window.location.href = `/?nav=${target}`;
   }
 

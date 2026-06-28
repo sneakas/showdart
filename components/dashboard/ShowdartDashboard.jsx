@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { ArrowDown, ArrowUp, CalendarDays, Check, Eye, EyeOff, ExternalLink, GitBranch, History, Medal, MoreVertical, Plus, QrCode, RefreshCw, RotateCcw, ShieldCheck, Trophy, Upload, UsersRound } from 'lucide-react';
+import { ArrowDown, ArrowUp, CalendarDays, Check, Eye, EyeOff, ExternalLink, Gamepad2, GitBranch, History, Medal, MoreVertical, Plus, QrCode, RefreshCw, RotateCcw, ShieldCheck, Trophy, Upload, UsersRound } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   addFixedTeam,
@@ -44,6 +44,7 @@ const texts = {
   da: {
     tournament: 'Turnering',
     championship: 'Mesterskab',
+    game: 'Spil',
     admin: 'Admin',
     rules: 'Regler',
     rulesTitle: 'Turneringsregler',
@@ -235,6 +236,7 @@ const texts = {
   en: {
     tournament: 'Tournament',
     championship: 'Championship',
+    game: 'Game',
     admin: 'Admin',
     rules: 'Rules',
     rulesTitle: 'Tournament rules',
@@ -436,6 +438,7 @@ export function ShowdartDashboard({
   onCopyScreenLink,
   onOpenAdmin,
   onOpenChampionship,
+  onOpenGame,
   onOpenRules,
   onLogout,
   onLanguageChange,
@@ -913,6 +916,7 @@ export function ShowdartDashboard({
         <nav className="sd-nav">
           {navButton('tournament', t.tournament, Trophy, () => {})}
           {navButton('championship', t.championship, Medal, onOpenChampionship)}
+          {navButton('game', t.game, Gamepad2, onOpenGame)}
           {role === 'admin' ? navButton('admin', t.admin, UsersRound, onOpenAdmin) : null}
           {navButton('rules', t.rules, ShieldCheck, () => setRulesOpen(true))}
         </nav>

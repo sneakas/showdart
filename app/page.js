@@ -413,6 +413,7 @@ export default function Page() {
       onCopyScreenLink={handleCopyScreenLink}
       onOpenAdmin={() => { window.location.href = '/admin'; }}
       onOpenChampionship={() => { window.location.href = '/championship'; }}
+      onOpenGame={() => { window.location.href = '/spil'; }}
       onOpenRules={() => {}}
       onLogout={handleLogout}
       onLanguageChange={changeLanguage}

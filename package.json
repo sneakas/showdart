@@ -4,7 +4,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "test": "node tests/tournamentEngine.test.mjs && node tests/championshipEngine.test.mjs",
+    "test": "node tests/tournamentEngine.test.mjs && node tests/championshipEngine.test.mjs && node tests/mickeyEngine.test.mjs",
     "start": "next start"
   },
   "dependencies": {

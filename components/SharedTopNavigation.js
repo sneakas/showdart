@@ -1,6 +1,6 @@
 'use client';
 
-import { Medal, ShieldCheck, Trophy, UsersRound } from 'lucide-react';
+import { Gamepad2, Medal, ShieldCheck, Trophy, UsersRound } from 'lucide-react';
 
 const headerTexts = {
   da: {
@@ -9,6 +9,7 @@ const headerTexts = {
     siteTitle: 'Showdart Turnerings Organisator',
     tournament: 'Turnering',
     championship: 'Mesterskab',
+    game: 'Spil',
     rules: 'Regler',
     admin: 'Admin'
   },
@@ -18,6 +19,7 @@ const headerTexts = {
     siteTitle: 'Showdart Tournament Organizer',
     tournament: 'Tournament',
     championship: 'Championship',
+    game: 'Game',
     rules: 'Rules',
     admin: 'Admin'
   }
@@ -54,6 +56,7 @@ export function SharedTopNavigation({
   const navIcons = {
     tournament: Trophy,
     championship: Medal,
+    game: Gamepad2,
     admin: UsersRound,
     rules: ShieldCheck
   };
@@ -117,6 +120,7 @@ export function SharedTopNavigation({
           <div style={{ display: 'flex', justifyContent: 'center', gap: 34, alignItems: 'stretch', flexWrap: 'wrap', minHeight: 90 }}>
             {navItem('tournament', t.tournament)}
             {navItem('championship', t.championship)}
+            {navItem('game', t.game)}
             {isAdmin ? navItem('admin', t.admin) : null}
             {showRules ? navItem('rules', t.rules) : null}
           </div>

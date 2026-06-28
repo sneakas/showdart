@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowDown, ArrowUp, Check, ChevronDown, ChevronUp, Copy, ExternalLink, Eye, EyeOff, History, LayoutGrid, Medal, Monitor, Plus, RotateCcw, Trophy, UsersRound, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, Check, ChevronDown, ChevronUp, Copy, ExternalLink, Eye, EyeOff, Gamepad2, History, LayoutGrid, Medal, Monitor, Plus, RotateCcw, Trophy, UsersRound, X } from 'lucide-react';
 import { getSupabaseBrowserClient } from '../../lib/supabaseBrowser';
 import {
   addChampionshipTeam,
@@ -56,7 +56,7 @@ const DEFAULT_WORKSPACE_PREFERENCES = {
 
 const texts = {
   da: {
-    loading: 'Indlæser mesterskab...', login: 'Log ind på forsiden for at fortsætte', championship: 'Mesterskab', tournament: 'Turnering', admin: 'Admin', logout: 'Log ud',
+    loading: 'Indlæser mesterskab...', login: 'Log ind på forsiden for at fortsætte', championship: 'Mesterskab', tournament: 'Turnering', game: 'Spil', admin: 'Admin', logout: 'Log ud',
     setup: 'Mesterskabsopsætning', name: 'Navn', initialGroups: 'Første grupper', aQualifiers: 'Til A pr. gruppe', aGroups: 'A-grupper', bGroups: 'B-grupper',
     aPlayoff: 'A-slutspil pr. gruppe', bPlayoff: 'B-slutspil pr. gruppe', allocation: 'Fordeling', seeded: 'Seedet', random: 'Tilfældig', manual: 'Manuel', lanes: 'Baner',
     teams: 'Hold', memberOne: 'Spiller 1', memberTwo: 'Spiller 2', seed: 'Seed', addTeam: 'Tilføj hold', createGroups: 'Opret første grupper',
@@ -76,7 +76,7 @@ const texts = {
     confirm: 'Bekræft handling', publishConfirm: 'Offentliggør kampe og baner på publikumsskærmen?', completeConfirm: 'Afslut spillerunden og gå videre?', reset: 'Nulstil mesterskab', resetConfirm: 'Nulstil hele mesterskabet og slet alle hold og resultater?', workspace: 'Arbejdsområde', showAll: 'Vis alle', recommended: 'Anbefalet layout', tournamentBanner: 'Turneringsbanner', spectatorControls: 'Publikumsskærm', teamSwap: 'Holdbytning', bottomBar: 'Statuslinje', publicScreenControl: 'Styring af publikumsskærme', screenOne: 'Skærm 1', screenTwo: 'Skærm 2', displayMode: 'Visning', modeAuto: 'Automatisk', modeRegistration: 'Registrering', modeMatches: 'Aktuelle kampe', modeInitial: 'Første gruppestilling', modeAStandings: 'A-grupper', modeBStandings: 'B-grupper', modeABracket: 'A-slutspil', modeBBracket: 'B-slutspil', modeBrackets: 'Begge slutspil', modePodium: 'Podier', modeAnnouncement: 'Kun besked', rowsPerPage: 'Rækker pr. side', matchesPerPage: 'Kampe pr. side', groupsPerPage: 'Grupper pr. side', rotationSeconds: 'Skift sek.', resumeAuto: 'Genoptag automatisk', announcementPlaceholder: 'Skriv besked til publikum...', publishMessage: 'Vis besked', clearMessage: 'Skjul besked', hideTopBar: 'Skjul topbjælke', hideBanner: 'Skjul banner', hideConnection: 'Skjul forbindelsesstatus', hidePageIndicator: 'Skjul sidetal', hideLaneInfo: 'Skjul baneinfo', hideFooter: 'Skjul statuslinje', laneFilter: 'Banefilter', allLanes: 'Alle baner'
   },
   en: {
-    loading: 'Loading championship...', login: 'Log in on the front page to continue', championship: 'Championship', tournament: 'Tournament', admin: 'Admin', logout: 'Logout',
+    loading: 'Loading championship...', login: 'Log in on the front page to continue', championship: 'Championship', tournament: 'Tournament', game: 'Game', admin: 'Admin', logout: 'Logout',
     setup: 'Championship setup', name: 'Name', initialGroups: 'Initial groups', aQualifiers: 'To A per group', aGroups: 'A groups', bGroups: 'B groups',
     aPlayoff: 'A playoff per group', bPlayoff: 'B playoff per group', allocation: 'Allocation', seeded: 'Seeded', random: 'Random', manual: 'Manual', lanes: 'Lanes',
     teams: 'Teams', memberOne: 'Player 1', memberTwo: 'Player 2', seed: 'Seed', addTeam: 'Add team', createGroups: 'Create initial groups',
@@ -363,6 +363,7 @@ export default function ChampionshipPage() {
         <nav className="sd-nav">
           <button type="button" onClick={() => { window.location.href = '/'; }}><Trophy size={20} />{t.tournament}</button>
           <button type="button" className="is-active"><Medal size={20} />{t.championship}</button>
+          <button type="button" onClick={() => { window.location.href = '/spil'; }}><Gamepad2 size={20} />{t.game}</button>
           {role === 'admin' ? <button type="button" onClick={() => { window.location.href = '/admin'; }}><UsersRound size={20} />{t.admin}</button> : null}
         </nav>
         <div className="sd-userbar">
