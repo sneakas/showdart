@@ -196,7 +196,35 @@
 }
 
 .game-board-panel {
-  min-height: 630px;
+  min-height: 0;
+}
+
+.mickey-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(216, 169, 40, .18), transparent 34rem),
+    rgba(1, 5, 3, .9);
+  padding: 22px;
+  backdrop-filter: blur(10px);
+}
+
+.mickey-modal {
+  width: min(1180px, calc(100vw - 44px));
+  max-height: calc(100vh - 44px);
+  display: grid;
+}
+
+.mickey-modal .game-board-panel {
+  max-height: calc(100vh - 44px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-color: rgba(241, 189, 53, .45);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, .72), 0 0 0 1px rgba(241, 189, 53, .12);
 }
 
 .mickey-grid {
@@ -226,10 +254,18 @@
   border-right: 0;
 }
 
-.mickey-corner,
+.mickey-corner {
+  background:
+    radial-gradient(circle at 50% 50%, rgba(241, 189, 53, .16), transparent 42%),
+    linear-gradient(180deg, rgba(9, 44, 29, .98), rgba(2, 15, 10, .98));
+}
+
 .mickey-target {
-  background: linear-gradient(180deg, #f0dfb5, #d2b166);
-  color: #07120d;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(241, 189, 53, .16), transparent 46%),
+    linear-gradient(180deg, rgba(14, 68, 42, .98), rgba(4, 32, 21, .98));
+  color: var(--sd-gold-2);
+  border-right-color: rgba(241, 189, 53, .38);
 }
 
 .mickey-target {
@@ -240,8 +276,8 @@
 
 .mickey-player {
   flex-direction: column;
-  gap: 5px;
-  background: rgba(7, 20, 15, .98);
+  background:
+    linear-gradient(180deg, rgba(10, 49, 31, .98), rgba(4, 24, 16, .98));
   color: var(--sd-text);
   text-align: center;
   text-transform: uppercase;
@@ -253,12 +289,6 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   padding: 0 12px;
-}
-
-.mickey-player span {
-  color: var(--sd-muted);
-  font-size: 11px;
-  font-weight: 900;
 }
 
 .mickey-player.is-winner {
@@ -425,5 +455,41 @@
 
   .mickey-target {
     font-size: 24px;
+  }
+}
+
+@media (max-width: 1180px), (pointer: coarse) {
+  .mickey-modal-backdrop {
+    padding: 0;
+  }
+
+  .mickey-modal {
+    width: 100vw;
+    max-height: 100vh;
+  }
+
+  .mickey-modal .game-board-panel {
+    width: 100vw;
+    height: 100vh;
+    max-height: 100vh;
+    border-radius: 0;
+    border-left: 0;
+    border-right: 0;
+    padding: 10px;
+  }
+
+  .mickey-modal .game-panel-head {
+    margin-bottom: 10px;
+  }
+
+  .mickey-modal .mickey-grid {
+    flex: 1;
+    grid-template-columns: 76px repeat(2, minmax(0, 1fr));
+    grid-template-rows: 54px repeat(9, minmax(42px, 1fr));
+  }
+
+  .mickey-modal .game-actions .sd-button {
+    min-height: 34px;
+    padding: 6px 9px;
   }
 }

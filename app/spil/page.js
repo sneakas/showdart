@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Bot, ClipboardList, Gamepad2, RotateCcw, Send, Settings, Trophy, Undo2, UsersRound } from 'lucide-react';
+import { Bot, ClipboardList, Gamepad2, RotateCcw, Send, Settings, Trophy, Undo2, UsersRound, X } from 'lucide-react';
 import { getSupabaseBrowserClient } from '../../lib/supabaseBrowser';
 import {
   MICKEY_RULES,
@@ -35,6 +35,7 @@ const texts = {
     brandSub: 'Turnering',
     app: 'App',
     setup: 'Setup',
+    closeApp: 'Luk app',
     title: 'Mickey scoring app',
     subtitle: 'Cricket Close-Out med Any Double, Any Triple og bull.',
     playerOne: 'Spiller 1',
@@ -84,6 +85,7 @@ const texts = {
     brandSub: 'Tournament',
     app: 'App',
     setup: 'Setup',
+    closeApp: 'Close app',
     title: 'Mickey scoring app',
     subtitle: 'Cricket Close-Out with Any Double, Any Triple and bull.',
     playerOne: 'Player 1',
@@ -129,6 +131,31 @@ function getInitialLanguage() {
   return stored === 'en' ? 'en' : 'da';
 }
 
+function shouldRequestMickeyFullscreen() {
+  if (typeof window === 'undefined') return false;
+  return window.matchMedia('(max-width: 1180px), (pointer: coarse)').matches;
+}
+
+function requestMickeyFullscreen() {
+  if (typeof document === 'undefined' || !shouldRequestMickeyFullscreen()) return;
+  if (document.fullscreenElement || document.webkitFullscreenElement) return;
+  const element = document.documentElement;
+  const requestFullscreen = element.requestFullscreen || element.webkitRequestFullscreen;
+  const result = requestFullscreen?.call(element);
+  if (result && typeof result.catch === 'function') result.catch(() => {});
+}
+
+function exitMickeyFullscreen() {
+  if (typeof document === 'undefined') return;
+  const exitFullscreen = document.fullscreenElement
+    ? document.exitFullscreen
+    : document.webkitFullscreenElement
+      ? document.webkitExitFullscreen
+      : null;
+  const result = exitFullscreen?.call(document);
+  if (result && typeof result.catch === 'function') result.catch(() => {});
+}
+
 export default function GamePage() {
   const supabase = useMemo(() => getSupabaseBrowserClient(), []);
   const [lang, setLang] = useState('da');
@@ -136,7 +163,8 @@ export default function GamePage() {
   const [session, setSession] = useState(null);
   const [role, setRole] = useState('user');
   const [email, setEmail] = useState('');
-  const [activePanel, setActivePanel] = useState('app');
+  const [activePanel, setActivePanel] = useState('setup');
+  const [scorerOpen, setScorerOpen] = useState(false);
   const [playerOneName, setPlayerOneName] = useState('Spiller 1');
   const [playerTwoName, setPlayerTwoName] = useState('Spiller 2');
   const [opponentMode, setOpponentMode] = useState('human');
@@ -220,12 +248,21 @@ export default function GamePage() {
 
   function beginGame() {
     setState(startMickeyGame({ playerOneName, playerTwoName, opponentMode, aiAverageMarks }));
-    setActivePanel('app');
+    setActivePanel('setup');
+    setScorerOpen(true);
+    requestMickeyFullscreen();
   }
 
   function restartGame() {
     setState(createMickeyState({ playerOneName, playerTwoName, opponentMode, aiAverageMarks }));
     setActivePanel('setup');
+    setScorerOpen(false);
+    exitMickeyFullscreen();
+  }
+
+  function closeScorer() {
+    setScorerOpen(false);
+    exitMickeyFullscreen();
   }
 
   function mark(playerIndex, targetIndex) {
@@ -289,34 +326,37 @@ export default function GamePage() {
       </section>
 
       <section className="game-tabs">
-        <button type="button" className={`sd-button ${activePanel === 'app' ? 'gold' : ''}`} onClick={() => setActivePanel('app')}><Gamepad2 size={17} /> {t.app}</button>
         <button type="button" className={`sd-button ${activePanel === 'setup' ? 'gold' : ''}`} onClick={() => setActivePanel('setup')}><Settings size={17} /> {t.setup}</button>
         <button type="button" className="sd-button" onClick={() => { window.location.href = '/'; }}>{t.openTournament}</button>
         <button type="button" className="sd-button" onClick={() => { window.location.href = '/championship'; }}>{t.openChampionship}</button>
       </section>
 
       <section className="game-layout">
-        {activePanel === 'setup' ? (
-          <SetupPanel
-            t={t}
-            playerOneName={playerOneName}
-            playerTwoName={playerTwoName}
-            opponentMode={opponentMode}
-            aiAverageMarks={aiAverageMarks}
-            setPlayerOneName={setPlayerOneName}
-            setPlayerTwoName={setPlayerTwoName}
-            setOpponentMode={setOpponentMode}
-            setAiAverageMarks={setAiAverageMarks}
-            onStart={beginGame}
-          />
-        ) : (
-          <MickeyBoard t={t} state={state} onMark={mark} onUndo={undo} onAiTurn={runAi} onRestart={restartGame} />
-        )}
+        <SetupPanel
+          t={t}
+          playerOneName={playerOneName}
+          playerTwoName={playerTwoName}
+          opponentMode={opponentMode}
+          aiAverageMarks={aiAverageMarks}
+          setPlayerOneName={setPlayerOneName}
+          setPlayerTwoName={setPlayerTwoName}
+          setOpponentMode={setOpponentMode}
+          setAiAverageMarks={setAiAverageMarks}
+          onStart={beginGame}
+        />
         <aside className="game-side">
           <RulesPanel t={t} />
           <ResultPanel t={t} state={state} resultPayload={resultPayload} />
         </aside>
       </section>
+
+      {scorerOpen ? (
+        <div className="mickey-modal-backdrop">
+          <div className="mickey-modal" role="dialog" aria-modal="true" aria-label={t.boardTitle}>
+            <MickeyBoard t={t} state={state} onMark={mark} onUndo={undo} onAiTurn={runAi} onRestart={restartGame} onClose={closeScorer} />
+          </div>
+        </div>
+      ) : null}
     </main>
   );
 }
@@ -356,7 +396,7 @@ function SetupPanel({ t, playerOneName, playerTwoName, opponentMode, aiAverageMa
   );
 }
 
-function MickeyBoard({ t, state, onMark, onUndo, onAiTurn, onRestart }) {
+function MickeyBoard({ t, state, onMark, onUndo, onAiTurn, onRestart, onClose }) {
   const canPlay = state.status === 'playing';
   return (
     <section className="sd-card game-panel game-board-panel">
@@ -369,6 +409,7 @@ function MickeyBoard({ t, state, onMark, onUndo, onAiTurn, onRestart }) {
           <button type="button" className="sd-button" disabled={!state.visits.length} onClick={onUndo}><Undo2 size={16} /> {t.undo}</button>
           {state.opponentMode === 'ai' ? <button type="button" className="sd-button gold" disabled={!canPlay} onClick={onAiTurn}><Bot size={16} /> {t.aiTurn}</button> : null}
           <button type="button" className="sd-button" onClick={onRestart}><RotateCcw size={16} /> {t.restart}</button>
+          <button type="button" className="sd-button" onClick={onClose}><X size={16} /> {t.closeApp}</button>
         </div>
       </div>
       <div className="mickey-grid" style={{ '--mickey-rows': MICKEY_TARGETS.length + 1 }}>
@@ -376,7 +417,6 @@ function MickeyBoard({ t, state, onMark, onUndo, onAiTurn, onRestart }) {
         {state.players.map((player, playerIndex) => (
           <div key={playerIndex} className={`mickey-cell mickey-player ${state.winnerIndex === playerIndex ? 'is-winner' : ''}`}>
             <strong>{player.name}</strong>
-            <span>{player.marks.filter(mark => mark >= 3).length}/{MICKEY_TARGETS.length} · {getMickeyMpr(player)} {t.mpr}</span>
           </div>
         ))}
         {MICKEY_TARGETS.map((target, targetIndex) => (
