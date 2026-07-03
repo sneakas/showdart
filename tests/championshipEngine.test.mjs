@@ -17,6 +17,7 @@ import {
   setChampionshipTieBreakQualifiers,
   setChampionshipWinner,
   swapTeamsBetweenGroups,
+  updateChampionshipGroupLanes,
   updateChampionshipPublicScreen,
   withdrawChampionshipTeam
 } from '../lib/championship/engine.js';
@@ -73,6 +74,30 @@ test('teams can be swapped after seeded allocation before results', () => {
   state = swapTeamsBetweenGroups(state, firstId, secondId);
   assert.ok(state.groups.find(group => group.id === first.id).teamIds.includes(secondId));
   assert.ok(state.groups.find(group => group.id === second.id).teamIds.includes(firstId));
+});
+
+test('group lanes restrict active matches and split large group rounds into lane-sized waves', () => {
+  let state = stateWithTeams(6, { initialGroupCount: 1, laneCount: 4 });
+  state = allocateInitialGroups(state, 'seeded');
+  const group = state.groups[0];
+  state = updateChampionshipGroupLanes(state, group.id, [2, 3]);
+
+  let active = getCurrentMatches(state);
+  assert.equal(active.length, 2);
+  assert.deepEqual([...new Set(active.map(match => match.laneNumber))].sort((a, b) => a - b), [2, 3]);
+  assert.ok(active.every(match => match.groupId === group.id && match.round === 1));
+
+  state = publishChampionshipRound(state);
+  for (const match of getCurrentMatches(state)) {
+    state = setChampionshipWinner(state, match.id, match.team1Id);
+  }
+  state = completeChampionshipRound(state);
+
+  active = getCurrentMatches(state);
+  assert.equal(state.stageRound, 2);
+  assert.equal(active.length, 1);
+  assert.ok([2, 3].includes(active[0].laneNumber));
+  assert.equal(active[0].round, 2);
 });
 
 test('completed initial groups advance into separate A and B groups with reset standings', () => {
