@@ -18,7 +18,7 @@ const texts = {
     teams: 'Hold', groups: 'Grupper', lanes: 'Baner', round: 'Runde', currentMatches: 'Aktuelle kampe', betweenRounds: 'Mellem spillerunder',
     playing: 'Spiller nu', queued: 'Næste kamp', completed: 'Afsluttet', lane: 'Bane', queue: 'Køplads', winner: 'Vinder',
     standings: 'Stilling', played: 'Spillet', wins: 'Sejre', losses: 'Nederlag', points: 'Point', page: 'Side',
-    aPlayoffs: 'A-slutspil', bPlayoffs: 'B-slutspil', champion: 'Vinder', runnerUp: '2. plads', third: '3. plads', waiting: 'Venter på næste offentliggjorte spillerunde', tieBreak: 'Tie-break', advancing: 'går videre', qualifyingPlaces: 'pladser', quarterFinal: 'Kvartfinale', semiFinal: 'Semifinale', final: 'Finale', awaitingTeams: 'Afventer hold', registeredTeams: 'Tilmeldte hold', announcement: 'Besked fra arrangør', updated: 'Senest opdateret'
+    aPlayoffs: 'A-slutspil', bPlayoffs: 'B-slutspil', champion: 'Vinder', runnerUp: '2. plads', third: '3. plads', waiting: 'Venter på næste offentliggjorte spillerunde', tournamentNotStarted: 'Turneringen er ikke startet', scanQr: 'Scan QR-kode', scanQrHint: 'Åbn skærmen på din telefon', tieBreak: 'Tie-break', advancing: 'går videre', qualifyingPlaces: 'pladser', quarterFinal: 'Kvartfinale', semiFinal: 'Semifinale', final: 'Finale', awaitingTeams: 'Afventer hold', registeredTeams: 'Tilmeldte hold', announcement: 'Besked fra arrangør', updated: 'Senest opdateret'
   },
   en: {
     loading: 'Loading championship screen...', invalid: 'Invalid screen link', live: 'Live', polling: 'Backup updates', delayed: 'Connection delayed',
@@ -26,7 +26,7 @@ const texts = {
     teams: 'Teams', groups: 'Groups', lanes: 'Lanes', round: 'Round', currentMatches: 'Current matches', betweenRounds: 'Between rounds',
     playing: 'Playing now', queued: 'Next match', completed: 'Completed', lane: 'Lane', queue: 'Queue position', winner: 'Winner',
     standings: 'Standings', played: 'Played', wins: 'Wins', losses: 'Losses', points: 'Points', page: 'Page',
-    aPlayoffs: 'A playoffs', bPlayoffs: 'B playoffs', champion: 'Winner', runnerUp: 'Runner-up', third: '3rd place', waiting: 'Waiting for the next published round', tieBreak: 'Tie-break', advancing: 'advancing', qualifyingPlaces: 'places', quarterFinal: 'Quarter-final', semiFinal: 'Semi-final', final: 'Final', awaitingTeams: 'Awaiting teams', registeredTeams: 'Registered teams', announcement: 'Organizer message', updated: 'Last updated'
+    aPlayoffs: 'A playoffs', bPlayoffs: 'B playoffs', champion: 'Winner', runnerUp: 'Runner-up', third: '3rd place', waiting: 'Waiting for the next published round', tournamentNotStarted: 'Tournament not started', scanQr: 'Scan QR Code', scanQrHint: 'Open this screen on your phone', tieBreak: 'Tie-break', advancing: 'advancing', qualifyingPlaces: 'places', quarterFinal: 'Quarter-final', semiFinal: 'Semi-final', final: 'Final', awaitingTeams: 'Awaiting teams', registeredTeams: 'Registered teams', announcement: 'Organizer message', updated: 'Last updated'
   }
 };
 
@@ -44,6 +44,7 @@ export default function ChampionshipScreenPage() {
   const [connection, setConnection] = useState('polling');
   const [lang, setLang] = useState('da');
   const [frameIndex, setFrameIndex] = useState(0);
+  const [shareUrl, setShareUrl] = useState('');
   const t = texts[lang] || texts.da;
 
   const screenConfig = useMemo(() => normalizePublicScreenConfig(state.publicScreens?.[screenKey], screenKey), [screenKey, state.publicScreens]);
@@ -80,6 +81,7 @@ export default function ChampionshipScreenPage() {
   useEffect(() => {
     const saved = localStorage.getItem('showdart-language');
     setLang(saved === 'en' ? 'en' : 'da');
+    setShareUrl(window.location.href);
     load();
   }, [load]);
 
@@ -120,6 +122,8 @@ export default function ChampionshipScreenPage() {
 
   const pageIndicator = !screenConfig.hidePageIndicator && frame.pages > 1 ? `${t.page} ${frame.page + 1}/${frame.pages}` : '';
   const activeGroupCount = state.groups.filter(group => state.phase === 'initial_groups' ? group.division === 'INITIAL' : ['A', 'B'].includes(group.division)).length;
+  const displayTitle = state.tournamentName || 'Showdart Live';
+  const qrSrc = shareUrl ? `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=0&data=${encodeURIComponent(shareUrl)}` : '';
 
   return <main className={`chs-page ${screenConfig.hideFooter ? '' : 'has-footer'}`}>
     {!screenConfig.hideHeader ? <header className="chs-header">
@@ -129,14 +133,15 @@ export default function ChampionshipScreenPage() {
     </header> : null}
 
     {!screenConfig.hideHero ? <section className="chs-hero">
-      <div><span>{phaseLabel}</span><h1>{state.tournamentName || t.initial}</h1><p>{state.teams.filter(team => !team.withdrawn).length} {t.teams} · {activeGroupCount} {t.groups} · {state.activeLanes.length} {t.lanes}</p></div>
+      <div><span>{phaseLabel}</span><h1>{displayTitle}</h1><p>{state.teams.filter(team => !team.withdrawn).length} {t.teams} · {activeGroupCount} {t.groups} · {state.activeLanes.length} {t.lanes}</p></div>
       <strong>{t.round} {state.stageRound || 0}</strong>
     </section> : null}
 
     <section className="chs-content">
       {screenConfig.announcement && frame.view !== 'announcement' ? <AnnouncementPanel message={screenConfig.announcement} t={t} /> : null}
+      {!state.started ? <PreStartInfo state={state} title={displayTitle} qrSrc={qrSrc} t={t} /> : null}
       {frame.view === 'announcement' ? <AnnouncementPanel message={screenConfig.announcement || '-'} t={t} full /> : null}
-      {frame.view === 'registration' ? <section><SectionTitle title={t.registeredTeams} page={pageIndicator} /><div className="chs-registration-grid">{frame.items.map((team, index) => <div className="chs-registration-team" key={team.id}><span>{frame.startIndex + index + 1}</span><strong>{team.name}</strong></div>)}</div></section> : null}
+      {state.started && frame.view === 'registration' ? <section><SectionTitle title={t.registeredTeams} page={pageIndicator} /><div className="chs-registration-grid">{frame.items.map((team, index) => <div className="chs-registration-team" key={team.id}><span>{frame.startIndex + index + 1}</span><strong>{team.name}</strong></div>)}</div></section> : null}
       {frame.view === 'matches' ? frame.items.length ? <section><SectionTitle title={t.currentMatches} page={pageIndicator} /><div className="chs-match-grid">{frame.items.map(match => <MatchCard key={match.id} match={match} allMatches={currentMatches} teamsById={teamsById} t={t} hideLaneInfo={screenConfig.hideLaneInfo} />)}</div></section> : <section className="chs-waiting"><span>{t.betweenRounds}</span><h2>{t.waiting}</h2></section> : null}
       {['initialStandings', 'aStandings', 'bStandings'].includes(frame.view) ? <section><SectionTitle title={t.standings} page={pageIndicator} /><div className="chs-group-grid">{frame.groups.map(item => <GroupTable key={item.group.id} group={item.group} standings={item.standings} t={t} />)}</div></section> : null}
       {['aBracket', 'bBracket', 'brackets'].includes(frame.view) ? <section className="chs-bracket-grid">{frame.view !== 'bBracket' ? <Bracket bracket={aBracket} teamsById={teamsById} title={t.aPlayoffs} t={t} /> : null}{frame.view !== 'aBracket' ? <Bracket bracket={bBracket} teamsById={teamsById} title={t.bPlayoffs} t={t} /> : null}</section> : null}
@@ -199,6 +204,23 @@ function bracketRoundLabel(number, totalRounds, t) {
 function Podium({ bracket, teamsById, title, t }) {
   if (!bracket) return null;
   return <section className="chs-card chs-podium"><h2>{title}</h2><div className="first"><span>1</span><strong>{teamsById.get(bracket.championId)?.name || '-'}</strong><small>{t.champion}</small></div><div><span>2</span><strong>{teamsById.get(bracket.runnerUpId)?.name || '-'}</strong><small>{t.runnerUp}</small></div><div><span>3</span><strong>{teamsById.get(bracket.thirdId)?.name || '-'}</strong><small>{t.third}</small></div></section>;
+}
+
+function PreStartInfo({ state, title, qrSrc, t }) {
+  const activeTeams = state.teams.filter(team => !team.withdrawn).length;
+  return <section className="chs-prestart">
+    <section className="chs-card chs-prestart-main">
+      <div className="chs-prestart-logo"><img src="/assets/small-logo.png" alt="Showdart" /></div>
+      <span>{t.tournamentNotStarted}</span>
+      <h2>{title}</h2>
+      <p>{activeTeams} {t.teams} · {state.config.laneCount || state.activeLanes.length} {t.lanes}</p>
+    </section>
+    {qrSrc ? <section className="chs-card chs-prestart-qr">
+      <span>{t.scanQr}</span>
+      <img src={qrSrc} alt={t.scanQr} />
+      <p>{t.scanQrHint}</p>
+    </section> : null}
+  </section>;
 }
 
 function SectionTitle({ title, page }) {
