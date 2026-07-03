@@ -142,13 +142,30 @@ export default function ChampionshipScreenPage() {
       {!state.started ? <PreStartInfo state={state} title={displayTitle} qrSrc={qrSrc} teams={frame.items || []} startIndex={frame.startIndex || 0} page={pageIndicator} columns={screenConfig.registeredTeamColumns} rows={screenConfig.registeredTeamRows} t={t} /> : null}
       {frame.view === 'announcement' ? <AnnouncementPanel message={screenConfig.announcement || '-'} t={t} full /> : null}
       {state.started && frame.view === 'registration' ? <section><SectionTitle title={t.registeredTeams} page={pageIndicator} /><div className="chs-registration-grid">{frame.items.map((team, index) => <div className="chs-registration-team" key={team.id}><span>{frame.startIndex + index + 1}</span><strong>{team.name}</strong></div>)}</div></section> : null}
-      {frame.view === 'matches' ? frame.items.length ? <section><SectionTitle title={t.currentMatches} page={pageIndicator} /><div className="chs-match-grid">{frame.items.map(match => <MatchCard key={match.id} match={match} allMatches={currentMatches} teamsById={teamsById} t={t} hideLaneInfo={screenConfig.hideLaneInfo} />)}</div></section> : <section className="chs-waiting"><span>{t.betweenRounds}</span><h2>{t.waiting}</h2></section> : null}
+      {frame.view === 'matches' ? frame.items.length ? <section><SectionTitle title={t.currentMatches} page={pageIndicator} /><GroupedMatches matches={frame.items} groups={state.groups} allMatches={currentMatches} teamsById={teamsById} t={t} hideLaneInfo={screenConfig.hideLaneInfo} /></section> : <section className="chs-waiting"><span>{t.betweenRounds}</span><h2>{t.waiting}</h2></section> : null}
       {['initialStandings', 'aStandings', 'bStandings'].includes(frame.view) ? <section><SectionTitle title={t.standings} page={pageIndicator} /><div className="chs-group-grid">{frame.groups.map(item => <GroupTable key={item.group.id} group={item.group} standings={item.standings} t={t} />)}</div></section> : null}
       {['aBracket', 'bBracket', 'brackets'].includes(frame.view) ? <section className="chs-bracket-grid">{frame.view !== 'bBracket' ? <Bracket bracket={aBracket} teamsById={teamsById} title={t.aPlayoffs} t={t} /> : null}{frame.view !== 'aBracket' ? <Bracket bracket={bBracket} teamsById={teamsById} title={t.bPlayoffs} t={t} /> : null}</section> : null}
       {frame.view === 'podium' ? <section className="chs-podium-grid"><Podium bracket={aBracket} teamsById={teamsById} title={t.aPlayoffs} t={t} /><Podium bracket={bBracket} teamsById={teamsById} title={t.bPlayoffs} t={t} /></section> : null}
     </section>
     {!screenConfig.hideFooter ? <footer className="chs-footer"><span>{screenConfig.label}</span><strong>{phaseLabel}</strong><span>{pageIndicator || `${t.round} ${state.stageRound || 0}`}</span><span>{t.updated}: {formatTime(updatedAt)}</span></footer> : null}
   </main>;
+}
+
+function GroupedMatches({ matches, groups, allMatches, teamsById, t, hideLaneInfo }) {
+  const groupsById = new Map(groups.map(group => [group.id, group]));
+  const grouped = [];
+  for (const match of matches) {
+    const key = match.groupId || match.bracketDivision || 'other';
+    let group = grouped.find(item => item.key === key);
+    if (!group) {
+      const source = groupsById.get(match.groupId);
+      group = { key, title: source?.name || match.bracketDivision || t.currentMatches, matches: [] };
+      grouped.push(group);
+    }
+    group.matches.push(match);
+  }
+  grouped.sort((left, right) => groupSortIndex(left.key, groups) - groupSortIndex(right.key, groups));
+  return <div className="chs-match-groups">{grouped.map(group => <section className="chs-match-group" key={group.key}><h3>{group.title}</h3><div className="chs-match-grid">{group.matches.map(match => <MatchCard key={match.id} match={match} allMatches={allMatches} teamsById={teamsById} t={t} hideLaneInfo={hideLaneInfo} />)}</div></section>)}</div>;
 }
 
 function MatchCard({ match, allMatches, teamsById, t, hideLaneInfo }) {
@@ -158,6 +175,11 @@ function MatchCard({ match, allMatches, teamsById, t, hideLaneInfo }) {
   const label = status === 'current' ? t.playing : status === 'queued' ? t.queued : t.completed;
   const displayQueue = queueIndex >= 0 ? queueIndex + 1 : null;
   return <article className={`chs-match is-${status} ${match.isMultiTeamTieBreak ? 'is-multi-tiebreak' : ''}`}><div className="chs-match-head"><strong>{match.isMultiTeamTieBreak ? `${t.tieBreak} · ${label}` : label}</strong>{!hideLaneInfo ? <span>{t.lane} {match.laneNumber || '-'}{displayQueue ? ` · ${t.queue} ${displayQueue}` : ''}</span> : null}</div>{match.isMultiTeamTieBreak ? <div className="chs-multi-tiebreak"><p><strong>{match.qualifierIds.length}/{match.qualifierCount}</strong> {t.qualifyingPlaces} {t.advancing}</p><div>{match.participantIds.map(teamId => <div key={teamId} className={match.qualifierIds.includes(teamId) ? 'is-winner' : isResolved(match) ? 'is-loser' : ''}><span>{match.qualifierIds.includes(teamId) ? '✓' : ''}</span>{teamsById.get(teamId)?.name || '-'}</div>)}</div></div> : <div className="chs-teams"><div className={match.winnerId === match.team1Id ? 'is-winner' : match.winnerId ? 'is-loser' : ''}>{match.winnerId === match.team1Id ? '✓ ' : ''}{teamsById.get(match.team1Id)?.name || '-'}</div><b>VS</b><div className={match.winnerId === match.team2Id ? 'is-winner' : match.winnerId ? 'is-loser' : ''}>{match.winnerId === match.team2Id ? '✓ ' : ''}{teamsById.get(match.team2Id)?.name || '-'}</div></div>}</article>;
+}
+
+function groupSortIndex(key, groups) {
+  const index = groups.findIndex(group => group.id === key);
+  return index >= 0 ? index : Number.MAX_SAFE_INTEGER;
 }
 
 function GroupTable({ group, standings, t }) {
@@ -255,7 +277,7 @@ function buildDisplayFrames({ state, views, currentMatches, screenConfig }) {
       const pageSize = state.started ? screenConfig.rowsPerPage : screenConfig.registeredTeamColumns * screenConfig.registeredTeamRows;
       viewFrames = chunk(state.teams.filter(team => !team.withdrawn), pageSize).map((items, page) => ({ view, items, startIndex: page * pageSize }));
     } else if (view === 'matches') {
-      viewFrames = chunk(orderMatches(currentMatches), screenConfig.matchesPerPage).map(items => ({ view, items }));
+      viewFrames = chunk(orderMatches(currentMatches, state.groups), screenConfig.matchesPerPage).map(items => ({ view, items }));
     } else if (['initialStandings', 'aStandings', 'bStandings'].includes(view)) {
       const division = view === 'initialStandings' ? 'INITIAL' : view === 'aStandings' ? 'A' : 'B';
       const groups = state.groups.filter(group => group.division === division);
@@ -308,11 +330,15 @@ function clampNumber(value, min, max, fallback) {
   return Number.isFinite(number) ? Math.max(min, Math.min(max, Math.round(number))) : fallback;
 }
 
-function orderMatches(matches) {
+function orderMatches(matches, groups = []) {
+  const groupOrder = new Map(groups.map((group, index) => [group.id, index]));
   return [...matches].sort((left, right) => {
     const leftStatus = isResolved(left) ? 2 : 0;
     const rightStatus = isResolved(right) ? 2 : 0;
-    return leftStatus - rightStatus || (left.lanePosition || 999) - (right.lanePosition || 999) || (left.laneNumber || 999) - (right.laneNumber || 999);
+    return (groupOrder.get(left.groupId) ?? 999) - (groupOrder.get(right.groupId) ?? 999)
+      || leftStatus - rightStatus
+      || (left.lanePosition || 999) - (right.lanePosition || 999)
+      || (left.laneNumber || 999) - (right.laneNumber || 999);
   });
 }
 
