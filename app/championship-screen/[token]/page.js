@@ -143,7 +143,7 @@ export default function ChampionshipScreenPage() {
       {frame.view === 'announcement' ? <AnnouncementPanel message={screenConfig.announcement || '-'} t={t} full /> : null}
       {state.started && frame.view === 'registration' ? <section><SectionTitle title={t.registeredTeams} page={pageIndicator} /><div className="chs-registration-grid">{frame.items.map((team, index) => <div className="chs-registration-team" key={team.id}><span>{frame.startIndex + index + 1}</span><strong>{team.name}</strong></div>)}</div></section> : null}
       {frame.view === 'matches' ? frame.items.length ? <section><SectionTitle title={t.currentMatches} page={pageIndicator} /><GroupedMatches matches={frame.items} groups={state.groups} allMatches={currentMatches} teamsById={teamsById} t={t} hideLaneInfo={screenConfig.hideLaneInfo} /></section> : <section className="chs-waiting"><span>{t.betweenRounds}</span><h2>{t.waiting}</h2></section> : null}
-      {['initialStandings', 'aStandings', 'bStandings'].includes(frame.view) ? <section><SectionTitle title={t.standings} page={pageIndicator} /><div className="chs-group-grid">{frame.groups.map(item => <GroupTable key={item.group.id} group={item.group} standings={item.standings} t={t} />)}</div></section> : null}
+      {['initialStandings', 'aStandings', 'bStandings', 'abStandings'].includes(frame.view) ? <section><SectionTitle title={t.standings} page={pageIndicator} /><div className="chs-group-grid">{frame.groups.map(item => <GroupTable key={item.group.id} group={item.group} standings={item.standings} t={t} />)}</div></section> : null}
       {['aBracket', 'bBracket', 'brackets'].includes(frame.view) ? <section className="chs-bracket-grid">{frame.view !== 'bBracket' ? <Bracket bracket={aBracket} teamsById={teamsById} title={t.aPlayoffs} t={t} /> : null}{frame.view !== 'aBracket' ? <Bracket bracket={bBracket} teamsById={teamsById} title={t.bPlayoffs} t={t} /> : null}</section> : null}
       {frame.view === 'podium' ? <section className="chs-podium-grid"><Podium bracket={aBracket} teamsById={teamsById} title={t.aPlayoffs} t={t} /><Podium bracket={bBracket} teamsById={teamsById} title={t.bPlayoffs} t={t} /></section> : null}
     </section>
@@ -264,7 +264,7 @@ function AnnouncementPanel({ message, t, full = false }) {
 function getAutomaticViews(state, currentMatchCount) {
   if (state.phase === 'registration') return ['registration'];
   if (state.phase === 'initial_groups') return currentMatchCount ? ['matches', 'initialStandings'] : ['initialStandings'];
-  if (state.phase === 'ab_groups') return currentMatchCount ? ['matches', 'aStandings', 'bStandings'] : ['aStandings', 'bStandings'];
+  if (state.phase === 'ab_groups') return currentMatchCount ? ['matches', 'abStandings'] : ['abStandings'];
   if (state.phase === 'playoffs') return currentMatchCount ? ['matches', 'brackets'] : ['brackets'];
   return ['podium'];
 }
@@ -278,9 +278,9 @@ function buildDisplayFrames({ state, views, currentMatches, screenConfig }) {
       viewFrames = chunk(state.teams.filter(team => !team.withdrawn), pageSize).map((items, page) => ({ view, items, startIndex: page * pageSize }));
     } else if (view === 'matches') {
       viewFrames = chunk(orderMatches(currentMatches, state.groups), screenConfig.matchesPerPage).map(items => ({ view, items }));
-    } else if (['initialStandings', 'aStandings', 'bStandings'].includes(view)) {
-      const division = view === 'initialStandings' ? 'INITIAL' : view === 'aStandings' ? 'A' : 'B';
-      const groups = state.groups.filter(group => group.division === division);
+    } else if (['initialStandings', 'aStandings', 'bStandings', 'abStandings'].includes(view)) {
+      const divisions = view === 'initialStandings' ? ['INITIAL'] : view === 'aStandings' ? ['A'] : view === 'bStandings' ? ['B'] : ['A', 'B'];
+      const groups = state.groups.filter(group => divisions.includes(group.division));
       for (const groupChunk of chunk(groups, screenConfig.groupsPerPage)) {
         const standings = groupChunk.map(group => ({ group, standings: getGroupStandings(state, group.id) }));
         const rowPageCount = Math.max(1, ...standings.map(item => Math.ceil(item.standings.length / screenConfig.rowsPerPage)));

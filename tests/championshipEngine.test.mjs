@@ -284,7 +284,7 @@ test('championship public screen settings are independent and normalized', () =>
     mode: 'matches', matchesPerPage: 18, rotationSeconds: 4, lanes: [1, 3], hideHeader: true
   });
   state = updateChampionshipPublicScreen(state, 'screen2', {
-    mode: 'aBracket', rowsPerPage: 20, groupsPerPage: 5, announcement: 'Finalen starter snart'
+    mode: 'abStandings', rowsPerPage: 20, groupsPerPage: 5, announcement: 'Finalen starter snart'
   });
 
   assert.equal(state.publicScreens.screen1.mode, 'matches');
@@ -292,7 +292,7 @@ test('championship public screen settings are independent and normalized', () =>
   assert.equal(state.publicScreens.screen1.rotationSeconds, 5);
   assert.deepEqual(state.publicScreens.screen1.lanes, [1, 3]);
   assert.equal(state.publicScreens.screen1.hideHeader, true);
-  assert.equal(state.publicScreens.screen2.mode, 'aBracket');
+  assert.equal(state.publicScreens.screen2.mode, 'abStandings');
   assert.equal(state.publicScreens.screen2.rowsPerPage, 20);
   assert.equal(state.publicScreens.screen2.groupsPerPage, 5);
   assert.equal(state.publicScreens.screen2.announcement, 'Finalen starter snart');
