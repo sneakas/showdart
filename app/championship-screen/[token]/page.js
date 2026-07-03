@@ -18,7 +18,7 @@ const texts = {
     teams: 'Hold', groups: 'Grupper', lanes: 'Baner', round: 'Runde', currentMatches: 'Aktuelle kampe', betweenRounds: 'Mellem spillerunder',
     playing: 'Spiller nu', queued: 'Næste kamp', completed: 'Afsluttet', lane: 'Bane', queue: 'Køplads', winner: 'Vinder',
     standings: 'Stilling', played: 'Spillet', wins: 'Sejre', losses: 'Nederlag', points: 'Point', page: 'Side',
-    aPlayoffs: 'A-slutspil', bPlayoffs: 'B-slutspil', champion: 'Mester', runnerUp: '2. plads', third: '3. plads', waiting: 'Venter på næste offentliggjorte spillerunde', tieBreak: 'Tie-break', advancing: 'går videre', qualifyingPlaces: 'pladser', quarterFinal: 'Kvartfinale', semiFinal: 'Semifinale', final: 'Finale', awaitingTeams: 'Afventer hold', registeredTeams: 'Tilmeldte hold', announcement: 'Besked fra arrangør', updated: 'Senest opdateret'
+    aPlayoffs: 'A-slutspil', bPlayoffs: 'B-slutspil', champion: 'Winner', runnerUp: '2. plads', third: '3. plads', waiting: 'Venter på næste offentliggjorte spillerunde', tieBreak: 'Tie-break', advancing: 'går videre', qualifyingPlaces: 'pladser', quarterFinal: 'Kvartfinale', semiFinal: 'Semifinale', final: 'Finale', awaitingTeams: 'Afventer hold', registeredTeams: 'Tilmeldte hold', announcement: 'Besked fra arrangør', updated: 'Senest opdateret'
   },
   en: {
     loading: 'Loading championship screen...', invalid: 'Invalid screen link', live: 'Live', polling: 'Backup updates', delayed: 'Connection delayed',
@@ -26,7 +26,7 @@ const texts = {
     teams: 'Teams', groups: 'Groups', lanes: 'Lanes', round: 'Round', currentMatches: 'Current matches', betweenRounds: 'Between rounds',
     playing: 'Playing now', queued: 'Next match', completed: 'Completed', lane: 'Lane', queue: 'Queue position', winner: 'Winner',
     standings: 'Standings', played: 'Played', wins: 'Wins', losses: 'Losses', points: 'Points', page: 'Page',
-    aPlayoffs: 'A playoffs', bPlayoffs: 'B playoffs', champion: 'Champion', runnerUp: 'Runner-up', third: '3rd place', waiting: 'Waiting for the next published round', tieBreak: 'Tie-break', advancing: 'advancing', qualifyingPlaces: 'places', quarterFinal: 'Quarter-final', semiFinal: 'Semi-final', final: 'Final', awaitingTeams: 'Awaiting teams', registeredTeams: 'Registered teams', announcement: 'Organizer message', updated: 'Last updated'
+    aPlayoffs: 'A playoffs', bPlayoffs: 'B playoffs', champion: 'Winner', runnerUp: 'Runner-up', third: '3rd place', waiting: 'Waiting for the next published round', tieBreak: 'Tie-break', advancing: 'advancing', qualifyingPlaces: 'places', quarterFinal: 'Quarter-final', semiFinal: 'Semi-final', final: 'Final', awaitingTeams: 'Awaiting teams', registeredTeams: 'Registered teams', announcement: 'Organizer message', updated: 'Last updated'
   }
 };
 
