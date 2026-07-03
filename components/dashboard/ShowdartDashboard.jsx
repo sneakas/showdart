@@ -630,7 +630,7 @@ export function ShowdartDashboard({
       return;
     }
     const nextConfig = {
-      tournamentName: form.tournamentName || 'Klubmesterskab 2025',
+      tournamentName: form.tournamentName || 'Klubturnering 2025',
       teammateMode: form.teammateMode,
       maxLosses: form.maxLosses,
       laneCount: form.laneCount
@@ -901,7 +901,7 @@ export function ShowdartDashboard({
   }
 
   const visibleEntries = standings.filter(entry => entry.name.toLowerCase().includes(search.toLowerCase()));
-  const tournamentTitle = state.tournamentName || form.tournamentName || 'Klubmesterskab 2025';
+  const tournamentTitle = state.tournamentName || form.tournamentName || 'Klubturnering 2025';
 
   return (
     <main className="sd-page">

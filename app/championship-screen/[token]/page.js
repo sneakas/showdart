@@ -13,12 +13,12 @@ const DEFAULT_PUBLIC_SCREENS = {
 
 const texts = {
   da: {
-    loading: 'Indlæser mesterskabsskærm...', invalid: 'Ugyldigt skærmlink', live: 'Live', polling: 'Backup-opdatering', delayed: 'Forbindelse forsinket',
-    registration: 'Registrering', initial: 'Første gruppespil', ab: 'A/B-gruppespil', playoffs: 'Slutspil', finished: 'Mesterskabet er afsluttet',
+    loading: 'Indlæser turneringsskærm...', invalid: 'Ugyldigt skærmlink', live: 'Live', polling: 'Backup-opdatering', delayed: 'Forbindelse forsinket',
+    registration: 'Registrering', initial: 'Første gruppespil', ab: 'A/B-gruppespil', playoffs: 'Slutspil', finished: 'Turneringen er afsluttet',
     teams: 'Hold', groups: 'Grupper', lanes: 'Baner', round: 'Runde', currentMatches: 'Aktuelle kampe', betweenRounds: 'Mellem spillerunder',
     playing: 'Spiller nu', queued: 'Næste kamp', completed: 'Afsluttet', lane: 'Bane', queue: 'Køplads', winner: 'Vinder',
     standings: 'Stilling', played: 'Spillet', wins: 'Sejre', losses: 'Nederlag', points: 'Point', page: 'Side',
-    aPlayoffs: 'A-slutspil', bPlayoffs: 'B-slutspil', champion: 'Winner', runnerUp: '2. plads', third: '3. plads', waiting: 'Venter på næste offentliggjorte spillerunde', tieBreak: 'Tie-break', advancing: 'går videre', qualifyingPlaces: 'pladser', quarterFinal: 'Kvartfinale', semiFinal: 'Semifinale', final: 'Finale', awaitingTeams: 'Afventer hold', registeredTeams: 'Tilmeldte hold', announcement: 'Besked fra arrangør', updated: 'Senest opdateret'
+    aPlayoffs: 'A-slutspil', bPlayoffs: 'B-slutspil', champion: 'Vinder', runnerUp: '2. plads', third: '3. plads', waiting: 'Venter på næste offentliggjorte spillerunde', tieBreak: 'Tie-break', advancing: 'går videre', qualifyingPlaces: 'pladser', quarterFinal: 'Kvartfinale', semiFinal: 'Semifinale', final: 'Finale', awaitingTeams: 'Afventer hold', registeredTeams: 'Tilmeldte hold', announcement: 'Besked fra arrangør', updated: 'Senest opdateret'
   },
   en: {
     loading: 'Loading championship screen...', invalid: 'Invalid screen link', live: 'Live', polling: 'Backup updates', delayed: 'Connection delayed',

@@ -56,8 +56,8 @@ const DEFAULT_WORKSPACE_PREFERENCES = {
 
 const texts = {
   da: {
-    loading: 'Indlæser mesterskab...', login: 'Log ind på forsiden for at fortsætte', championship: 'Mesterskab', tournament: 'Turnering', game: 'Spil', admin: 'Admin', logout: 'Log ud',
-    setup: 'Mesterskabsopsætning', name: 'Navn', initialGroups: 'Første grupper', aQualifiers: 'Til A pr. gruppe', aGroups: 'A-grupper', bGroups: 'B-grupper',
+    loading: 'Indlæser turnering...', login: 'Log ind på forsiden for at fortsætte', championship: 'Mesterskab', tournament: 'Turnering', game: 'Spil', admin: 'Admin', logout: 'Log ud',
+    setup: 'Turneringsopsætning', name: 'Navn', initialGroups: 'Første grupper', aQualifiers: 'Til A pr. gruppe', aGroups: 'A-grupper', bGroups: 'B-grupper',
     aPlayoff: 'A-slutspil pr. gruppe', bPlayoff: 'B-slutspil pr. gruppe', allocation: 'Fordeling', seeded: 'Seedet', random: 'Tilfældig', manual: 'Manuel', lanes: 'Baner',
     teams: 'Hold', memberOne: 'Spiller 1', memberTwo: 'Spiller 2', seed: 'Seed', addTeam: 'Tilføj hold', createGroups: 'Opret første grupper',
     spectator: 'Publikumsskærm', openScreen: 'Åbn publikumsskærm', copyLink: 'Kopier link', copied: 'Link kopieret',
@@ -72,8 +72,8 @@ const texts = {
     addAdjustment: 'Tilføj pointjustering', reason: 'Begrundelse', value: 'Point +/-', group: 'Gruppe', team: 'Hold',
     withdraw: 'Træk hold', keepResults: 'Behold færdige resultater', voidResults: 'Annuller alle resultater', cancel: 'Annuller',
     withdrawQuestion: 'Hvordan skal allerede spillede resultater behandles?', activeLanes: 'Aktive baner', audit: 'Ændringslog',
-    aBracket: 'A-slutspil', bBracket: 'B-slutspil', champion: 'Mester', third: '3. plads', replace: 'Erstat hold', noMatches: 'Ingen aktuelle kampe', qualifyingPlaces: 'kvalifikationspladser', selectQualifiers: 'Vælg de hold, der går videre',
-    confirm: 'Bekræft handling', publishConfirm: 'Offentliggør kampe og baner på publikumsskærmen?', completeConfirm: 'Afslut spillerunden og gå videre?', reset: 'Nulstil mesterskab', resetConfirm: 'Nulstil hele mesterskabet og slet alle hold og resultater?', workspace: 'Arbejdsområde', showAll: 'Vis alle', recommended: 'Anbefalet layout', tournamentBanner: 'Turneringsbanner', spectatorControls: 'Publikumsskærm', teamSwap: 'Holdbytning', bottomBar: 'Statuslinje', publicScreenControl: 'Styring af publikumsskærme', screenOne: 'Skærm 1', screenTwo: 'Skærm 2', displayMode: 'Visning', modeAuto: 'Automatisk', modeRegistration: 'Registrering', modeMatches: 'Aktuelle kampe', modeInitial: 'Første gruppestilling', modeAStandings: 'A-grupper', modeBStandings: 'B-grupper', modeABracket: 'A-slutspil', modeBBracket: 'B-slutspil', modeBrackets: 'Begge slutspil', modePodium: 'Podier', modeAnnouncement: 'Kun besked', rowsPerPage: 'Rækker pr. side', matchesPerPage: 'Kampe pr. side', groupsPerPage: 'Grupper pr. side', rotationSeconds: 'Skift sek.', resumeAuto: 'Genoptag automatisk', announcementPlaceholder: 'Skriv besked til publikum...', publishMessage: 'Vis besked', clearMessage: 'Skjul besked', hideTopBar: 'Skjul topbjælke', hideBanner: 'Skjul banner', hideConnection: 'Skjul forbindelsesstatus', hidePageIndicator: 'Skjul sidetal', hideLaneInfo: 'Skjul baneinfo', hideFooter: 'Skjul statuslinje', laneFilter: 'Banefilter', allLanes: 'Alle baner'
+    aBracket: 'A-slutspil', bBracket: 'B-slutspil', champion: 'Vinder', third: '3. plads', replace: 'Erstat hold', noMatches: 'Ingen aktuelle kampe', qualifyingPlaces: 'kvalifikationspladser', selectQualifiers: 'Vælg de hold, der går videre',
+    confirm: 'Bekræft handling', publishConfirm: 'Offentliggør kampe og baner på publikumsskærmen?', completeConfirm: 'Afslut spillerunden og gå videre?', reset: 'Nulstil turnering', resetConfirm: 'Nulstil hele turneringen og slet alle hold og resultater?', workspace: 'Arbejdsområde', showAll: 'Vis alle', recommended: 'Anbefalet layout', tournamentBanner: 'Turneringsbanner', spectatorControls: 'Publikumsskærm', teamSwap: 'Holdbytning', bottomBar: 'Statuslinje', publicScreenControl: 'Styring af publikumsskærme', screenOne: 'Skærm 1', screenTwo: 'Skærm 2', displayMode: 'Visning', modeAuto: 'Automatisk', modeRegistration: 'Registrering', modeMatches: 'Aktuelle kampe', modeInitial: 'Første gruppestilling', modeAStandings: 'A-grupper', modeBStandings: 'B-grupper', modeABracket: 'A-slutspil', modeBBracket: 'B-slutspil', modeBrackets: 'Begge slutspil', modePodium: 'Podier', modeAnnouncement: 'Kun besked', rowsPerPage: 'Rækker pr. side', matchesPerPage: 'Kampe pr. side', groupsPerPage: 'Grupper pr. side', rotationSeconds: 'Skift sek.', resumeAuto: 'Genoptag automatisk', announcementPlaceholder: 'Skriv besked til publikum...', publishMessage: 'Vis besked', clearMessage: 'Skjul besked', hideTopBar: 'Skjul topbjælke', hideBanner: 'Skjul banner', hideConnection: 'Skjul forbindelsesstatus', hidePageIndicator: 'Skjul sidetal', hideLaneInfo: 'Skjul baneinfo', hideFooter: 'Skjul statuslinje', laneFilter: 'Banefilter', allLanes: 'Alle baner'
   },
   en: {
     loading: 'Loading championship...', login: 'Log in on the front page to continue', championship: 'Championship', tournament: 'Tournament', game: 'Game', admin: 'Admin', logout: 'Logout',
@@ -251,7 +251,7 @@ export default function ChampionshipPage() {
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
       body: JSON.stringify({ id: TOURNAMENT_ID, state: next })
     });
-    if (!response.ok) throw new Error('Kunne ikke gemme mesterskabet.');
+    if (!response.ok) throw new Error('Kunne ikke gemme turneringen.');
     await channelRef.current?.send({ type: 'broadcast', event: 'tournament-state', payload: { tournamentId: TOURNAMENT_ID, state: next, updatedAt } });
   }
 
