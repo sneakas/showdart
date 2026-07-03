@@ -202,6 +202,46 @@
   font-weight: 900;
 }
 
+.chs-registration-table {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(330px, 1fr));
+  gap: 0;
+  overflow: hidden;
+  border: 1px solid rgba(43, 99, 73, .9);
+  border-radius: 10px;
+  background: rgba(4, 31, 20, .88);
+}
+
+.chs-registration-row {
+  min-height: 68px;
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+  border-right: 1px solid rgba(43, 99, 73, .65);
+  border-bottom: 1px solid rgba(43, 99, 73, .65);
+  padding: 12px 16px;
+}
+
+.chs-registration-row > span {
+  width: 35px;
+  height: 35px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #78a96f;
+  color: #06100b;
+  font-size: 1.25rem;
+  font-weight: 900;
+}
+
+.chs-registration-row > strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 1.25rem;
+  line-height: 1.15;
+}
+
 .chs-prestart {
   display: grid;
   gap: 20px;
@@ -716,6 +756,10 @@
   }
 
   .chs-match-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .chs-registration-table {
     grid-template-columns: 1fr;
   }
 }

@@ -7,8 +7,8 @@ import { getCurrentMatches, getDivisionBracket, getGroupStandings, normalizeCham
 import './screen.css';
 
 const DEFAULT_PUBLIC_SCREENS = {
-  screen1: { label: 'Skærm 1', mode: 'auto', rowsPerPage: 12, matchesPerPage: 8, groupsPerPage: 2, rotationSeconds: 10, announcement: '', hideHeader: false, hideHero: false, hideConnection: false, hidePageIndicator: false, hideLaneInfo: false, hideFooter: false, lanes: [] },
-  screen2: { label: 'Skærm 2', mode: 'auto', rowsPerPage: 12, matchesPerPage: 8, groupsPerPage: 2, rotationSeconds: 10, announcement: '', hideHeader: false, hideHero: false, hideConnection: false, hidePageIndicator: false, hideLaneInfo: false, hideFooter: false, lanes: [] }
+  screen1: { label: 'Skærm 1', mode: 'auto', rowsPerPage: 12, registeredTeamsPerPage: 12, matchesPerPage: 8, groupsPerPage: 2, rotationSeconds: 10, announcement: '', hideHeader: false, hideHero: false, hideConnection: false, hidePageIndicator: false, hideLaneInfo: false, hideFooter: false, lanes: [] },
+  screen2: { label: 'Skærm 2', mode: 'auto', rowsPerPage: 12, registeredTeamsPerPage: 12, matchesPerPage: 8, groupsPerPage: 2, rotationSeconds: 10, announcement: '', hideHeader: false, hideHero: false, hideConnection: false, hidePageIndicator: false, hideLaneInfo: false, hideFooter: false, lanes: [] }
 };
 
 const texts = {
@@ -224,7 +224,7 @@ function PreStartInfo({ state, title, qrSrc, teams, startIndex, page, t }) {
     </section>
     <section>
       <SectionTitle title={t.registeredTeams} page={page} />
-      <div className="chs-registration-grid">{teams.map((team, index) => <div className="chs-registration-team" key={team.id}><span>{startIndex + index + 1}</span><strong>{team.name}</strong></div>)}</div>
+      <div className="chs-registration-table">{teams.map((team, index) => <div className="chs-registration-row" key={team.id}><span>{startIndex + index + 1}</span><strong>{team.name}</strong></div>)}</div>
     </section>
   </section>;
 }
@@ -250,7 +250,8 @@ function buildDisplayFrames({ state, views, currentMatches, screenConfig }) {
   for (const view of views) {
     let viewFrames = [];
     if (view === 'registration') {
-      viewFrames = chunk(state.teams.filter(team => !team.withdrawn), screenConfig.rowsPerPage).map((items, page) => ({ view, items, startIndex: page * screenConfig.rowsPerPage }));
+      const pageSize = state.started ? screenConfig.rowsPerPage : screenConfig.registeredTeamsPerPage;
+      viewFrames = chunk(state.teams.filter(team => !team.withdrawn), pageSize).map((items, page) => ({ view, items, startIndex: page * pageSize }));
     } else if (view === 'matches') {
       viewFrames = chunk(orderMatches(currentMatches), screenConfig.matchesPerPage).map(items => ({ view, items }));
     } else if (['initialStandings', 'aStandings', 'bStandings'].includes(view)) {
@@ -282,6 +283,7 @@ function normalizePublicScreenConfig(value, screenKey) {
     ...defaults,
     ...configured,
     rowsPerPage: clampNumber(configured.rowsPerPage, 4, 24, defaults.rowsPerPage),
+    registeredTeamsPerPage: clampNumber(configured.registeredTeamsPerPage, 4, 60, defaults.registeredTeamsPerPage),
     matchesPerPage: clampNumber(configured.matchesPerPage, 1, 24, defaults.matchesPerPage),
     groupsPerPage: clampNumber(configured.groupsPerPage, 1, 6, defaults.groupsPerPage),
     rotationSeconds: clampNumber(configured.rotationSeconds, 5, 120, defaults.rotationSeconds),
