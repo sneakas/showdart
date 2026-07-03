@@ -204,9 +204,11 @@
 
 .chs-registration-table {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(330px, 1fr));
+  grid-template-columns: repeat(var(--registration-columns), minmax(0, 1fr));
+  grid-template-rows: repeat(var(--registration-rows), minmax(72px, 1fr));
   gap: 0;
   overflow: hidden;
+  min-height: min(54vh, var(--registration-min-height));
   border: 1px solid rgba(43, 99, 73, .9);
   border-radius: 10px;
   background: rgba(4, 31, 20, .88);
@@ -221,6 +223,10 @@
   border-right: 1px solid rgba(43, 99, 73, .65);
   border-bottom: 1px solid rgba(43, 99, 73, .65);
   padding: 12px 16px;
+}
+
+.chs-registration-row.is-empty {
+  background: rgba(2, 18, 11, .38);
 }
 
 .chs-registration-row > span {
@@ -761,6 +767,8 @@
 
   .chs-registration-table {
     grid-template-columns: 1fr;
+    grid-template-rows: repeat(var(--registration-rows), minmax(62px, 1fr));
+    min-height: auto;
   }
 }
 

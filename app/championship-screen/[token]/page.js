@@ -7,8 +7,8 @@ import { getCurrentMatches, getDivisionBracket, getGroupStandings, normalizeCham
 import './screen.css';
 
 const DEFAULT_PUBLIC_SCREENS = {
-  screen1: { label: 'Skærm 1', mode: 'auto', rowsPerPage: 12, registeredTeamsPerPage: 12, matchesPerPage: 8, groupsPerPage: 2, rotationSeconds: 10, announcement: '', hideHeader: false, hideHero: false, hideConnection: false, hidePageIndicator: false, hideLaneInfo: false, hideFooter: false, lanes: [] },
-  screen2: { label: 'Skærm 2', mode: 'auto', rowsPerPage: 12, registeredTeamsPerPage: 12, matchesPerPage: 8, groupsPerPage: 2, rotationSeconds: 10, announcement: '', hideHeader: false, hideHero: false, hideConnection: false, hidePageIndicator: false, hideLaneInfo: false, hideFooter: false, lanes: [] }
+  screen1: { label: 'Skærm 1', mode: 'auto', rowsPerPage: 12, registeredTeamColumns: 3, registeredTeamRows: 4, matchesPerPage: 8, groupsPerPage: 2, rotationSeconds: 10, announcement: '', hideHeader: false, hideHero: false, hideConnection: false, hidePageIndicator: false, hideLaneInfo: false, hideFooter: false, lanes: [] },
+  screen2: { label: 'Skærm 2', mode: 'auto', rowsPerPage: 12, registeredTeamColumns: 3, registeredTeamRows: 4, matchesPerPage: 8, groupsPerPage: 2, rotationSeconds: 10, announcement: '', hideHeader: false, hideHero: false, hideConnection: false, hidePageIndicator: false, hideLaneInfo: false, hideFooter: false, lanes: [] }
 };
 
 const texts = {
@@ -139,7 +139,7 @@ export default function ChampionshipScreenPage() {
 
     <section className="chs-content">
       {screenConfig.announcement && frame.view !== 'announcement' ? <AnnouncementPanel message={screenConfig.announcement} t={t} /> : null}
-      {!state.started ? <PreStartInfo state={state} title={displayTitle} qrSrc={qrSrc} teams={frame.items || []} startIndex={frame.startIndex || 0} page={pageIndicator} t={t} /> : null}
+      {!state.started ? <PreStartInfo state={state} title={displayTitle} qrSrc={qrSrc} teams={frame.items || []} startIndex={frame.startIndex || 0} page={pageIndicator} columns={screenConfig.registeredTeamColumns} rows={screenConfig.registeredTeamRows} t={t} /> : null}
       {frame.view === 'announcement' ? <AnnouncementPanel message={screenConfig.announcement || '-'} t={t} full /> : null}
       {state.started && frame.view === 'registration' ? <section><SectionTitle title={t.registeredTeams} page={pageIndicator} /><div className="chs-registration-grid">{frame.items.map((team, index) => <div className="chs-registration-team" key={team.id}><span>{frame.startIndex + index + 1}</span><strong>{team.name}</strong></div>)}</div></section> : null}
       {frame.view === 'matches' ? frame.items.length ? <section><SectionTitle title={t.currentMatches} page={pageIndicator} /><div className="chs-match-grid">{frame.items.map(match => <MatchCard key={match.id} match={match} allMatches={currentMatches} teamsById={teamsById} t={t} hideLaneInfo={screenConfig.hideLaneInfo} />)}</div></section> : <section className="chs-waiting"><span>{t.betweenRounds}</span><h2>{t.waiting}</h2></section> : null}
@@ -206,8 +206,10 @@ function Podium({ bracket, teamsById, title, t }) {
   return <section className="chs-card chs-podium"><h2>{title}</h2><div className="first"><span>1</span><strong>{teamsById.get(bracket.championId)?.name || '-'}</strong><small>{t.champion}</small></div><div><span>2</span><strong>{teamsById.get(bracket.runnerUpId)?.name || '-'}</strong><small>{t.runnerUp}</small></div><div><span>3</span><strong>{teamsById.get(bracket.thirdId)?.name || '-'}</strong><small>{t.third}</small></div></section>;
 }
 
-function PreStartInfo({ state, title, qrSrc, teams, startIndex, page, t }) {
+function PreStartInfo({ state, title, qrSrc, teams, startIndex, page, columns, rows, t }) {
   const activeTeams = state.teams.filter(team => !team.withdrawn).length;
+  const cellCount = Math.max(1, columns * rows);
+  const cells = Array.from({ length: cellCount }, (_, index) => teams[index] || null);
   return <section className="chs-prestart">
     <section className="chs-prestart-top">
       <section className="chs-card chs-prestart-main">
@@ -224,7 +226,7 @@ function PreStartInfo({ state, title, qrSrc, teams, startIndex, page, t }) {
     </section>
     <section>
       <SectionTitle title={t.registeredTeams} page={page} />
-      <div className="chs-registration-table">{teams.map((team, index) => <div className="chs-registration-row" key={team.id}><span>{startIndex + index + 1}</span><strong>{team.name}</strong></div>)}</div>
+      <div className="chs-registration-table" style={{ '--registration-columns': columns, '--registration-rows': rows, '--registration-min-height': `${rows * 92}px` }}>{cells.map((team, index) => team ? <div className="chs-registration-row" key={team.id}><span>{startIndex + index + 1}</span><strong>{team.name}</strong></div> : <div className="chs-registration-row is-empty" key={`empty-${index}`} />)}</div>
     </section>
   </section>;
 }
@@ -250,7 +252,7 @@ function buildDisplayFrames({ state, views, currentMatches, screenConfig }) {
   for (const view of views) {
     let viewFrames = [];
     if (view === 'registration') {
-      const pageSize = state.started ? screenConfig.rowsPerPage : screenConfig.registeredTeamsPerPage;
+      const pageSize = state.started ? screenConfig.rowsPerPage : screenConfig.registeredTeamColumns * screenConfig.registeredTeamRows;
       viewFrames = chunk(state.teams.filter(team => !team.withdrawn), pageSize).map((items, page) => ({ view, items, startIndex: page * pageSize }));
     } else if (view === 'matches') {
       viewFrames = chunk(orderMatches(currentMatches), screenConfig.matchesPerPage).map(items => ({ view, items }));
@@ -279,11 +281,14 @@ function buildDisplayFrames({ state, views, currentMatches, screenConfig }) {
 function normalizePublicScreenConfig(value, screenKey) {
   const defaults = DEFAULT_PUBLIC_SCREENS[screenKey] || DEFAULT_PUBLIC_SCREENS.screen1;
   const configured = value && typeof value === 'object' ? value : {};
+  const registeredTeamColumns = clampNumber(configured.registeredTeamColumns, 1, 6, defaults.registeredTeamColumns);
+  const legacyTeamRows = configured.registeredTeamRows ?? Math.ceil(clampNumber(configured.registeredTeamsPerPage, 4, 60, defaults.registeredTeamColumns * defaults.registeredTeamRows) / registeredTeamColumns);
   return {
     ...defaults,
     ...configured,
     rowsPerPage: clampNumber(configured.rowsPerPage, 4, 24, defaults.rowsPerPage),
-    registeredTeamsPerPage: clampNumber(configured.registeredTeamsPerPage, 4, 60, defaults.registeredTeamsPerPage),
+    registeredTeamColumns,
+    registeredTeamRows: clampNumber(legacyTeamRows, 1, 12, defaults.registeredTeamRows),
     matchesPerPage: clampNumber(configured.matchesPerPage, 1, 24, defaults.matchesPerPage),
     groupsPerPage: clampNumber(configured.groupsPerPage, 1, 6, defaults.groupsPerPage),
     rotationSeconds: clampNumber(configured.rotationSeconds, 5, 120, defaults.rotationSeconds),
