@@ -204,6 +204,11 @@
 
 .chs-prestart {
   display: grid;
+  gap: 20px;
+}
+
+.chs-prestart-top {
+  display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(220px, 320px);
   gap: 22px;
   align-items: stretch;
@@ -706,7 +711,7 @@
   .chs-group-grid,
   .chs-bracket-grid,
   .chs-podium-grid,
-  .chs-prestart {
+  .chs-prestart-top {
     grid-template-columns: 1fr;
   }
 

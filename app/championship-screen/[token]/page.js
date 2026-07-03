@@ -139,7 +139,7 @@ export default function ChampionshipScreenPage() {
 
     <section className="chs-content">
       {screenConfig.announcement && frame.view !== 'announcement' ? <AnnouncementPanel message={screenConfig.announcement} t={t} /> : null}
-      {!state.started ? <PreStartInfo state={state} title={displayTitle} qrSrc={qrSrc} t={t} /> : null}
+      {!state.started ? <PreStartInfo state={state} title={displayTitle} qrSrc={qrSrc} teams={frame.items || []} startIndex={frame.startIndex || 0} page={pageIndicator} t={t} /> : null}
       {frame.view === 'announcement' ? <AnnouncementPanel message={screenConfig.announcement || '-'} t={t} full /> : null}
       {state.started && frame.view === 'registration' ? <section><SectionTitle title={t.registeredTeams} page={pageIndicator} /><div className="chs-registration-grid">{frame.items.map((team, index) => <div className="chs-registration-team" key={team.id}><span>{frame.startIndex + index + 1}</span><strong>{team.name}</strong></div>)}</div></section> : null}
       {frame.view === 'matches' ? frame.items.length ? <section><SectionTitle title={t.currentMatches} page={pageIndicator} /><div className="chs-match-grid">{frame.items.map(match => <MatchCard key={match.id} match={match} allMatches={currentMatches} teamsById={teamsById} t={t} hideLaneInfo={screenConfig.hideLaneInfo} />)}</div></section> : <section className="chs-waiting"><span>{t.betweenRounds}</span><h2>{t.waiting}</h2></section> : null}
@@ -206,20 +206,26 @@ function Podium({ bracket, teamsById, title, t }) {
   return <section className="chs-card chs-podium"><h2>{title}</h2><div className="first"><span>1</span><strong>{teamsById.get(bracket.championId)?.name || '-'}</strong><small>{t.champion}</small></div><div><span>2</span><strong>{teamsById.get(bracket.runnerUpId)?.name || '-'}</strong><small>{t.runnerUp}</small></div><div><span>3</span><strong>{teamsById.get(bracket.thirdId)?.name || '-'}</strong><small>{t.third}</small></div></section>;
 }
 
-function PreStartInfo({ state, title, qrSrc, t }) {
+function PreStartInfo({ state, title, qrSrc, teams, startIndex, page, t }) {
   const activeTeams = state.teams.filter(team => !team.withdrawn).length;
   return <section className="chs-prestart">
-    <section className="chs-card chs-prestart-main">
-      <div className="chs-prestart-logo"><img src="/assets/small-logo.png" alt="Showdart" /></div>
-      <span>{t.tournamentNotStarted}</span>
-      <h2>{title}</h2>
-      <p>{activeTeams} {t.teams} · {state.config.laneCount || state.activeLanes.length} {t.lanes}</p>
+    <section className="chs-prestart-top">
+      <section className="chs-card chs-prestart-main">
+        <div className="chs-prestart-logo"><img src="/assets/small-logo.png" alt="Showdart" /></div>
+        <span>{t.tournamentNotStarted}</span>
+        <h2>{title}</h2>
+        <p>{activeTeams} {t.teams} · {state.config.laneCount || state.activeLanes.length} {t.lanes}</p>
+      </section>
+      {qrSrc ? <section className="chs-card chs-prestart-qr">
+        <span>{t.scanQr}</span>
+        <img src={qrSrc} alt={t.scanQr} />
+        <p>{t.scanQrHint}</p>
+      </section> : null}
     </section>
-    {qrSrc ? <section className="chs-card chs-prestart-qr">
-      <span>{t.scanQr}</span>
-      <img src={qrSrc} alt={t.scanQr} />
-      <p>{t.scanQrHint}</p>
-    </section> : null}
+    <section>
+      <SectionTitle title={t.registeredTeams} page={page} />
+      <div className="chs-registration-grid">{teams.map((team, index) => <div className="chs-registration-team" key={team.id}><span>{startIndex + index + 1}</span><strong>{team.name}</strong></div>)}</div>
+    </section>
   </section>;
 }
 
