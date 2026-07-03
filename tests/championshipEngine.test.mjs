@@ -95,9 +95,11 @@ test('group lanes restrict active matches and split large group rounds into lane
 
   active = getCurrentMatches(state);
   assert.equal(state.stageRound, 2);
-  assert.equal(active.length, 1);
-  assert.ok([2, 3].includes(active[0].laneNumber));
-  assert.equal(active[0].round, 2);
+  assert.equal(active.length, 2);
+  assert.deepEqual([...new Set(active.map(match => match.laneNumber))].sort((a, b) => a - b), [2, 3]);
+  assert.ok(active.every(match => match.round === 2));
+  const activeTeamIds = active.flatMap(match => [match.team1Id, match.team2Id]);
+  assert.equal(new Set(activeTeamIds).size, activeTeamIds.length);
 });
 
 test('completed initial groups advance into separate A and B groups with reset standings', () => {

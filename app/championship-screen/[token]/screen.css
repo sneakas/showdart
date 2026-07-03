@@ -400,7 +400,7 @@
   margin: 0;
   color: #f6f6ed;
   font-family: 'Barlow Condensed', sans-serif;
-  font-size: clamp(2rem, 3vw, 3.6rem);
+  font-size: clamp(1rem, 1.5vw, 1.8rem);
   line-height: .95;
   letter-spacing: .04em;
 }
