@@ -13,6 +13,7 @@ import {
   getCurrentMatches,
   getDivisionBracket,
   getGroupStandings,
+  normalizeChampionshipState,
   publishChampionshipRound,
   setChampionshipTieBreakQualifiers,
   setChampionshipWinner,
@@ -208,6 +209,63 @@ test('seeded playoffs cross-pair second and third places from opposite groups', 
   const pairs = firstRound.map(match => [match.team1Id, match.team2Id].sort((a, b) => a - b).join('-'));
   assert.ok(pairs.includes('2-9'), 'A1 #2 should meet A2 #3');
   assert.ok(pairs.includes('3-8'), 'A1 #3 should meet A2 #2');
+});
+
+test('normalization repairs already generated unplayed seeded playoff pairings', () => {
+  let state = stateWithTeams(24, {
+    aPlayoffQualifiersPerGroup: 3,
+    bPlayoffQualifiersPerGroup: 3,
+    laneCount: 8
+  });
+  const makeGroup = (id, division, startId) => ({
+    id,
+    division,
+    name: `${division}-gruppe ${id.slice(1)}`,
+    teamIds: Array.from({ length: 6 }, (_, index) => startId + index)
+  });
+  state = {
+    ...state,
+    started: true,
+    phase: 'ab_groups',
+    stageComplete: true,
+    groups: [
+      makeGroup('A1', 'A', 1),
+      makeGroup('A2', 'A', 7),
+      makeGroup('B1', 'B', 13),
+      makeGroup('B2', 'B', 19)
+    ],
+    matches: [],
+    activeMatchIds: [],
+    stageRound: 0
+  };
+  for (const group of state.groups) {
+    for (const [index, teamId] of group.teamIds.entries()) {
+      state = addPointsAdjustment(state, teamId, group.id, 12 - index, 'Seed test');
+    }
+  }
+  state = generateChampionshipPlayoffs(state);
+  const badSeeds = [1, 7, 8, 2, 3, 9];
+  const badSlots = new Map([
+    [1, { team1Id: 1, team2Id: null, isBye: true, winnerId: 1 }],
+    [2, { team1Id: 2, team2Id: 3, isBye: false, winnerId: null }],
+    [3, { team1Id: 7, team2Id: null, isBye: true, winnerId: 7 }],
+    [4, { team1Id: 8, team2Id: 9, isBye: false, winnerId: null }]
+  ]);
+  state = {
+    ...state,
+    brackets: { ...state.brackets, A: { ...state.brackets.A, seedTeamIds: badSeeds } },
+    matches: state.matches.map(match => {
+      if (match.bracketDivision !== 'A' || match.bracketRound !== 1) return match;
+      return { ...match, ...badSlots.get(match.bracketSlot) };
+    })
+  };
+
+  state = normalizeChampionshipState(state);
+
+  const firstRound = state.matches.filter(match => match.bracketDivision === 'A' && match.bracketRound === 1 && !match.isBye);
+  const pairs = firstRound.map(match => [match.team1Id, match.team2Id].sort((a, b) => a - b).join('-'));
+  assert.ok(pairs.includes('2-9'), 'existing bad A1 #2 vs A1 #3 pairing should be repaired');
+  assert.ok(pairs.includes('3-8'), 'existing bad A2 #2 vs A2 #3 pairing should be repaired');
 });
 
 test('three-way boundary ties use one simultaneous event and unlock progression', () => {
