@@ -169,6 +169,47 @@ test('six qualifiers create eight-slot A and B brackets with byes', () => {
   assert.ok(getDivisionBracket(state, 'B').championId);
 });
 
+test('seeded playoffs cross-pair second and third places from opposite groups', () => {
+  let state = stateWithTeams(24, {
+    aPlayoffQualifiersPerGroup: 3,
+    bPlayoffQualifiersPerGroup: 3,
+    laneCount: 8
+  });
+  const makeGroup = (id, division, startId) => ({
+    id,
+    division,
+    name: `${division}-gruppe ${id.slice(1)}`,
+    teamIds: Array.from({ length: 6 }, (_, index) => startId + index)
+  });
+  state = {
+    ...state,
+    started: true,
+    phase: 'ab_groups',
+    stageComplete: true,
+    groups: [
+      makeGroup('A1', 'A', 1),
+      makeGroup('A2', 'A', 7),
+      makeGroup('B1', 'B', 13),
+      makeGroup('B2', 'B', 19)
+    ],
+    matches: [],
+    activeMatchIds: [],
+    stageRound: 0
+  };
+  for (const group of state.groups) {
+    for (const [index, teamId] of group.teamIds.entries()) {
+      state = addPointsAdjustment(state, teamId, group.id, 12 - index, 'Seed test');
+    }
+  }
+
+  state = generateChampionshipPlayoffs(state);
+
+  const firstRound = state.matches.filter(match => match.bracketDivision === 'A' && match.bracketRound === 1 && !match.isBye);
+  const pairs = firstRound.map(match => [match.team1Id, match.team2Id].sort((a, b) => a - b).join('-'));
+  assert.ok(pairs.includes('2-9'), 'A1 #2 should meet A2 #3');
+  assert.ok(pairs.includes('3-8'), 'A1 #3 should meet A2 #2');
+});
+
 test('three-way boundary ties use one simultaneous event and unlock progression', () => {
   let state = stateWithTeams(6, {
     initialGroupCount: 2,
