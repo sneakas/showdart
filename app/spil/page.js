@@ -75,7 +75,7 @@ const texts = {
     sendLater: 'Klar til senere turneringskobling',
     openTournament: 'Til turnering',
     openChampionship: 'Til mesterskab',
-    laneSetup: 'Tablet-bane', chooseLane: 'Vælg hvilken bane denne tablet står på', lane: 'Bane',
+    laneSetup: 'Tablet-bane', chooseLane: 'Vælg bane…', lane: 'Bane',
     refreshing: 'Opdaterer...', refresh: 'Opdater kamp', noCompetition: 'Ingen aktiv turnering eller mesterskab blev fundet.',
     roundNotPublished: 'Runden er ikke offentliggjort endnu.', waitingForMatch: 'Der er ingen kamp klar på denne bane endnu.', inactiveLane: 'Denne bane er ikke aktiv i turneringen.',
     matchReady: 'Kamp klar', startMatch: 'Start kamp', continueMatch: 'Fortsæt kamp', whoStarts: 'Hvem starter?', whoStartsHint: 'Tryk på spilleren eller holdet, der kaster først.',
@@ -131,7 +131,7 @@ const texts = {
     sendLater: 'Ready for later tournament link',
     openTournament: 'To tournament',
     openChampionship: 'To championship',
-    laneSetup: 'Tablet lane', chooseLane: 'Choose the lane where this tablet is located', lane: 'Lane',
+    laneSetup: 'Tablet lane', chooseLane: 'Choose lane…', lane: 'Lane',
     refreshing: 'Refreshing...', refresh: 'Refresh match', noCompetition: 'No active tournament or championship was found.',
     roundNotPublished: 'The round has not been published yet.', waitingForMatch: 'No match is ready on this lane yet.', inactiveLane: 'This lane is not active in the competition.',
     matchReady: 'Match ready', startMatch: 'Start match', continueMatch: 'Continue match', whoStarts: 'Who starts?', whoStartsHint: 'Press the player or team that throws first.',
@@ -545,59 +545,48 @@ function SetupPanel({ t, playerOneName, playerTwoName, opponentMode, aiAverageMa
     inactive_lane: t.inactiveLane,
     choose_lane: t.chooseLane
   };
-  const isSameActiveMatch = gameStatus === 'playing' && linkedMatch?.matchKey && linkedMatch.matchKey === laneData?.match?.key;
+  const laneDataIsCurrent = !!selectedLane && laneData?.lane === selectedLane;
+  const readyMatch = laneDataIsCurrent ? laneData?.match : null;
+  const isSameActiveMatch = gameStatus === 'playing' && linkedMatch?.matchKey && linkedMatch.matchKey === readyMatch?.key;
   return (
     <section className="sd-card game-panel">
-      <div className="game-panel-head">
-        <div>
-          <p className="sd-small-label">{t.laneSetup}</p>
-          <h2 className="sd-panel-title">{t.chooseLane}</h2>
-        </div>
-        <button type="button" className="sd-button" disabled={laneLoading} onClick={onRefresh}><RefreshCw size={16} /> {laneLoading ? t.refreshing : t.refresh}</button>
+      <div className="game-lane-toolbar">
+        <label>
+          <MapPin size={18} />
+          <span>{t.laneSetup}</span>
+          <select className="sd-select" aria-label={t.chooseLane} value={selectedLane || ''} onChange={event => onLaneChange(event.target.value ? Number(event.target.value) : null)}>
+            <option value="">{t.chooseLane}</option>
+            {Array.from({ length: laneData?.laneCount || 0 }, (_, index) => index + 1).map(lane => <option key={lane} value={lane}>{t.lane} {lane}</option>)}
+          </select>
+        </label>
+        <button type="button" className="game-refresh-button" title={t.refresh} aria-label={t.refresh} disabled={laneLoading} onClick={onRefresh}><RefreshCw size={18} className={laneLoading ? 'is-spinning' : ''} /></button>
       </div>
-      <div className="game-lane-picker">
-        {Array.from({ length: laneData?.laneCount || 0 }, (_, index) => index + 1).map(lane => (
-          <button type="button" key={lane} className={selectedLane === lane ? 'is-active' : ''} onClick={() => onLaneChange(lane)}><MapPin size={19} /> {t.lane} {lane}</button>
-        ))}
-      </div>
-      {laneData?.competition ? <div className="game-competition-line"><strong>{laneData.competition.label}</strong><span>{laneData.competition.roundLabel}</span></div> : null}
-      {laneData?.match ? (
+      {selectedLane && readyMatch ? (
         <article className="game-linked-match">
-          <div className="game-linked-meta"><span>{t.matchReady}</span><strong>{t.lane} {laneData.match.laneNumber}</strong><small>{laneData.match.roundLabel}</small></div>
-          <div className="game-linked-versus"><strong>{laneData.match.side1Label}</strong><b>VS</b><strong>{laneData.match.side2Label}</strong></div>
+          <div className="game-linked-meta"><span>{t.matchReady}</span><small>{laneData.competition?.label} · {readyMatch.roundLabel}</small></div>
+          <div className="game-linked-versus"><strong>{readyMatch.side1Label}</strong><b>VS</b><strong>{readyMatch.side2Label}</strong></div>
           <button type="button" className="sd-button gold" onClick={isSameActiveMatch ? onResume : onLinkedStart}>{isSameActiveMatch ? t.continueMatch : t.startMatch}</button>
         </article>
-      ) : <div className="game-lane-status">{laneLoading ? t.refreshing : laneError || statusMessages[laneData?.status] || t.chooseLane}</div>}
+      ) : selectedLane ? <div className="game-lane-status">{laneLoading || !laneDataIsCurrent ? t.refreshing : laneError || statusMessages[laneData?.status] || t.waitingForMatch}</div> : null}
 
-      <div className="game-manual-divider"><span>{t.manualGame}</span></div>
-      <div className="game-panel-head">
-        <div><h2 className="sd-panel-title">{t.setupTitle}</h2><p>{t.manualGameHint}</p></div>
-        <button type="button" className="sd-button" onClick={onStart}>{t.start}</button>
-      </div>
-      <div className="game-form-grid">
-        <label>
-          <span>{t.playerOne}</span>
-          <input className="sd-input" value={playerOneName} maxLength={40} onChange={event => setPlayerOneName(event.target.value)} />
-        </label>
-        <label>
-          <span>{t.playerTwo}</span>
-          <input className="sd-input" value={opponentMode === 'ai' ? 'AI' : playerTwoName} maxLength={40} disabled={opponentMode === 'ai'} onChange={event => setPlayerTwoName(event.target.value)} />
-        </label>
-      </div>
-      <div className="game-mode-grid">
-        <button type="button" className={opponentMode === 'human' ? 'is-active' : ''} onClick={() => setOpponentMode('human')}><UsersRound size={20} />{t.twoPlayers}</button>
-        <button type="button" className={opponentMode === 'ai' ? 'is-active' : ''} onClick={() => setOpponentMode('ai')}><Bot size={20} />{t.ai}</button>
-      </div>
-      {opponentMode === 'ai' ? (
-        <div className="game-ai-control">
-          <div>
-            <span>{t.aiStrength}</span>
-            <strong>{Number(aiAverageMarks).toFixed(2)}</strong>
+      <details className="game-manual-details">
+        <summary>{t.manualGame}</summary>
+        <div className="game-manual-content">
+          <div className="game-panel-head">
+            <div><h2 className="sd-panel-title">{t.setupTitle}</h2><p>{t.manualGameHint}</p></div>
+            <button type="button" className="sd-button" onClick={onStart}>{t.start}</button>
           </div>
-          <input type="range" min="0.25" max="5" step="0.25" value={aiAverageMarks} onChange={event => setAiAverageMarks(Number(event.target.value))} />
-          <p>{t.aiHelp}</p>
+          <div className="game-form-grid">
+            <label><span>{t.playerOne}</span><input className="sd-input" value={playerOneName} maxLength={40} onChange={event => setPlayerOneName(event.target.value)} /></label>
+            <label><span>{t.playerTwo}</span><input className="sd-input" value={opponentMode === 'ai' ? 'AI' : playerTwoName} maxLength={40} disabled={opponentMode === 'ai'} onChange={event => setPlayerTwoName(event.target.value)} /></label>
+          </div>
+          <div className="game-mode-grid">
+            <button type="button" className={opponentMode === 'human' ? 'is-active' : ''} onClick={() => setOpponentMode('human')}><UsersRound size={20} />{t.twoPlayers}</button>
+            <button type="button" className={opponentMode === 'ai' ? 'is-active' : ''} onClick={() => setOpponentMode('ai')}><Bot size={20} />{t.ai}</button>
+          </div>
+          {opponentMode === 'ai' ? <div className="game-ai-control"><div><span>{t.aiStrength}</span><strong>{Number(aiAverageMarks).toFixed(2)}</strong></div><input type="range" min="0.25" max="5" step="0.25" value={aiAverageMarks} onChange={event => setAiAverageMarks(Number(event.target.value))} /><p>{t.aiHelp}</p></div> : <p className="game-muted">{t.humanMode}</p>}
         </div>
-      ) : <p className="game-muted">{t.humanMode}</p>}
+      </details>
     </section>
   );
 }
