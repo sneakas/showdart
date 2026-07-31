@@ -105,6 +105,7 @@ export default function Page() {
   const [screenInfo, setScreenInfo] = useState(null);
   const [screenError, setScreenError] = useState('');
   const [screenNotice, setScreenNotice] = useState('');
+  const [externalTournamentState, setExternalTournamentState] = useState(null);
   const screenChannelRef = useRef(null);
   const screenChannelReadyRef = useRef(false);
   const pendingScreenPayloadRef = useRef(null);
@@ -257,6 +258,8 @@ export default function Page() {
       config: {
         broadcast: { self: false }
       }
+    }).on('broadcast', { event: 'tournament-state' }, ({ payload }) => {
+      if (payload?.tournamentId === 'showdart-default' && payload?.state) setExternalTournamentState(payload.state);
     });
 
     screenChannelRef.current = channel;
@@ -418,6 +421,7 @@ export default function Page() {
       onLogout={handleLogout}
       onLanguageChange={changeLanguage}
       onStateSync={sendSpectatorPayload}
+      externalState={externalTournamentState}
     />
   );
 }

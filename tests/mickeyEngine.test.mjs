@@ -42,7 +42,7 @@ test('Mickey mark values follow extracted cricket rules', () => {
 });
 
 test('manual marks close every Mickey target and create a tournament result payload', () => {
-  let state = startMickeyGame({ playerOneName: 'Mickey', playerTwoName: 'Mouse' });
+  let state = startMickeyGame({ playerOneName: 'Mickey', playerTwoName: 'Mouse', startingPlayerIndex: 1 });
   state = closePlayer(state, 0);
 
   assert.equal(state.status, 'finished');
@@ -56,6 +56,7 @@ test('manual marks close every Mickey target and create a tournament result payl
   assert.equal(result.loserName, 'Mouse');
   assert.equal(result.players[0].closedTargets, 9);
   assert.equal(result.metadata.matchId, 'future-match');
+  assert.equal(result.startingPlayerIndex, 1);
 });
 
 test('undo removes the last visit and reopens the result if needed', () => {

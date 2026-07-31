@@ -442,7 +442,8 @@ export function ShowdartDashboard({
   onOpenRules,
   onLogout,
   onLanguageChange,
-  onStateSync
+  onStateSync,
+  externalState
 }) {
   const t = texts[lang] || texts.da;
   const [state, setState] = useState(() => normalizeTournamentState(null));
@@ -470,6 +471,18 @@ export function ShowdartDashboard({
   const previousAnnouncementsRef = useRef({ screen1: '', screen2: '' });
 
   const token = session?.access_token;
+
+  useEffect(() => {
+    if (!externalState) return;
+    const next = normalizeTournamentState(externalState);
+    setState(next);
+    setForm({
+      tournamentName: next.tournamentName || '',
+      teammateMode: next.teammateMode,
+      maxLosses: next.maxLosses,
+      laneCount: next.laneCount
+    });
+  }, [externalState]);
   const entries = useMemo(() => getEntries(state), [state]);
   const activeEntries = useMemo(() => getActiveEntries(state), [state]);
   const standings = useMemo(() => getSortedStandings(state), [state]);

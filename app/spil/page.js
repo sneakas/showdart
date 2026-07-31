@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { Bot, ClipboardList, Gamepad2, RotateCcw, Send, Settings, Trophy, Undo2, UsersRound, X } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Bot, CheckCircle2, ClipboardList, Gamepad2, MapPin, RefreshCw, RotateCcw, Send, Settings, Trophy, Undo2, UsersRound, X } from 'lucide-react';
 import { getSupabaseBrowserClient } from '../../lib/supabaseBrowser';
 import {
   MICKEY_RULES,
@@ -12,6 +12,7 @@ import {
   getMickeyTargetLabel,
   isMickeyPlayerFinished,
   markMickeyTarget,
+  normalizeMickeyState,
   runMickeyAiTurn,
   startMickeyGame,
   undoMickeyVisit
@@ -21,6 +22,8 @@ import './spil.css';
 
 const LANGUAGE_STORAGE_KEY = 'showdart-language';
 const STORAGE_PREFIX = 'showdart-mickey-state';
+const LANE_STORAGE_PREFIX = 'showdart-tablet-lane';
+const LINKED_MATCH_STORAGE_PREFIX = 'showdart-linked-match';
 
 const texts = {
   da: {
@@ -59,7 +62,7 @@ const texts = {
     visits: 'Visits',
     mpr: 'MPR',
     integration: 'Turneringsintegration',
-    integrationBody: 'Forberedt: Mickey kan nu returnere vinder, taber, marks, pile, MPR og metadata. Næste trin er at forbinde den payload til en konkret turneringskamp.',
+    integrationBody: 'Vælg tablettens bane. Den aktuelle kamp hentes automatisk, og vinderen sendes tilbage til turneringen.',
     noResult: 'Spil færdigt først for at se resultat-payload.',
     ruleTitle: 'Mickey regler',
     setupTitle: 'Spilopsætning',
@@ -71,7 +74,13 @@ const texts = {
     aiMode: 'Du markerer Spiller 1. AI markerer sig selv med AI tur-knappen.',
     sendLater: 'Klar til senere turneringskobling',
     openTournament: 'Til turnering',
-    openChampionship: 'Til mesterskab'
+    openChampionship: 'Til mesterskab',
+    laneSetup: 'Tablet-bane', chooseLane: 'Vælg hvilken bane denne tablet står på', lane: 'Bane',
+    refreshing: 'Opdaterer...', refresh: 'Opdater kamp', noCompetition: 'Ingen aktiv turnering eller mesterskab blev fundet.',
+    roundNotPublished: 'Runden er ikke offentliggjort endnu.', waitingForMatch: 'Der er ingen kamp klar på denne bane endnu.', inactiveLane: 'Denne bane er ikke aktiv i turneringen.',
+    matchReady: 'Kamp klar', startMatch: 'Start kamp', continueMatch: 'Fortsæt kamp', whoStarts: 'Hvem starter?', whoStartsHint: 'Tryk på spilleren eller holdet, der kaster først.',
+    starts: 'Starter', linkedMatch: 'Forbundet kamp', resultSending: 'Sender resultat...', resultSent: 'Resultatet er sendt og kampforløbet er opdateret.', resultFailed: 'Resultatet kunne ikke sendes.',
+    retry: 'Prøv igen', manualGame: 'Frit spil', manualGameHint: 'Brug kun frit spil, når kampen ikke kommer fra en turnering.'
   },
   en: {
     loading: 'Loading game...',
@@ -109,7 +118,7 @@ const texts = {
     visits: 'Visits',
     mpr: 'MPR',
     integration: 'Tournament integration',
-    integrationBody: 'Prepared: Mickey can now return winner, loser, marks, darts, MPR and metadata. Next step is connecting that payload to a specific tournament match.',
+    integrationBody: 'Choose the tablet lane. The current match is loaded automatically and the winner is sent back to the competition.',
     noResult: 'Finish the game first to see the result payload.',
     ruleTitle: 'Mickey rules',
     setupTitle: 'Game setup',
@@ -121,7 +130,13 @@ const texts = {
     aiMode: 'You mark Player 1. AI marks itself through the AI turn button.',
     sendLater: 'Ready for later tournament link',
     openTournament: 'To tournament',
-    openChampionship: 'To championship'
+    openChampionship: 'To championship',
+    laneSetup: 'Tablet lane', chooseLane: 'Choose the lane where this tablet is located', lane: 'Lane',
+    refreshing: 'Refreshing...', refresh: 'Refresh match', noCompetition: 'No active tournament or championship was found.',
+    roundNotPublished: 'The round has not been published yet.', waitingForMatch: 'No match is ready on this lane yet.', inactiveLane: 'This lane is not active in the competition.',
+    matchReady: 'Match ready', startMatch: 'Start match', continueMatch: 'Continue match', whoStarts: 'Who starts?', whoStartsHint: 'Press the player or team that throws first.',
+    starts: 'Starts', linkedMatch: 'Linked match', resultSending: 'Sending result...', resultSent: 'The result was sent and match progress was updated.', resultFailed: 'The result could not be sent.',
+    retry: 'Try again', manualGame: 'Free play', manualGameHint: 'Use free play only when the match does not come from a competition.'
   }
 };
 
@@ -170,6 +185,13 @@ export default function GamePage() {
   const [opponentMode, setOpponentMode] = useState('human');
   const [aiAverageMarks, setAiAverageMarks] = useState(3);
   const [state, setState] = useState(() => createMickeyState());
+  const [selectedLane, setSelectedLane] = useState(null);
+  const [laneData, setLaneData] = useState(null);
+  const [laneLoading, setLaneLoading] = useState(false);
+  const [laneError, setLaneError] = useState('');
+  const [linkedMatch, setLinkedMatch] = useState(null);
+  const [startPrompt, setStartPrompt] = useState(null);
+  const [submission, setSubmission] = useState({ status: 'idle', message: '' });
   const t = texts[lang] || texts.da;
 
   useEffect(() => {
@@ -217,10 +239,14 @@ export default function GamePage() {
   useEffect(() => {
     if (!session?.user?.id) return;
     try {
+      const storedLane = Number(localStorage.getItem(`${LANE_STORAGE_PREFIX}-${session.user.id}`));
+      setSelectedLane(Number.isInteger(storedLane) && storedLane > 0 ? storedLane : null);
+      const storedLink = JSON.parse(localStorage.getItem(`${LINKED_MATCH_STORAGE_PREFIX}-${session.user.id}`) || 'null');
+      setLinkedMatch(storedLink && typeof storedLink === 'object' ? storedLink : null);
       const stored = localStorage.getItem(`${STORAGE_PREFIX}-${session.user.id}`);
       if (!stored) return;
       const parsed = JSON.parse(stored);
-      setState(parsed);
+      setState(normalizeMickeyState(parsed));
       setOpponentMode(parsed?.opponentMode === 'ai' ? 'ai' : 'human');
       setAiAverageMarks(Number(parsed?.aiAverageMarks) || 3);
       setPlayerOneName(parsed?.players?.[0]?.name || 'Spiller 1');
@@ -235,6 +261,46 @@ export default function GamePage() {
     localStorage.setItem(`${STORAGE_PREFIX}-${session.user.id}`, JSON.stringify(state));
   }, [session?.user?.id, state]);
 
+  useEffect(() => {
+    if (!session?.user?.id) return;
+    const laneKey = `${LANE_STORAGE_PREFIX}-${session.user.id}`;
+    if (selectedLane) localStorage.setItem(laneKey, String(selectedLane));
+    else localStorage.removeItem(laneKey);
+  }, [selectedLane, session?.user?.id]);
+
+  useEffect(() => {
+    if (!session?.user?.id) return;
+    const linkKey = `${LINKED_MATCH_STORAGE_PREFIX}-${session.user.id}`;
+    if (linkedMatch) localStorage.setItem(linkKey, JSON.stringify(linkedMatch));
+    else localStorage.removeItem(linkKey);
+  }, [linkedMatch, session?.user?.id]);
+
+  const refreshLaneMatch = useCallback(async (laneOverride = selectedLane) => {
+    if (!session?.access_token) return;
+    setLaneLoading(true);
+    setLaneError('');
+    try {
+      const query = laneOverride ? `?lane=${encodeURIComponent(laneOverride)}` : '';
+      const response = await fetch(`/api/lane-match${query}`, { headers: { Authorization: `Bearer ${session.access_token}` } });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload?.error || t.resultFailed);
+      setLaneData(payload);
+      if (laneOverride && payload.laneCount > 0 && laneOverride > payload.laneCount) setSelectedLane(null);
+    } catch (error) {
+      setLaneError(error instanceof Error ? error.message : t.resultFailed);
+    } finally {
+      setLaneLoading(false);
+    }
+  }, [selectedLane, session?.access_token, t.resultFailed]);
+
+  useEffect(() => {
+    if (!session?.access_token) return undefined;
+    refreshLaneMatch();
+    if (scorerOpen) return undefined;
+    const interval = window.setInterval(() => refreshLaneMatch(), 5000);
+    return () => window.clearInterval(interval);
+  }, [refreshLaneMatch, scorerOpen, session?.access_token]);
+
   function changeLanguage(nextLang) {
     setLang(nextLang);
     localStorage.setItem(LANGUAGE_STORAGE_KEY, nextLang);
@@ -247,16 +313,62 @@ export default function GamePage() {
   }
 
   function beginGame() {
-    setState(startMickeyGame({ playerOneName, playerTwoName, opponentMode, aiAverageMarks }));
+    setStartPrompt({ playerOneName, playerTwoName: opponentMode === 'ai' ? 'AI' : playerTwoName, opponentMode, linked: null });
+  }
+
+  function beginLinkedGame() {
+    if (!laneData?.competition || !laneData?.match) return;
+    const linked = {
+      competitionKey: laneData.competition.key,
+      competitionLabel: laneData.competition.label,
+      matchId: laneData.match.id,
+      matchKey: laneData.match.key,
+      lane: laneData.match.laneNumber,
+      roundLabel: laneData.match.roundLabel,
+      side1Label: laneData.match.side1Label,
+      side2Label: laneData.match.side2Label
+    };
+    setStartPrompt({ playerOneName: linked.side1Label, playerTwoName: linked.side2Label, opponentMode: 'human', linked });
+  }
+
+  function chooseStarter(startingPlayerIndex) {
+    if (!startPrompt) return;
+    setState(startMickeyGame({
+      playerOneName: startPrompt.playerOneName,
+      playerTwoName: startPrompt.playerTwoName,
+      opponentMode: startPrompt.opponentMode,
+      aiAverageMarks,
+      startingPlayerIndex
+    }));
+    setPlayerOneName(startPrompt.playerOneName);
+    setPlayerTwoName(startPrompt.playerTwoName);
+    setOpponentMode(startPrompt.opponentMode);
+    setLinkedMatch(startPrompt.linked);
+    setSubmission({ status: 'idle', message: '' });
+    setStartPrompt(null);
     setActivePanel('setup');
     setScorerOpen(true);
     requestMickeyFullscreen();
   }
 
+  function resumeGame() {
+    setScorerOpen(true);
+    requestMickeyFullscreen();
+  }
+
   function restartGame() {
+    const prompt = linkedMatch && submission.status !== 'success' ? {
+      playerOneName: linkedMatch.side1Label,
+      playerTwoName: linkedMatch.side2Label,
+      opponentMode: 'human',
+      linked: linkedMatch
+    } : null;
     setState(createMickeyState({ playerOneName, playerTwoName, opponentMode, aiAverageMarks }));
+    setLinkedMatch(null);
+    setSubmission({ status: 'idle', message: '' });
     setActivePanel('setup');
     setScorerOpen(false);
+    if (prompt) setStartPrompt(prompt);
     exitMickeyFullscreen();
   }
 
@@ -276,6 +388,44 @@ export default function GamePage() {
   function undo() {
     setState(previous => undoMickeyVisit(previous));
   }
+
+  function retryResult() {
+    setSubmission({ status: 'idle', message: '' });
+  }
+
+  useEffect(() => {
+    if (state.status !== 'finished' || state.winnerIndex === null || !linkedMatch || submission.status !== 'idle' || !session?.access_token) return;
+    async function submitResult() {
+      setSubmission({ status: 'sending', message: t.resultSending });
+      const gameResult = buildMickeyTournamentResult(state, {
+        source: 'showdart-spil-page',
+        competitionKey: linkedMatch.competitionKey,
+        matchId: linkedMatch.matchId,
+        lane: linkedMatch.lane
+      });
+      try {
+        const response = await fetch('/api/lane-match', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+          body: JSON.stringify({
+            competitionKey: linkedMatch.competitionKey,
+            matchId: linkedMatch.matchId,
+            lane: linkedMatch.lane,
+            winnerIndex: state.winnerIndex,
+            gameResult
+          })
+        });
+        const payload = await response.json();
+        if (!response.ok) throw new Error(payload?.error || t.resultFailed);
+        setSubmission({ status: 'success', message: t.resultSent });
+        setLaneData(payload.next || null);
+      } catch (error) {
+        setSubmission({ status: 'error', message: error instanceof Error ? error.message : t.resultFailed });
+        refreshLaneMatch(linkedMatch.lane);
+      }
+    }
+    submitResult();
+  }, [linkedMatch, refreshLaneMatch, session?.access_token, state, submission.status, t.resultFailed, t.resultSending, t.resultSent]);
 
   if (loading) return <main className="sd-page game-center">{t.loading}</main>;
   if (!session) return <main className="sd-page game-center"><a className="sd-button gold" href="/">{t.login}</a></main>;
@@ -320,7 +470,7 @@ export default function GamePage() {
         </div>
         <div className="sd-card game-integration-card">
           <p className="sd-small-label">{t.integration}</p>
-          <strong>{resultPayload ? t.resultReady : t.resultWaiting}</strong>
+          <strong>{submission.message || (laneData?.match ? `${t.lane} ${laneData.match.laneNumber} · ${t.matchReady}` : t.resultWaiting)}</strong>
           <p>{t.integrationBody}</p>
         </div>
       </section>
@@ -343,17 +493,43 @@ export default function GamePage() {
           setOpponentMode={setOpponentMode}
           setAiAverageMarks={setAiAverageMarks}
           onStart={beginGame}
+          selectedLane={selectedLane}
+          onLaneChange={setSelectedLane}
+          laneData={laneData}
+          laneLoading={laneLoading}
+          laneError={laneError}
+          onRefresh={() => refreshLaneMatch()}
+          onLinkedStart={beginLinkedGame}
+          onResume={resumeGame}
+          linkedMatch={linkedMatch}
+          gameStatus={state.status}
         />
         <aside className="game-side">
           <RulesPanel t={t} />
-          <ResultPanel t={t} state={state} resultPayload={resultPayload} />
+          <ResultPanel t={t} state={state} resultPayload={resultPayload} submission={submission} linkedMatch={linkedMatch} />
         </aside>
       </section>
+
+      {startPrompt ? (
+        <div className="mickey-modal-backdrop">
+          <div className="starter-modal sd-card" role="dialog" aria-modal="true" aria-label={t.whoStarts}>
+            <button type="button" className="starter-close" aria-label={t.closeApp} onClick={() => setStartPrompt(null)}><X size={22} /></button>
+            <MapPin size={32} />
+            <p className="sd-small-label">{startPrompt.linked ? `${t.lane} ${startPrompt.linked.lane} · ${startPrompt.linked.roundLabel}` : t.manualGame}</p>
+            <h2>{t.whoStarts}</h2>
+            <p>{t.whoStartsHint}</p>
+            <div className="starter-options">
+              <button type="button" onClick={() => chooseStarter(0)}>{startPrompt.playerOneName}</button>
+              <button type="button" onClick={() => chooseStarter(1)}>{startPrompt.playerTwoName}</button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {scorerOpen ? (
         <div className="mickey-modal-backdrop">
           <div className="mickey-modal" role="dialog" aria-modal="true" aria-label={t.boardTitle}>
-            <MickeyBoard t={t} state={state} onMark={mark} onUndo={undo} onAiTurn={runAi} onRestart={restartGame} onClose={closeScorer} />
+            <MickeyBoard t={t} state={state} linkedMatch={linkedMatch} submission={submission} onMark={mark} onUndo={undo} onAiTurn={runAi} onRetry={retryResult} onRestart={restartGame} onClose={closeScorer} />
           </div>
         </div>
       ) : null}
@@ -361,12 +537,42 @@ export default function GamePage() {
   );
 }
 
-function SetupPanel({ t, playerOneName, playerTwoName, opponentMode, aiAverageMarks, setPlayerOneName, setPlayerTwoName, setOpponentMode, setAiAverageMarks, onStart }) {
+function SetupPanel({ t, playerOneName, playerTwoName, opponentMode, aiAverageMarks, setPlayerOneName, setPlayerTwoName, setOpponentMode, setAiAverageMarks, onStart, selectedLane, onLaneChange, laneData, laneLoading, laneError, onRefresh, onLinkedStart, onResume, linkedMatch, gameStatus }) {
+  const statusMessages = {
+    no_competition: t.noCompetition,
+    round_not_published: t.roundNotPublished,
+    waiting_for_match: t.waitingForMatch,
+    inactive_lane: t.inactiveLane,
+    choose_lane: t.chooseLane
+  };
+  const isSameActiveMatch = gameStatus === 'playing' && linkedMatch?.matchKey && linkedMatch.matchKey === laneData?.match?.key;
   return (
     <section className="sd-card game-panel">
       <div className="game-panel-head">
-        <h2 className="sd-panel-title">{t.setupTitle}</h2>
-        <button type="button" className="sd-button gold" onClick={onStart}>{t.start}</button>
+        <div>
+          <p className="sd-small-label">{t.laneSetup}</p>
+          <h2 className="sd-panel-title">{t.chooseLane}</h2>
+        </div>
+        <button type="button" className="sd-button" disabled={laneLoading} onClick={onRefresh}><RefreshCw size={16} /> {laneLoading ? t.refreshing : t.refresh}</button>
+      </div>
+      <div className="game-lane-picker">
+        {Array.from({ length: laneData?.laneCount || 0 }, (_, index) => index + 1).map(lane => (
+          <button type="button" key={lane} className={selectedLane === lane ? 'is-active' : ''} onClick={() => onLaneChange(lane)}><MapPin size={19} /> {t.lane} {lane}</button>
+        ))}
+      </div>
+      {laneData?.competition ? <div className="game-competition-line"><strong>{laneData.competition.label}</strong><span>{laneData.competition.roundLabel}</span></div> : null}
+      {laneData?.match ? (
+        <article className="game-linked-match">
+          <div className="game-linked-meta"><span>{t.matchReady}</span><strong>{t.lane} {laneData.match.laneNumber}</strong><small>{laneData.match.roundLabel}</small></div>
+          <div className="game-linked-versus"><strong>{laneData.match.side1Label}</strong><b>VS</b><strong>{laneData.match.side2Label}</strong></div>
+          <button type="button" className="sd-button gold" onClick={isSameActiveMatch ? onResume : onLinkedStart}>{isSameActiveMatch ? t.continueMatch : t.startMatch}</button>
+        </article>
+      ) : <div className="game-lane-status">{laneLoading ? t.refreshing : laneError || statusMessages[laneData?.status] || t.chooseLane}</div>}
+
+      <div className="game-manual-divider"><span>{t.manualGame}</span></div>
+      <div className="game-panel-head">
+        <div><h2 className="sd-panel-title">{t.setupTitle}</h2><p>{t.manualGameHint}</p></div>
+        <button type="button" className="sd-button" onClick={onStart}>{t.start}</button>
       </div>
       <div className="game-form-grid">
         <label>
@@ -396,17 +602,20 @@ function SetupPanel({ t, playerOneName, playerTwoName, opponentMode, aiAverageMa
   );
 }
 
-function MickeyBoard({ t, state, onMark, onUndo, onAiTurn, onRestart, onClose }) {
+function MickeyBoard({ t, state, linkedMatch, submission, onMark, onUndo, onAiTurn, onRetry, onRestart, onClose }) {
   const canPlay = state.status === 'playing';
+  const starterName = state.players[state.startingPlayerIndex]?.name;
   return (
     <section className="sd-card game-panel game-board-panel">
       <div className="game-panel-head">
         <div>
           <h2 className="sd-panel-title">{t.boardTitle}</h2>
-          <p>{state.message || (state.opponentMode === 'ai' ? t.aiMode : t.humanMode)}</p>
+          <p>{linkedMatch ? `${t.linkedMatch} · ${t.lane} ${linkedMatch.lane} · ${linkedMatch.roundLabel}` : (state.opponentMode === 'ai' ? t.aiMode : t.humanMode)}</p>
+          <p className="game-starter"><strong>{t.starts}: {starterName}</strong>{state.message ? ` · ${state.message}` : ''}</p>
+          {submission.message ? <p className={`game-submission is-${submission.status}`}>{submission.status === 'success' ? <CheckCircle2 size={16} /> : null}{submission.message}{submission.status === 'error' ? <button type="button" className="sd-button" onClick={onRetry}>{t.retry}</button> : null}</p> : null}
         </div>
         <div className="game-actions">
-          <button type="button" className="sd-button" disabled={!state.visits.length} onClick={onUndo}><Undo2 size={16} /> {t.undo}</button>
+          <button type="button" className="sd-button" disabled={!state.visits.length || (!!linkedMatch && state.status === 'finished')} onClick={onUndo}><Undo2 size={16} /> {t.undo}</button>
           {state.opponentMode === 'ai' ? <button type="button" className="sd-button gold" disabled={!canPlay} onClick={onAiTurn}><Bot size={16} /> {t.aiTurn}</button> : null}
           <button type="button" className="sd-button" onClick={onRestart}><RotateCcw size={16} /> {t.restart}</button>
           <button type="button" className="sd-button" onClick={onClose}><X size={16} /> {t.closeApp}</button>
@@ -466,7 +675,7 @@ function RulesPanel({ t }) {
   );
 }
 
-function ResultPanel({ t, state, resultPayload }) {
+function ResultPanel({ t, state, resultPayload, submission, linkedMatch }) {
   const winner = state.winnerIndex === 0 || state.winnerIndex === 1 ? state.players[state.winnerIndex] : null;
   return (
     <section className="sd-card game-panel game-result">
@@ -489,7 +698,7 @@ function ResultPanel({ t, state, resultPayload }) {
               </div>
             ))}
           </div>
-          <p>{t.resultHint}</p>
+          <p>{linkedMatch ? submission.message || t.resultSending : t.resultHint}</p>
           <pre>{JSON.stringify(resultPayload, null, 2)}</pre>
         </>
       ) : (

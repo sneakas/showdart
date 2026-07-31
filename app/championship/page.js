@@ -212,7 +212,10 @@ export default function ChampionshipPage() {
 
   useEffect(() => {
     if (!supabase || !screenInfo?.realtimeChannel) return undefined;
-    const channel = supabase.channel(screenInfo.realtimeChannel, { config: { broadcast: { self: false } } });
+    const channel = supabase.channel(screenInfo.realtimeChannel, { config: { broadcast: { self: false } } })
+      .on('broadcast', { event: 'tournament-state' }, ({ payload }) => {
+        if (payload?.tournamentId === TOURNAMENT_ID && payload?.state) setState(normalizeChampionshipState(payload.state));
+      });
     channel.subscribe();
     channelRef.current = channel;
     return () => {
