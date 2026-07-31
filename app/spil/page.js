@@ -658,7 +658,7 @@ function MickeyBoard({ t, state, linkedMatch, submission, onMark, onUndo, onAiTu
           <button type="button" className="sd-button" disabled={!state.visits.length || (!!linkedMatch && state.status === 'finished')} onClick={onUndo}><Undo2 size={16} /> {t.undo}</button>
           {state.opponentMode === 'ai' ? <button type="button" className="sd-button gold" disabled={!canPlay} onClick={onAiTurn}><Bot size={16} /> {t.aiTurn}</button> : null}
           {state.status === 'finished' ? <button type="button" className="sd-button gold" onClick={onRequestApproval}><CheckCircle2 size={16} /> {t.confirmResult}</button> : null}
-          <button type="button" className="sd-button" onClick={onRestart}><RotateCcw size={16} /> {t.restart}</button>
+          {!linkedMatch ? <button type="button" className="sd-button" onClick={onRestart}><RotateCcw size={16} /> {t.restart}</button> : null}
           <button type="button" className="sd-button" onClick={onClose}><X size={16} /> {t.closeApp}</button>
         </div>
       </div>

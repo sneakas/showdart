@@ -471,11 +471,13 @@
 .mickey-modal {
   width: min(1180px, calc(100vw - 44px));
   max-height: calc(100vh - 44px);
+  max-height: calc(100dvh - 44px);
   display: grid;
 }
 
 .mickey-modal .game-board-panel {
   max-height: calc(100vh - 44px);
+  max-height: calc(100dvh - 44px);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -768,12 +770,15 @@
   .mickey-modal {
     width: 100vw;
     max-height: 100vh;
+    max-height: 100dvh;
   }
 
   .mickey-modal .game-board-panel {
     width: 100vw;
     height: 100vh;
+    height: 100dvh;
     max-height: 100vh;
+    max-height: 100dvh;
     border-radius: 0;
     border-left: 0;
     border-right: 0;
@@ -781,13 +786,42 @@
   }
 
   .mickey-modal .game-panel-head {
-    margin-bottom: 10px;
+    flex: 0 0 auto;
+    margin-bottom: 6px;
+    gap: 8px;
+  }
+
+  .mickey-modal .game-panel-head p {
+    margin-top: 2px;
+    line-height: 1.15;
   }
 
   .mickey-modal .mickey-grid {
     flex: 1;
+    min-height: 0;
+    width: 100%;
     grid-template-columns: 76px repeat(2, minmax(0, 1fr));
-    grid-template-rows: 54px repeat(9, minmax(42px, 1fr));
+    grid-template-rows: minmax(34px, .9fr) repeat(9, minmax(0, 1fr));
+  }
+
+  .mickey-modal .mickey-target {
+    font-size: clamp(22px, 5dvh, 38px);
+    line-height: 1;
+  }
+
+  .mickey-modal .mickey-symbol {
+    width: clamp(28px, 6dvh, 52px);
+    height: clamp(28px, 6dvh, 52px);
+  }
+
+  .mickey-modal .mickey-symbol .line {
+    width: 88%;
+    height: clamp(3px, .5dvh, 4px);
+  }
+
+  .mickey-modal .mickey-symbol .circle {
+    inset: 10%;
+    border-width: clamp(3px, .5dvh, 4px);
   }
 
   .mickey-modal .game-actions .sd-button {
