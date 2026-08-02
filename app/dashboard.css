@@ -1256,6 +1256,24 @@
   overflow: auto;
 }
 
+.sd-final-match-controls {
+  grid-template-columns: minmax(150px, 1fr) auto;
+}
+
+.sd-final-match-controls .sd-button {
+  padding-inline: 14px;
+}
+
+.sd-final-entry-dialog {
+  width: min(100%, 620px);
+  max-height: min(88vh, 760px);
+  overflow: auto;
+}
+
+.sd-final-entry-dialog .sd-match-card {
+  padding: 12px;
+}
+
 .sd-dialog-mark {
   width: 46px;
   height: 46px;

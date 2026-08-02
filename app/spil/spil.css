@@ -594,7 +594,7 @@
   border-bottom: 1px solid rgba(99, 128, 109, .42);
 }
 
-.mickey-cell:nth-child(3n) {
+.mickey-grid:not(.mickey-final-grid) .mickey-cell:nth-child(3n) {
   border-right: 0;
 }
 

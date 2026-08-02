@@ -8,6 +8,7 @@ import {
   assignMatchLane,
   approveTagChanges,
   canManageEntriesBetweenRounds,
+  completeFinal,
   completeRound,
   configureTournament,
   eliminateEntry,
@@ -172,6 +173,8 @@ const texts = {
     finalResults: 'Slutresultat',
     individualFinal: 'Individuel finale',
     finalWaitingTablet: 'Venter på resultat fra Spil',
+    enterFinalResult: 'Indtast resultat',
+    enterFinalResultHint: 'Flyt spillerne, så 1. plads står øverst. Resultatet afslutter finalen med det samme.',
     tags: 'Tags',
     place: 'Placering',
     eliminated: 'Ude',
@@ -366,6 +369,8 @@ const texts = {
     finalResults: 'Final results',
     individualFinal: 'Individual final',
     finalWaitingTablet: 'Waiting for result from Game',
+    enterFinalResult: 'Enter result',
+    enterFinalResultHint: 'Move the players so first place is at the top. Saving completes the final immediately.',
     tags: 'Tags',
     place: 'Place',
     eliminated: 'Out',
@@ -464,6 +469,7 @@ export function ShowdartDashboard({
   const [search, setSearch] = useState('');
   const [historyVisible, setHistoryVisible] = useState(false);
   const [treeVisible, setTreeVisible] = useState(false);
+  const [finalRankingIds, setFinalRankingIds] = useState([]);
   const [dialog, setDialog] = useState(null);
   const [rulesOpen, setRulesOpen] = useState(false);
   const [announcementDrafts, setAnnouncementDrafts] = useState({ screen1: '', screen2: '' });
@@ -848,8 +854,39 @@ export function ShowdartDashboard({
     });
   }
 
+  function handleOpenManualFinal(match) {
+    setFinalRankingIds([...(match.participantPlayerIds || [])]);
+  }
+
+  function moveFinalist(id, direction) {
+    setFinalRankingIds(previous => {
+      const next = [...previous];
+      const index = next.indexOf(id);
+      const target = index + direction;
+      if (index < 0 || target < 0 || target >= next.length) return previous;
+      [next[index], next[target]] = [next[target], next[index]];
+      return next;
+    });
+  }
+
+  function handleCompleteFinal() {
+    const orderedIds = [...finalRankingIds];
+    showConfirm(t.confirmFinalResult, () => {
+      commit(previous => ({
+        ...completeFinal(previous, orderedIds),
+        finalGameResult: {
+          source: 'tournament-admin',
+          orderedPlayerIds: orderedIds,
+          completedAt: new Date().toISOString()
+        }
+      }));
+      setFinalRankingIds([]);
+    });
+  }
+
   function handleResetTournament() {
     showConfirm(t.confirmReset, () => {
+      setFinalRankingIds([]);
       setHistoryVisible(false);
       setTreeVisible(false);
       commit(resetTournament());
@@ -1189,7 +1226,7 @@ export function ShowdartDashboard({
                 </div>
                 {[...state.matches].sort((left, right) => (Number(left.lanePosition) || 999) - (Number(right.lanePosition) || 999) || (Number(left.laneNumber) || 999) - (Number(right.laneNumber) || 999) || left.id - right.id).map(match => (
                   match.mode === 'final' ? (
-                    <FinalMatchCard key={match.id} state={state} match={match} t={t} onLane={lane => handleAssignLane(match.id, lane)} />
+                    <FinalMatchCard key={match.id} state={state} match={match} t={t} onLane={lane => handleAssignLane(match.id, lane)} onManualResult={() => handleOpenManualFinal(match)} />
                   ) : (
                     <MatchCard
                       key={match.id}
@@ -1227,6 +1264,20 @@ export function ShowdartDashboard({
         <BottomItem label={t.lanesInUse} value={`${state.activeLanes.length} / ${state.laneCount}`} />
         <BottomItem label={t.lastUpdate} value={loaded ? new Date().toLocaleTimeString('da-DK') : '...'} />
       </footer>
+      {finalRankingIds.length ? (
+        <div className="sd-dialog-backdrop" role="presentation" onMouseDown={event => {
+          if (event.target === event.currentTarget) setFinalRankingIds([]);
+        }}>
+          <div className="sd-dialog sd-final-entry-dialog" role="dialog" aria-modal="true" aria-labelledby="sd-final-entry-title">
+            <div>
+              <h2 id="sd-final-entry-title" className="sd-dialog-title">{t.enterFinalResult}</h2>
+              <p className="sd-dialog-message">{t.enterFinalResultHint}</p>
+            </div>
+            <FinalRanking ids={finalRankingIds} entries={entries} t={t} onMove={moveFinalist} onConfirm={handleCompleteFinal} />
+            <button type="button" className="sd-button" onClick={() => setFinalRankingIds([])}>{t.cancel}</button>
+          </div>
+        </div>
+      ) : null}
       {dialog ? (
         <ShowdartDialog
           dialog={dialog}
@@ -1308,7 +1359,7 @@ function Field({ label, children }) {
   return <div className="sd-field"><label>{label}</label>{children}</div>;
 }
 
-function FinalMatchCard({ state, match, t, onLane }) {
+function FinalMatchCard({ state, match, t, onLane, onManualResult }) {
   const participants = (match.participantPlayerIds || [])
     .map(id => state.players.find(player => player.id === id))
     .filter(Boolean);
@@ -1325,11 +1376,12 @@ function FinalMatchCard({ state, match, t, onLane }) {
       <div className="sd-final-player-list">
         {participants.map((player, index) => <span key={player.id}><strong>{index + 1}</strong>{player.name}</span>)}
       </div>
-      <div className="sd-match-queue-controls">
+      <div className="sd-match-queue-controls sd-final-match-controls">
         <select className="sd-select" value={match.laneNumber || ''} onChange={event => onLane(event.target.value ? Number(event.target.value) : null)}>
           <option value="">{t.laneUnassigned}</option>
           {state.activeLanes.map(lane => <option key={lane} value={lane}>Bane {lane}</option>)}
         </select>
+        <button type="button" className="sd-button gold" disabled={!state.roundPublished} onClick={onManualResult}><Check size={16} /> {t.enterFinalResult}</button>
       </div>
     </div>
   );
