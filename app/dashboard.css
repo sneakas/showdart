@@ -651,6 +651,39 @@
   opacity: .78;
 }
 
+.sd-final-player-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.sd-final-player-list span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--sd-border);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.035);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sd-final-player-list strong {
+  display: grid;
+  flex: 0 0 24px;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--sd-gold);
+  color: #17130a;
+  font-size: 0.75rem;
+}
+
 .sd-mini-board {
   width: 38px;
   height: 38px;

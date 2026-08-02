@@ -502,11 +502,17 @@ function MatchCard({ match, t, compact }) {
         <div style={{ color: statusColor, fontSize: compact ? 16 : 18, fontWeight: 900, letterSpacing: '.04em', lineHeight: 1.05, whiteSpace: 'nowrap', flexShrink: 0 }}>{statusText}</div>
         <span style={{ border: `1px solid ${completed ? 'rgba(112, 135, 151, .5)' : 'rgba(241, 189, 53, .38)'}`, color: completed ? '#b8c7d1' : colors.gold2, borderRadius: 999, padding: '7px 11px', fontSize: 13, lineHeight: 1, whiteSpace: 'nowrap', fontWeight: 900 }}>{laneText}</span>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: compact ? '1fr' : '1fr auto 1fr', gap: compact ? 8 : 14, alignItems: 'center' }}>
-        <TeamBox outcome={completed ? (match.winner === 1 ? 'winner' : 'loser') : 'neutral'} label={match.team1Label} />
-        <div style={{ color: colors.muted, fontWeight: 900, textAlign: 'center' }}>{t.vs}</div>
-        <TeamBox outcome={completed ? (match.winner === 2 ? 'winner' : 'loser') : 'neutral'} label={match.team2Label} />
-      </div>
+      {match.isFinal ? (
+        <div style={{ display: 'grid', gridTemplateColumns: compact ? '1fr 1fr' : 'repeat(auto-fit, minmax(150px, 1fr))', gap: 9 }}>
+          {(match.participantLabels || []).map((name, index) => <TeamBox key={`${index}-${name}`} label={`${index + 1}. ${name}`} />)}
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: compact ? '1fr' : '1fr auto 1fr', gap: compact ? 8 : 14, alignItems: 'center' }}>
+          <TeamBox outcome={completed ? (match.winner === 1 ? 'winner' : 'loser') : 'neutral'} label={match.team1Label} />
+          <div style={{ color: colors.muted, fontWeight: 900, textAlign: 'center' }}>{t.vs}</div>
+          <TeamBox outcome={completed ? (match.winner === 2 ? 'winner' : 'loser') : 'neutral'} label={match.team2Label} />
+        </div>
+      )}
       {winner ? <div style={{ color: colors.green, marginTop: 14, fontWeight: 900 }}>✓ {t.winner}: {winner}</div> : null}
     </Card>
   );
@@ -576,9 +582,9 @@ function LaneOverview({ screenState, matches, selectedLanes, t, compact }) {
               {match ? (
                 <div style={{ marginTop: 13, display: 'grid', gap: 6, fontWeight: 900 }}>
                   <span style={{ color: colors.green, fontSize: 12 }}>{t.laneCurrent}</span>
-                  <span>{match.team1Label}</span>
-                  <span style={{ color: colors.muted, fontSize: 13 }}>{t.vs}</span>
-                  <span>{match.team2Label}</span>
+                  {match.isFinal
+                    ? (match.participantLabels || []).map((name, index) => <span key={`${index}-${name}`}>{index + 1}. {name}</span>)
+                    : <><span>{match.team1Label}</span><span style={{ color: colors.muted, fontSize: 13 }}>{t.vs}</span><span>{match.team2Label}</span></>}
                 </div>
               ) : (
                 <div style={{ marginTop: 16, color: colors.muted, fontWeight: 900 }}>{active ? t.noMatch : t.waitingForLane}</div>

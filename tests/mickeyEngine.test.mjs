@@ -6,6 +6,7 @@ import {
   getMickeyMpr,
   getMickeyMarksValue,
   markMickeyTarget,
+  orderMickeyPlayersByStarter,
   runMickeyAiTurn,
   startMickeyGame,
   undoMickeyVisit
@@ -57,6 +58,15 @@ test('manual marks close every Mickey target and create a tournament result payl
   assert.equal(result.players[0].closedTargets, 9);
   assert.equal(result.metadata.matchId, 'future-match');
   assert.equal(result.startingPlayerIndex, 1);
+});
+
+test('the selected starter is ordered into the left scoring column', () => {
+  assert.deepEqual(orderMickeyPlayersByStarter('Team A', 'Team B', 0), {
+    playerOneName: 'Team A', playerTwoName: 'Team B', sourcePlayerIndexes: [0, 1]
+  });
+  assert.deepEqual(orderMickeyPlayersByStarter('Team A', 'Team B', 1), {
+    playerOneName: 'Team B', playerTwoName: 'Team A', sourcePlayerIndexes: [1, 0]
+  });
 });
 
 test('undo removes the last visit and reopens the result if needed', () => {

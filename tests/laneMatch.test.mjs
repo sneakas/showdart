@@ -4,6 +4,7 @@ import {
   CHAMPIONSHIP_KEY,
   TOURNAMENT_KEY,
   LaneMatchError,
+  applyLaneFinalResult,
   applyLaneMatchResult,
   buildLaneMatchSnapshot
 } from '../lib/laneMatch.js';
@@ -84,6 +85,29 @@ test('queued matches cannot submit a result', () => {
     winnerIndex: 0,
     gameResult: { game: 'mickey' }
   }), error => error instanceof LaneMatchError && error.code === 'match_not_current');
+});
+
+test('an individual final is exposed with all players and saves ordered placements', () => {
+  const state = normalizeTournamentState({
+    ...publishedTournament(),
+    matches: [{ id: 1, mode: 'final', participantPlayerIds: [1, 2, 3, 4], laneNumber: 2, lanePosition: 1 }]
+  });
+  const snapshot = buildLaneMatchSnapshot({ [TOURNAMENT_KEY]: state }, 2);
+  assert.equal(snapshot.match.isFinal, true);
+  assert.deepEqual(snapshot.match.participants.map(player => player.name), ['Alice', 'Bob', 'Carla', 'Dan']);
+
+  const next = applyLaneFinalResult({
+    competitionKey: TOURNAMENT_KEY,
+    state,
+    matchId: 1,
+    lane: 2,
+    orderedPlayerIds: [3, 1, 4, 2],
+    gameResult: { game: 'mickey-final', visits: 91 }
+  });
+  assert.deepEqual(next.finalResultPlayerIds, [3, 1, 4, 2]);
+  assert.deepEqual(next.finalResults.map(result => result.place), [1, 2, 3, 4]);
+  assert.equal(next.finalGameResult.visits, 91);
+  assert.equal(next.matches.length, 0);
 });
 
 test('championship matches resolve winner ids and are preferred when active', () => {

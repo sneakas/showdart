@@ -9,7 +9,6 @@ import {
   approveTagChanges,
   canManageEntriesBetweenRounds,
   completeRound,
-  completeFinal,
   configureTournament,
   eliminateEntry,
   generateMatches,
@@ -71,7 +70,7 @@ const texts = {
       'Når en spiller bliver elimineret, vises elimineringsrunden i spillerens status, f.eks. "Elimineret R3".',
       'Mellem runder kan turneringslederen rette nederlag, gendanne eliminerede spillere ved at sænke nederlag, tilføje spillere, ændre tags og se kamphistorik.',
       'Tilskuerskærmen viser stilling mellem runder, aktuelle kampe under runden, vindere når de markeres, og kan midlertidigt vise stillingen i 30 sekunder.',
-      'Når 5 eller færre aktive spillere er tilbage, kan turneringslederen starte en finale. I finalen rangeres de resterende spillere manuelt fra 1. plads til sidste plads.'
+      'Når 2–4 aktive spillere er tilbage, kan turneringslederen oprette en individuel finale på en bane. Spil registrerer automatisk placeringerne.'
     ],
     rulesFixed: [
       'Hold skal registreres som to faste spillere, før turneringen starter.',
@@ -91,7 +90,7 @@ const texts = {
       'Når et hold når det maksimale antal nederlag, bliver det elimineret, og elimineringsrunden vises i oversigten.',
       'Mellem runder kan turneringslederen rette nederlag, gendanne eliminerede hold ved at sænke nederlag, tilføje hold, ændre baner og se kamphistorik.',
       'Tilskuerskærmen viser stilling mellem runder, aktuelle kampe under runden, vindere når de markeres, og kan midlertidigt vise stillingen i 30 sekunder.',
-      'Når 5 eller færre aktive hold er tilbage, kan turneringslederen starte en finale. I finalen rangeres de resterende hold manuelt fra 1. plads til sidste plads.'
+      'Individuel finaletilstand bruges kun i formatet med skiftende makkere. Faste hold fortsætter med almindelige holdkampe.'
     ],
     logout: 'Log ud',
     brandSub: 'Turnering',
@@ -171,6 +170,8 @@ const texts = {
     confirmFinal: 'Bekræft finaleresultat',
     finalRanking: 'Finalerangering',
     finalResults: 'Slutresultat',
+    individualFinal: 'Individuel finale',
+    finalWaitingTablet: 'Venter på resultat fra Spil',
     tags: 'Tags',
     place: 'Placering',
     eliminated: 'Ude',
@@ -192,7 +193,7 @@ const texts = {
     confirmRemoveEntry: 'Er du sikker på, at du vil fjerne {name} fra turneringen?',
     confirmFinalResult: 'Er du sikker på, at finalerangeringen er korrekt? Slutresultatet bliver gemt.',
     confirmReset: 'Er du sikker på, at du vil nulstille hele turneringen? Alle kampe, spillere og resultater bliver slettet.',
-    confirmFinalStart: 'Er du sikker på, at du vil starte finalen nu? Du skal rangere de resterende deltagere manuelt.',
+    confirmFinalStart: 'Opret en individuel finale for de resterende spillere? Vælg bane, offentliggør finalen og lad spillerne registrere placeringerne i Spil.',
     warningTitle: 'Bekræft handling',
     errorTitle: 'Turneringsbesked',
     ok: 'OK',
@@ -263,7 +264,7 @@ const texts = {
       'When a player is eliminated, the elimination round is shown in their status, e.g. "Eliminated R3".',
       'Between rounds the tournament director can edit losses, restore eliminated players by lowering losses, add players, change tags and view match history.',
       'The spectator screen shows standings between rounds, current matches during the round, winners as soon as they are marked, and can temporarily show standings for 30 seconds.',
-      'When 5 or fewer active players remain, the tournament director can start a final. In the final, remaining players are ranked manually from 1st place to last place.'
+      'When 2–4 active players remain, the tournament director can create an individual final on a lane. Game records the placements automatically.'
     ],
     rulesFixed: [
       'Teams must be registered as two fixed players before the tournament starts.',
@@ -283,7 +284,7 @@ const texts = {
       'When a team reaches the maximum number of losses, it is eliminated and its elimination round is shown in the standings.',
       'Between rounds the tournament director can edit losses, restore eliminated teams by lowering losses, add teams, change lanes and view match history.',
       'The spectator screen shows standings between rounds, current matches during the round, winners as soon as they are marked, and can temporarily show standings for 30 seconds.',
-      'When 5 or fewer active teams remain, the tournament director can start a final. In the final, remaining teams are ranked manually from 1st place to last place.'
+      'Individual final mode is only used with changing teammates. Fixed teams continue with regular team matches.'
     ],
     logout: 'Logout',
     brandSub: 'Tournament',
@@ -363,6 +364,8 @@ const texts = {
     confirmFinal: 'Confirm final results',
     finalRanking: 'Final ranking',
     finalResults: 'Final results',
+    individualFinal: 'Individual final',
+    finalWaitingTablet: 'Waiting for result from Game',
     tags: 'Tags',
     place: 'Place',
     eliminated: 'Out',
@@ -384,7 +387,7 @@ const texts = {
     confirmRemoveEntry: 'Are you sure you want to remove {name} from the tournament?',
     confirmFinalResult: 'Are you sure the final ranking is correct? The final result will be saved.',
     confirmReset: 'Are you sure you want to reset the whole tournament? All matches, players and results will be deleted.',
-    confirmFinalStart: 'Are you sure you want to start the final now? You will need to rank the remaining entries manually.',
+    confirmFinalStart: 'Create an individual final for the remaining players? Choose a lane, publish the final, and let the players record their placements in Game.',
     warningTitle: 'Confirm action',
     errorTitle: 'Tournament message',
     ok: 'OK',
@@ -461,7 +464,6 @@ export function ShowdartDashboard({
   const [search, setSearch] = useState('');
   const [historyVisible, setHistoryVisible] = useState(false);
   const [treeVisible, setTreeVisible] = useState(false);
-  const [finalRankingIds, setFinalRankingIds] = useState([]);
   const [dialog, setDialog] = useState(null);
   const [rulesOpen, setRulesOpen] = useState(false);
   const [announcementDrafts, setAnnouncementDrafts] = useState({ screen1: '', screen2: '' });
@@ -493,7 +495,7 @@ export function ShowdartDashboard({
   const canAddEntries = !state.started || canManageEntries;
   const canApproveTags = state.pendingTagChanges && canManageEntries;
   const tournamentFinished = Boolean(state.finalResults || state.finalResultPlayerIds || state.finalResultTeamIds);
-  const canStartFinal = state.started && !tournamentFinished && !isRoundActive && activeEntries.length > 1 && activeEntries.length <= 5;
+  const canStartFinal = state.started && state.teammateMode === 'changing' && !tournamentFinished && !isRoundActive && activeEntries.length > 1 && activeEntries.length <= 4;
   const finalPlacements = useMemo(() => buildFinalPlacements(entries, state), [entries, state]);
   const matchesPlayed = state.roundHistory?.reduce((total, round) => total + (round.matches?.length || 0), 0) || 0;
   const registrationMode = state.started ? state.teammateMode : form.teammateMode;
@@ -837,35 +839,20 @@ export function ShowdartDashboard({
 
   function handleStartFinal() {
     showConfirm(t.confirmFinalStart, () => {
-      setFinalRankingIds(activeEntries.map(entry => entry.id));
-      commit(previous => startFinalMatch(previous));
+      setState(previous => {
+        const next = normalizeTournamentState(startFinalMatch(previous));
+        if (next.lastGenerationError) showDialog(next.lastGenerationError);
+        persist(next).catch(error => showDialog(error instanceof Error ? error.message : 'Save failed'));
+        return next;
+      });
     });
   }
 
   function handleResetTournament() {
     showConfirm(t.confirmReset, () => {
-      setFinalRankingIds([]);
       setHistoryVisible(false);
       setTreeVisible(false);
       commit(resetTournament());
-    });
-  }
-
-  function moveFinalist(id, direction) {
-    setFinalRankingIds(previous => {
-      const next = [...previous];
-      const index = next.indexOf(id);
-      const target = index + direction;
-      if (index < 0 || target < 0 || target >= next.length) return previous;
-      [next[index], next[target]] = [next[target], next[index]];
-      return next;
-    });
-  }
-
-  function handleCompleteFinal() {
-    showConfirm(t.confirmFinalResult, () => {
-      commit(previous => completeFinal(previous, finalRankingIds));
-      setFinalRankingIds([]);
     });
   }
 
@@ -1187,8 +1174,6 @@ export function ShowdartDashboard({
           <div className="sd-match-list">
             {finalPlacements.length ? (
               <FinalResults placements={finalPlacements} t={t} />
-            ) : finalRankingIds.length ? (
-              <FinalRanking ids={finalRankingIds} entries={entries} t={t} onMove={moveFinalist} onConfirm={handleCompleteFinal} />
             ) : isRoundActive ? (
               <>
                 <div className={`sd-round-publish ${state.roundPublished ? 'is-published' : 'is-draft'}`}>
@@ -1203,18 +1188,22 @@ export function ShowdartDashboard({
                   ) : null}
                 </div>
                 {[...state.matches].sort((left, right) => (Number(left.lanePosition) || 999) - (Number(right.lanePosition) || 999) || (Number(left.laneNumber) || 999) - (Number(right.laneNumber) || 999) || left.id - right.id).map(match => (
-                  <MatchCard
-                    key={match.id}
-                    state={state}
-                    match={match}
-                    t={t}
-                    onWinner={winner => handleSelectWinner(match.id, winner)}
-                    onLane={lane => handleAssignLane(match.id, lane)}
-                    onMoveQueue={direction => handleMoveMatchQueue(match.id, direction)}
-                  />
+                  match.mode === 'final' ? (
+                    <FinalMatchCard key={match.id} state={state} match={match} t={t} onLane={lane => handleAssignLane(match.id, lane)} />
+                  ) : (
+                    <MatchCard
+                      key={match.id}
+                      state={state}
+                      match={match}
+                      t={t}
+                      onWinner={winner => handleSelectWinner(match.id, winner)}
+                      onLane={lane => handleAssignLane(match.id, lane)}
+                      onMoveQueue={direction => handleMoveMatchQueue(match.id, direction)}
+                    />
+                  )
                 ))}
                 {skippedEntries.length ? <div className="sd-match-card"><div className="sd-match-title">{t.sitOver}</div><div>{skippedEntries.map(entry => entry.name).join(', ')}</div></div> : null}
-                <button type="button" className="sd-button gold" disabled={!state.roundPublished} onClick={handleComplete}>{t.complete}</button>
+                {!state.matches.some(match => match.mode === 'final') ? <button type="button" className="sd-button gold" disabled={!state.roundPublished} onClick={handleComplete}>{t.complete}</button> : null}
               </>
             ) : (
               <>
@@ -1317,6 +1306,33 @@ function RulesDialog({ t, mode, onClose }) {
 
 function Field({ label, children }) {
   return <div className="sd-field"><label>{label}</label>{children}</div>;
+}
+
+function FinalMatchCard({ state, match, t, onLane }) {
+  const participants = (match.participantPlayerIds || [])
+    .map(id => state.players.find(player => player.id === id))
+    .filter(Boolean);
+  const displayStatus = state.roundPublished ? 'current' : 'draft';
+  return (
+    <div className={`sd-match-card is-${displayStatus}`}>
+      <div className="sd-match-head">
+        <div>
+          <div className="sd-match-title">{t.individualFinal}</div>
+          <div className="sd-match-sub">{participants.length} {t.participants.toLowerCase()}</div>
+        </div>
+        <span className={`sd-pill is-${displayStatus}`}>{state.roundPublished ? t.finalWaitingTablet : t.roundDraft}</span>
+      </div>
+      <div className="sd-final-player-list">
+        {participants.map((player, index) => <span key={player.id}><strong>{index + 1}</strong>{player.name}</span>)}
+      </div>
+      <div className="sd-match-queue-controls">
+        <select className="sd-select" value={match.laneNumber || ''} onChange={event => onLane(event.target.value ? Number(event.target.value) : null)}>
+          <option value="">{t.laneUnassigned}</option>
+          {state.activeLanes.map(lane => <option key={lane} value={lane}>Bane {lane}</option>)}
+        </select>
+      </div>
+    </div>
+  );
 }
 
 function MatchCard({ state, match, t, onWinner, onLane, onMoveQueue }) {

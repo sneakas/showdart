@@ -4,6 +4,7 @@ import { getSpectatorRealtimeChannel } from '../../../lib/server/tournamentSpect
 import {
   COMPETITION_KEYS,
   LaneMatchError,
+  applyLaneFinalResult,
   applyLaneMatchResult,
   buildLaneMatchSnapshot
 } from '../../../lib/laneMatch';
@@ -44,14 +45,16 @@ export async function POST(request) {
       if (readError) throw readError;
       if (!row) throw new LaneMatchError('Turneringen blev ikke fundet.', 'competition_not_found', 404);
 
-      const nextState = applyLaneMatchResult({
+      const resultInput = {
         competitionKey,
         state: row.state_json,
         matchId: payload?.matchId,
         lane: payload?.lane,
-        winnerIndex: payload?.winnerIndex,
         gameResult: payload?.gameResult
-      });
+      };
+      const nextState = payload?.resultType === 'final'
+        ? applyLaneFinalResult({ ...resultInput, orderedPlayerIds: payload?.orderedPlayerIds })
+        : applyLaneMatchResult({ ...resultInput, winnerIndex: payload?.winnerIndex });
       const now = new Date().toISOString();
       const { data: savedRows, error: saveError } = await auth.serviceClient
         .from('tournament_states')

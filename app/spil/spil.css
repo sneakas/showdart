@@ -260,6 +260,39 @@
   color: var(--sd-gold-2);
 }
 
+.game-linked-finalists {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.game-linked-finalists span,
+.final-order-selected span {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid rgba(99, 128, 109, .5);
+  border-radius: 8px;
+  padding: 9px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.game-linked-finalists b,
+.final-order-selected b {
+  flex: 0 0 22px;
+  display: grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--sd-gold-2);
+  color: #181208;
+  font-size: 11px;
+}
+
 .game-lane-status {
   margin-top: 10px;
   color: var(--sd-muted);
@@ -345,6 +378,26 @@
   color: var(--sd-gold-2);
 }
 
+.final-order-modal {
+  width: min(680px, calc(100vw - 28px));
+}
+
+.final-order-selected {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 7px;
+  margin-top: 16px;
+  text-align: left;
+}
+
+.final-order-options {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.final-order-options button {
+  min-height: 82px;
+}
+
 .result-approval-backdrop {
   z-index: 1100;
   padding: 18px;
@@ -361,6 +414,39 @@
 .result-approval-modal h2,
 .result-approval-winner strong {
   color: var(--sd-gold-2);
+}
+
+.result-approval-ranking {
+  display: grid;
+  gap: 7px;
+  margin: 18px 0;
+}
+
+.result-approval-ranking div {
+  display: grid;
+  grid-template-columns: 74px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  border: 1px solid rgba(241, 189, 53, .34);
+  border-radius: 8px;
+  background: rgba(241, 189, 53, .07);
+  padding: 9px 13px;
+  text-align: left;
+}
+
+.result-approval-ranking span {
+  color: var(--sd-gold-2);
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.result-approval-ranking strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--sd-text);
+  font-size: 20px;
 }
 
 .result-approval-modal h2 {
@@ -559,6 +645,56 @@
   background: rgba(11, 24, 18, .96);
   color: var(--sd-text);
   cursor: pointer;
+}
+
+.mickey-final-grid {
+  flex: 1;
+  min-height: 0;
+  grid-template-columns: 64px repeat(var(--final-player-count), minmax(0, 1fr));
+  grid-template-rows: 58px repeat(9, minmax(0, 1fr));
+}
+
+.mickey-final-grid .mickey-target {
+  font-size: clamp(26px, 4.2dvh, 38px);
+}
+
+.mickey-final-grid .mickey-symbol {
+  width: clamp(32px, 5.6dvh, 48px);
+  height: clamp(32px, 5.6dvh, 48px);
+}
+
+.mickey-final-grid .mickey-symbol .line {
+  width: 88%;
+}
+
+.final-player {
+  position: relative;
+  gap: 2px;
+  padding: 5px 3px;
+}
+
+.final-player strong {
+  width: 100%;
+  padding: 0 4px;
+  font-size: clamp(11px, 2.1vw, 17px);
+}
+
+.final-place-badge {
+  display: grid;
+  width: 23px;
+  height: 23px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--sd-gold-2);
+  color: #181208;
+  font-size: 11px;
+  font-weight: 1000;
+}
+
+.final-player.has-place,
+.mickey-final-grid .mickey-mark.is-placed {
+  background: rgba(44, 37, 16, .94);
+  opacity: .68;
 }
 
 .mickey-mark:hover:not(:disabled) {
@@ -804,6 +940,23 @@
     grid-template-rows: minmax(34px, .9fr) repeat(9, minmax(0, 1fr));
   }
 
+  .mickey-modal .mickey-final-grid {
+    grid-template-columns: 58px repeat(var(--final-player-count), minmax(0, 1fr));
+    grid-template-rows: minmax(48px, .9fr) repeat(9, minmax(0, 1fr));
+  }
+
+  .mickey-modal .final-board-head {
+    align-items: center;
+  }
+
+  .mickey-modal .final-board-head .sd-panel-title {
+    font-size: clamp(15px, 2.4dvh, 21px);
+  }
+
+  .mickey-modal .final-board-head p {
+    font-size: clamp(10px, 1.6dvh, 13px);
+  }
+
   .mickey-modal .mickey-target {
     font-size: clamp(22px, 5dvh, 38px);
     line-height: 1;
@@ -845,6 +998,11 @@
 
   .game-linked-match {
     grid-template-columns: 1fr;
+  }
+
+  .game-linked-finalists,
+  .final-order-selected {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .result-approval-actions {

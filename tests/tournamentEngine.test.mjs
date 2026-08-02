@@ -17,6 +17,7 @@ import {
   selectWinner,
   showStandingsOverride,
   setActiveLane,
+  startFinalMatch,
   startTournament,
   updateEntryLosses,
   updateTournamentMaxLosses,
@@ -347,6 +348,28 @@ test('spectator temporary standings override only changes the effective screen p
   assert.equal(overrideScreen.phase, 'standings');
   assert.equal(overrideScreen.basePhase, 'round');
   assert.equal(overrideScreen.spectatorOverride.active, true);
+});
+
+test('individual final creates a publishable lane match for two to four remaining players', () => {
+  let state = startTournament(changingState(4), { teammateMode: 'changing', laneCount: 3 });
+  state = startFinalMatch(state);
+  assert.equal(state.matches.length, 1);
+  assert.equal(state.matches[0].mode, 'final');
+  assert.equal(state.matches[0].participantPlayerIds.length, 4);
+  assert.equal(state.roundPublished, false);
+
+  state = publishRound(state);
+  assert.equal(state.roundPublished, true);
+  const screenState = buildScreenState(state);
+  assert.equal(screenState.matches[0].isFinal, true);
+  assert.equal(screenState.matches[0].participantLabels.length, 4);
+});
+
+test('fixed teams cannot enter the individual final flow', () => {
+  let state = startTournament(fixedState(2), { teammateMode: 'fixed' });
+  state = startFinalMatch(state);
+  assert.equal(state.matches.length, 0);
+  assert.match(state.lastGenerationError, /individuel/i);
 });
 
 test('fixed-team final placements include teams eliminated before the final', () => {

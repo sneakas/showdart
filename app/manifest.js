@@ -7,7 +7,7 @@ export default function manifest() {
     start_url: '/spil',
     scope: '/',
     display: 'standalone',
-    orientation: 'any',
+    orientation: 'portrait',
     background_color: '#030806',
     theme_color: '#04120c',
     categories: ['sports', 'games'],
