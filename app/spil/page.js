@@ -272,7 +272,7 @@ export default function GamePage() {
     setFinalState(createFinalMickeyState());
     setLinkedMatch(null);
     try {
-      setScreenWanted(localStorage.getItem(`showdart-screen-enabled-${session.user.id}`) === 'true');
+      setScreenWanted(localStorage.getItem(`showdart-screen-enabled-${session.user.id}`) !== 'false');
       const storedLane = Number(localStorage.getItem(`${LANE_STORAGE_PREFIX}-${session.user.id}`));
       setSelectedLane(Number.isInteger(storedLane) && storedLane > 0 ? storedLane : null);
       const storedLink = JSON.parse(localStorage.getItem(`${LINKED_MATCH_STORAGE_PREFIX}-${session.user.id}`) || 'null');
