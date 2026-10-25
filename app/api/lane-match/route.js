@@ -3,6 +3,9 @@ import { requireUser } from '../../../lib/server/supabaseServer';
 import { getSpectatorRealtimeChannel } from '../../../lib/server/tournamentSpectator';
 import { approveLaneDisplayBoard } from '../../../lib/laneDisplay';
 import { readLaneDisplayGrant, deliverLaneDisplayOutbox } from '../../../lib/server/laneDisplayBridge';
+import { readCompetitionStates, saveStateWithAnnouncements, deliverLaneAnnouncements } from '../../../lib/server/laneAnnouncements';
+
+export const maxDuration = 60;
 import {
   COMPETITION_KEYS,
   LaneMatchError,
@@ -62,13 +65,8 @@ export async function POST(request) {
     }
 
     for (let attempt = 0; attempt < 3; attempt += 1) {
-      const { data: row, error: readError } = await auth.serviceClient
-        .from('tournament_states')
-        .select('state_json, updated_at')
-        .eq('user_id', auth.user.id)
-        .eq('tournament_key', competitionKey)
-        .maybeSingle();
-      if (readError) throw readError;
+      const rows = await readCompetitionStates(auth.serviceClient, auth.user.id);
+      const row = rows.find(item => item.tournament_key === competitionKey);
       if (!row) throw new LaneMatchError('Turneringen blev ikke fundet.', 'competition_not_found', 404);
       if (typeof payload.competitionInstanceId === 'string' && payload.competitionInstanceId !== (row.state_json?.competitionInstanceId || 'legacy')) {
         throw new LaneMatchError('Turneringen er startet forfra. Kampresultatet blev ikke ændret.', 'competition_changed', 409);
@@ -89,21 +87,9 @@ export async function POST(request) {
       const nextState = payload?.resultType === 'final'
         ? applyLaneFinalResult({ ...resultInput, orderedPlayerIds: payload?.orderedPlayerIds })
         : applyLaneMatchResult({ ...resultInput, winnerIndex: payload?.winnerIndex });
-      const now = new Date().toISOString();
-      const save = delivery
-        ? await auth.serviceClient.rpc('save_showdart_result_with_display', {
-          target_user_id: auth.user.id, target_tournament_key: competitionKey, expected_updated_at: row.updated_at,
-          target_state: nextState, target_event_id: delivery.eventId, target_delivery: delivery
-        })
-        : await auth.serviceClient
-        .from('tournament_states')
-        .update({ state_json: nextState, updated_at: now })
-        .eq('user_id', auth.user.id)
-        .eq('tournament_key', competitionKey)
-        .eq('updated_at', row.updated_at)
-        .select('tournament_key');
-      if (save.error) throw save.error;
-      if (delivery ? save.data !== true : !save.data?.length) continue;
+      const save = await saveStateWithAnnouncements(auth.serviceClient, auth.user.id, competitionKey, nextState, rows, delivery);
+      if (!save?.ok) continue;
+      const now = save.updatedAt;
 
       // Never turn a successful result commit into a failed result submission.
       let displayDelivered = false;
@@ -111,6 +97,8 @@ export async function POST(request) {
         try { displayDelivered = (await deliverLaneDisplayOutbox(auth.serviceClient, delivery.eventId)).delivered > 0; }
         catch { /* Durable outbox is retried by the scheduled endpoint. */ }
       }
+      try { await deliverLaneAnnouncements(auth.serviceClient, auth.user.id); }
+      catch { /* Scheduled delivery also advances the next published pairing. */ }
 
       await broadcastState(auth.serviceClient, auth.user.id, competitionKey, nextState, now);
       const snapshot = buildLaneMatchSnapshot({ [competitionKey]: nextState }, payload?.lane);

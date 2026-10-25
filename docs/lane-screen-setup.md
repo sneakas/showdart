@@ -88,3 +88,12 @@ Playground has focused tests in `src/lib/showdart-bridge.test.ts` for signature 
 `tests/fixtures/laneDisplay.schema.sql` and `tests/laneDisplay.integration.sql` in ShowDart are **local test files only**. The schema fixture must never be applied to an application database. They exercise the new migrations with the existing display producer on an isolated PostgreSQL instance, including competing sources, rate limits, stale revisions, expired holds, result retries, privileges, and atomic result/outbox rollback.
 
 The bridge sends only current games and their approved results. It does not mirror the organizer's complete standings, historical results, or later manual edits made outside the scoring result API. Those would require a separate projection from the organizer's save path.
+# Published pairings (lane 1 pilot)
+
+Publishing a tournament or championship round also saves the current pairing for each permitted lane. The screen shows the event, round, and player/team names before a scoring tablet opens. Draft rounds remain private. After approval, the existing result remains for 20 seconds and the next published pairing appears. Moving, unpublishing, or resetting an event updates or clears the affected lane.
+
+The organizer does not need to leave the page open. One current announcement per organizer/lane is saved atomically with competition state and, for scored matches, the approved-result outbox. The existing source retry job delivers failures with backoff. Unchanged visible pairings do not write a projection or contact Playground. Live scoring sessions keep their existing leases and take priority over announcements; native Playground content retains its priority.
+
+Apply the Playground `showdart_published_lane_pairings` migration and deploy its bridge/view before applying the ShowDart migration of the same name and deploying ShowDart. The source migration extends the installed retry scheduler and requires the previous scheduler migration. No new secret, Pi software update, target scheduler, or hosting plan is needed. Existing protocol-v1 clients display the text fallback until refreshed; refreshed clients show participant cards.
+
+Lane access is unchanged: only source-configured lanes that are enabled for ShowDart in Playground can receive announcements. Keep lane 1 as the pilot until both competition types have been checked physically.

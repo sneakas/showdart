@@ -13,3 +13,10 @@ The database tests used the existing display producer with isolated native-state
 Preview images are saved in `output/lane-screen/`, including `live.png`, `result.png`, `four-player-live.png`, and `four-player-result-720p.png`.
 
 Follow `docs/lane-screen-setup.md` to apply the migrations, configure the two applications, install the retry schedule, and enable the first lane. No production database, deployment setting, or physical screen was changed during implementation.
+# Published-pairing verification
+
+The publication extension is covered by `tests/laneAnnouncements.test.mjs`, `tests/laneAnnouncements.integration.sql`, and Playground's `src/lib/showdart-bridge.test.ts`.
+
+Verified against isolated PostgreSQL using the real display producer: draft privacy, duplicate suppression, monotonic delivery, clear tombstones, native/live/result priority, offline Pi snapshot recovery, disable/reenable, service-only writes, both-competition comparison checks, atomic result/announcement save and rollback, bounded replacement queue, backoff, and stale acknowledgment protection. The previous bridge SQL regression suite also passes with the new migration installed.
+
+Browser verification ran the real ShowDart publication and result APIs, the signed Playground integration API, PostgreSQL, and the existing lane-screen component. It confirmed pairing → live score → approved result → next pairing, unpublication, queued delivery after the organizer browser closed, championship team names, and four-player finals. Screenshots were inspected at 1280×720 and 1920×1080. Production game data was not used for these tests.

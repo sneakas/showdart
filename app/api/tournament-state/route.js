@@ -1,5 +1,9 @@
 import { NextResponse } from 'next/server';
 import { requireUser } from '../../../lib/server/supabaseServer';
+import { COMPETITION_KEYS } from '../../../lib/laneMatch';
+import { readCompetitionStates, saveStateWithAnnouncements, deliverLaneAnnouncements } from '../../../lib/server/laneAnnouncements';
+
+export const maxDuration = 60;
 
 export async function GET(request) {
   const auth = await requireUser(request);
@@ -54,6 +58,21 @@ export async function PUT(request) {
 
     if (!state || typeof state !== 'object') {
       return NextResponse.json({ error: 'Invalid body: state object is required' }, { status: 400 });
+    }
+
+    if (COMPETITION_KEYS.includes(tournamentKey)) {
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        const rows = await readCompetitionStates(auth.serviceClient, auth.user.id);
+        const saved = await saveStateWithAnnouncements(auth.serviceClient, auth.user.id, tournamentKey, state, rows);
+        if (!saved?.ok) continue;
+        let screenDelivery = 'queued';
+        try {
+          const result = await deliverLaneAnnouncements(auth.serviceClient, auth.user.id);
+          screenDelivery = result.delivered === result.attempted ? 'delivered' : 'queued';
+        } catch { /* Saving the round and its durable screen projection succeeded. */ }
+        return NextResponse.json({ ok: true, tournamentId: tournamentKey, updatedAt: saved.updatedAt, screenDelivery });
+      }
+      return NextResponse.json({ error: 'Turneringen blev ændret samtidig. Prøv igen.' }, { status: 409 });
     }
 
     const now = new Date().toISOString();

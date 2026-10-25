@@ -541,7 +541,7 @@ export function ShowdartDashboard({
 
   const persist = useCallback(async nextState => {
     if (!token) return;
-    await fetch('/api/tournament-state', {
+    const response = await fetch('/api/tournament-state', {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -549,6 +549,7 @@ export function ShowdartDashboard({
       },
       body: JSON.stringify({ id: 'showdart-default', state: nextState })
     });
+    if (!response.ok) throw new Error('Kunne ikke gemme turneringen. Prøv igen.');
     onStateSync?.({
       tournamentId: 'showdart-default',
       state: nextState,
