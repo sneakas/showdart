@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { requireUser } from '../../../lib/server/supabaseServer';
 import { getSpectatorRealtimeChannel } from '../../../lib/server/tournamentSpectator';
+import { approveLaneDisplayBoard } from '../../../lib/laneDisplay';
+import { readLaneDisplayGrant, deliverLaneDisplayOutbox } from '../../../lib/server/laneDisplayBridge';
 import {
   COMPETITION_KEYS,
   LaneMatchError,
@@ -21,7 +23,7 @@ export async function GET(request) {
     .in('tournament_key', COMPETITION_KEYS);
 
   if (error) return NextResponse.json({ error: 'Kunne ikke hente banekampen.', detail: error.message }, { status: 500 });
-  return NextResponse.json(buildLaneMatchSnapshot(toStateMap(data), lane), { status: 200 });
+  return NextResponse.json({ ...buildLaneMatchSnapshot(toStateMap(data), lane), realtimeChannels: COMPETITION_KEYS.map(tournamentKey => getSpectatorRealtimeChannel({ userId: auth.user.id, tournamentKey })) }, { status: 200 });
 }
 
 export async function POST(request) {
@@ -35,6 +37,30 @@ export async function POST(request) {
       throw new LaneMatchError('Den aktive turnering blev ikke fundet.', 'competition_not_found', 404);
     }
 
+    let delivery = null;
+    let displayUnavailable = false;
+    let displayBinding = null;
+    if (payload?.display?.token) {
+      try {
+        const grant = readLaneDisplayGrant(payload.display.token);
+        if (grant.userId !== auth.user.id || grant.lane !== Number(payload.lane)
+          || grant.binding?.competitionKey !== competitionKey || grant.binding?.matchId !== Number(payload.matchId)) {
+          throw new LaneMatchError('Skærmen er koblet til en anden kamp.', 'display_mismatch', 403);
+        }
+        if (!Number.isSafeInteger(payload.display.revision) || payload.display.revision < 1) throw new LaneMatchError('Ugyldig skærmversion.', 'invalid_display_revision');
+        const board = approveLaneDisplayBoard(payload.display.board, payload.gameResult, payload?.resultType === 'final');
+        delivery = {
+          action: 'result', lane: grant.lane, ownerId: auth.user.id, sessionId: grant.sessionId,
+          revision: payload.display.revision, eventId: `${grant.sessionId}:approved`, approvedAt: new Date().toISOString(), board
+        };
+        displayBinding = grant.binding;
+      } catch {
+        // Screen credentials may expire or be revoked independently of scoring.
+        // The authenticated, validated tournament result must still be saved.
+        displayUnavailable = true;
+      }
+    }
+
     for (let attempt = 0; attempt < 3; attempt += 1) {
       const { data: row, error: readError } = await auth.serviceClient
         .from('tournament_states')
@@ -44,6 +70,14 @@ export async function POST(request) {
         .maybeSingle();
       if (readError) throw readError;
       if (!row) throw new LaneMatchError('Turneringen blev ikke fundet.', 'competition_not_found', 404);
+      if (typeof payload.competitionInstanceId === 'string' && payload.competitionInstanceId !== (row.state_json?.competitionInstanceId || 'legacy')) {
+        throw new LaneMatchError('Turneringen er startet forfra. Kampresultatet blev ikke ændret.', 'competition_changed', 409);
+      }
+      if (delivery) {
+        if ((row.state_json?.competitionInstanceId || 'legacy') !== displayBinding.instanceId) {
+          throw new LaneMatchError('Turneringen er startet forfra. Kampresultatet blev ikke ændret.', 'competition_changed', 409);
+        }
+      }
 
       const resultInput = {
         competitionKey,
@@ -56,19 +90,31 @@ export async function POST(request) {
         ? applyLaneFinalResult({ ...resultInput, orderedPlayerIds: payload?.orderedPlayerIds })
         : applyLaneMatchResult({ ...resultInput, winnerIndex: payload?.winnerIndex });
       const now = new Date().toISOString();
-      const { data: savedRows, error: saveError } = await auth.serviceClient
+      const save = delivery
+        ? await auth.serviceClient.rpc('save_showdart_result_with_display', {
+          target_user_id: auth.user.id, target_tournament_key: competitionKey, expected_updated_at: row.updated_at,
+          target_state: nextState, target_event_id: delivery.eventId, target_delivery: delivery
+        })
+        : await auth.serviceClient
         .from('tournament_states')
         .update({ state_json: nextState, updated_at: now })
         .eq('user_id', auth.user.id)
         .eq('tournament_key', competitionKey)
         .eq('updated_at', row.updated_at)
         .select('tournament_key');
-      if (saveError) throw saveError;
-      if (!savedRows?.length) continue;
+      if (save.error) throw save.error;
+      if (delivery ? save.data !== true : !save.data?.length) continue;
+
+      // Never turn a successful result commit into a failed result submission.
+      let displayDelivered = false;
+      if (delivery) {
+        try { displayDelivered = (await deliverLaneDisplayOutbox(auth.serviceClient, delivery.eventId)).delivered > 0; }
+        catch { /* Durable outbox is retried by the scheduled endpoint. */ }
+      }
 
       await broadcastState(auth.serviceClient, auth.user.id, competitionKey, nextState, now);
       const snapshot = buildLaneMatchSnapshot({ [competitionKey]: nextState }, payload?.lane);
-      return NextResponse.json({ ok: true, state: nextState, next: snapshot, updatedAt: now }, { status: 200 });
+      return NextResponse.json({ ok: true, state: nextState, next: snapshot, updatedAt: now, screenDelivery: delivery ? (displayDelivered ? 'delivered' : 'queued') : displayUnavailable ? 'unavailable' : null }, { status: 200 });
     }
 
     return NextResponse.json({ error: 'Turneringen blev ændret samtidig. Prøv igen.' }, { status: 409 });
@@ -91,6 +137,6 @@ async function broadcastState(serviceClient, userId, tournamentKey, state, updat
   } catch {
     // Persistence is authoritative; connected screens can recover on reload.
   } finally {
-    await serviceClient.removeChannel(channel);
+    await serviceClient.removeChannel(channel).catch(() => {});
   }
 }

@@ -1,8 +1,10 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Bot, CheckCircle2, ClipboardList, Gamepad2, MapPin, RefreshCw, RotateCcw, Send, Settings, Trophy, Undo2, UsersRound, X } from 'lucide-react';
 import { getSupabaseBrowserClient } from '../../lib/supabaseBrowser';
+import { buildLaneDisplayBoard } from '../../lib/laneDisplay';
+import { useLaneDisplay } from '../../lib/useLaneDisplay';
 import {
   MICKEY_RULES,
   MICKEY_TARGETS,
@@ -208,12 +210,18 @@ export default function GamePage() {
   const [laneData, setLaneData] = useState(null);
   const [laneLoading, setLaneLoading] = useState(false);
   const [laneError, setLaneError] = useState('');
+  const laneRequestRef = useRef(0);
   const [linkedMatch, setLinkedMatch] = useState(null);
   const [startPrompt, setStartPrompt] = useState(null);
   const [finalOrderPrompt, setFinalOrderPrompt] = useState(null);
   const [submission, setSubmission] = useState({ status: 'idle', message: '' });
   const [resultApprovalOpen, setResultApprovalOpen] = useState(false);
   const [approvalDismissed, setApprovalDismissed] = useState(false);
+  const [screenConfig, setScreenConfig] = useState({ enabled: false, lanes: [] });
+  const [screenWanted, setScreenWanted] = useState(false);
+  const [restoredForUser, setRestoredForUser] = useState(null);
+  const displayBoard = useMemo(() => buildLaneDisplayBoard({ state, finalState, linkedMatch }), [state, finalState, linkedMatch]);
+  const screen = useLaneDisplay({ session, lane: linkedMatch?.lane || selectedLane, board: displayBoard, linkedMatch, enabled: screenWanted && screenConfig.enabled && restoredForUser === session?.user?.id });
   const t = texts[lang] || texts.da;
 
   useEffect(() => {
@@ -260,7 +268,11 @@ export default function GamePage() {
 
   useEffect(() => {
     if (!session?.user?.id) return;
+    setState(createMickeyState());
+    setFinalState(createFinalMickeyState());
+    setLinkedMatch(null);
     try {
+      setScreenWanted(localStorage.getItem(`showdart-screen-enabled-${session.user.id}`) === 'true');
       const storedLane = Number(localStorage.getItem(`${LANE_STORAGE_PREFIX}-${session.user.id}`));
       setSelectedLane(Number.isInteger(storedLane) && storedLane > 0 ? storedLane : null);
       const storedLink = JSON.parse(localStorage.getItem(`${LINKED_MATCH_STORAGE_PREFIX}-${session.user.id}`) || 'null');
@@ -277,58 +289,87 @@ export default function GamePage() {
       setPlayerTwoName(parsed?.players?.[1]?.name === 'AI' ? 'Spiller 2' : parsed?.players?.[1]?.name || 'Spiller 2');
     } catch {
       setState(createMickeyState());
+    } finally {
+      setRestoredForUser(session.user.id);
     }
   }, [session?.user?.id]);
 
   useEffect(() => {
-    if (!session?.user?.id) return;
+    if (!session?.user?.id || restoredForUser !== session.user.id) return;
     localStorage.setItem(`${STORAGE_PREFIX}-${session.user.id}`, JSON.stringify(state));
-  }, [session?.user?.id, state]);
+  }, [session?.user?.id, state, restoredForUser]);
 
   useEffect(() => {
-    if (!session?.user?.id) return;
+    if (!session?.user?.id || restoredForUser !== session.user.id) return;
     localStorage.setItem(`${FINAL_STORAGE_PREFIX}-${session.user.id}`, JSON.stringify(finalState));
-  }, [finalState, session?.user?.id]);
+  }, [finalState, session?.user?.id, restoredForUser]);
 
   useEffect(() => {
-    if (!session?.user?.id) return;
+    if (!session?.user?.id || restoredForUser !== session.user.id) return;
     const laneKey = `${LANE_STORAGE_PREFIX}-${session.user.id}`;
     if (selectedLane) localStorage.setItem(laneKey, String(selectedLane));
     else localStorage.removeItem(laneKey);
-  }, [selectedLane, session?.user?.id]);
+  }, [selectedLane, session?.user?.id, restoredForUser]);
 
   useEffect(() => {
-    if (!session?.user?.id) return;
+    if (!session?.user?.id || restoredForUser !== session.user.id) return;
     const linkKey = `${LINKED_MATCH_STORAGE_PREFIX}-${session.user.id}`;
     if (linkedMatch) localStorage.setItem(linkKey, JSON.stringify(linkedMatch));
     else localStorage.removeItem(linkKey);
-  }, [linkedMatch, session?.user?.id]);
+  }, [linkedMatch, session?.user?.id, restoredForUser]);
 
   const refreshLaneMatch = useCallback(async (laneOverride = selectedLane) => {
     if (!session?.access_token) return;
+    const requestId = ++laneRequestRef.current;
     setLaneLoading(true);
     setLaneError('');
     try {
       const query = laneOverride ? `?lane=${encodeURIComponent(laneOverride)}` : '';
       const response = await fetch(`/api/lane-match${query}`, { headers: { Authorization: `Bearer ${session.access_token}` } });
       const payload = await response.json();
+      if (requestId !== laneRequestRef.current) return;
       if (!response.ok) throw new Error(payload?.error || t.resultFailed);
       setLaneData(payload);
       if (laneOverride && payload.laneCount > 0 && laneOverride > payload.laneCount) setSelectedLane(null);
     } catch (error) {
-      setLaneError(error instanceof Error ? error.message : t.resultFailed);
+      if (requestId === laneRequestRef.current) setLaneError(error instanceof Error ? error.message : t.resultFailed);
     } finally {
-      setLaneLoading(false);
+      if (requestId === laneRequestRef.current) setLaneLoading(false);
     }
   }, [selectedLane, session?.access_token, t.resultFailed]);
 
   useEffect(() => {
     if (!session?.access_token) return undefined;
+    let active = true;
+    fetch('/api/lane-display', { headers: { Authorization: `Bearer ${session.access_token}` } })
+      .then(response => response.ok ? response.json() : { enabled: false, lanes: [] })
+      .then(config => { if (active) setScreenConfig(config); })
+      .catch(() => { if (active) setScreenConfig({ enabled: false, lanes: [] }); });
+    return () => { active = false; };
+  }, [session?.access_token]);
+
+  useEffect(() => {
+    if (!session?.access_token) return undefined;
     refreshLaneMatch();
     if (scorerOpen) return undefined;
-    const interval = window.setInterval(() => refreshLaneMatch(), 5000);
-    return () => window.clearInterval(interval);
+    let timer;
+    const recover = () => { timer = window.setTimeout(() => { refreshLaneMatch(); recover(); }, 90_000 + Math.round(Math.random() * 30_000)); };
+    recover();
+    const resume = () => { if (document.visibilityState === 'visible') refreshLaneMatch(); };
+    document.addEventListener('visibilitychange', resume);
+    window.addEventListener('online', resume);
+    return () => { window.clearTimeout(timer); document.removeEventListener('visibilitychange', resume); window.removeEventListener('online', resume); };
   }, [refreshLaneMatch, scorerOpen, session?.access_token]);
+
+  const laneChannelKey = (laneData?.realtimeChannels || []).join('|');
+  useEffect(() => {
+    if (!supabase || scorerOpen || !laneChannelKey) return undefined;
+    let timer;
+    const channels = laneChannelKey.split('|').map(name => supabase.channel(name)
+      .on('broadcast', { event: 'tournament-state' }, () => { clearTimeout(timer); timer = setTimeout(() => refreshLaneMatch(), 250); })
+      .subscribe());
+    return () => { clearTimeout(timer); channels.forEach(channel => { supabase.removeChannel(channel); }); };
+  }, [supabase, scorerOpen, laneChannelKey, refreshLaneMatch]);
 
   function changeLanguage(nextLang) {
     setLang(nextLang);
@@ -337,6 +378,7 @@ export default function GamePage() {
   }
 
   async function logout() {
+    await screen.release();
     await supabase?.auth.signOut();
     window.location.href = '/';
   }
@@ -349,6 +391,7 @@ export default function GamePage() {
     if (!laneData?.competition || !laneData?.match) return;
     const linked = {
       competitionKey: laneData.competition.key,
+      competitionInstanceId: laneData.competition.instanceId,
       competitionLabel: laneData.competition.label,
       matchId: laneData.match.id,
       matchKey: laneData.match.key,
@@ -416,7 +459,8 @@ export default function GamePage() {
     requestMickeyFullscreen();
   }
 
-  function restartGame() {
+  async function restartGame() {
+    await screen.release();
     const prompt = linkedMatch && submission.status !== 'success' ? {
       playerOneName: linkedMatch.side1Label,
       playerTwoName: linkedMatch.side2Label,
@@ -492,8 +536,24 @@ export default function GamePage() {
     if (isFinal && finalState.status !== 'finished') return;
     if (!isFinal && (state.status !== 'finished' || state.winnerIndex === null)) return;
     if (!linkedMatch) {
+      setSubmission({ status: 'sending', message: t.resultSending });
+      const display = await screen.getResultDisplay();
+      if (display && session?.access_token) {
+        setSubmission({ status: 'sending', message: t.resultSending });
+        try {
+          const response = await fetch('/api/lane-display/result', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+            body: JSON.stringify({ display, gameResult: buildMickeyTournamentResult(state) }) });
+          const payload = await response.json();
+          if (!response.ok) throw new Error(payload.error || t.resultFailed);
+          const note = payload.screenDelivery === 'queued' ? (lang === 'da' ? ' Skærmresultatet sendes automatisk igen.' : ' Screen delivery will retry automatically.')
+            : payload.screenDelivery === 'unavailable' ? (lang === 'da' ? ' Baneskærmen er ikke tilsluttet.' : ' The lane screen is disconnected.') : '';
+          setSubmission({ status: 'success', message: (lang === 'da' ? 'Resultatet er godkendt.' : 'Result approved.') + note });
+        } catch (error) { setSubmission({ status: 'error', message: error.message }); return; }
+      } else setSubmission({ status: 'success', message: t.resultReady });
+      await screen.release();
       setResultApprovalOpen(false);
       setScorerOpen(false);
+      setState(createMickeyState({ playerOneName, playerTwoName, opponentMode, aiAverageMarks }));
       exitMickeyFullscreen();
       return;
     }
@@ -511,16 +571,20 @@ export default function GamePage() {
       competitionWinnerIndex, competitionSideIndexes: linkedMatch.competitionSideIndexes || [0, 1]
     });
     try {
+      const display = await screen.getResultDisplay();
       const response = await fetch('/api/lane-match', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
         body: JSON.stringify(isFinal
-          ? { competitionKey: linkedMatch.competitionKey, matchId: linkedMatch.matchId, lane: linkedMatch.lane, resultType: 'final', orderedPlayerIds: gameResult?.orderedPlayerIds, gameResult }
-          : { competitionKey: linkedMatch.competitionKey, matchId: linkedMatch.matchId, lane: linkedMatch.lane, winnerIndex: competitionWinnerIndex, gameResult })
+          ? { competitionKey: linkedMatch.competitionKey, competitionInstanceId: linkedMatch.competitionInstanceId || 'legacy', matchId: linkedMatch.matchId, lane: linkedMatch.lane, resultType: 'final', orderedPlayerIds: gameResult?.orderedPlayerIds, gameResult, display }
+          : { competitionKey: linkedMatch.competitionKey, competitionInstanceId: linkedMatch.competitionInstanceId || 'legacy', matchId: linkedMatch.matchId, lane: linkedMatch.lane, winnerIndex: competitionWinnerIndex, gameResult, display })
       });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload?.error || t.resultFailed);
-      setSubmission({ status: 'success', message: t.resultSent });
+      await screen.release();
+      const screenNote = payload.screenDelivery === 'queued' ? (lang === 'da' ? ' Skærmresultatet sendes automatisk igen.' : ' Screen delivery will retry automatically.')
+        : payload.screenDelivery === 'unavailable' ? (lang === 'da' ? ' Baneskærmen er ikke tilsluttet.' : ' The lane screen is disconnected.') : '';
+      setSubmission({ status: 'success', message: t.resultSent + screenNote });
       setLaneData(payload.next || null);
       setResultApprovalOpen(false);
       setApprovalDismissed(false);
@@ -588,10 +652,17 @@ export default function GamePage() {
       </section>
 
       <section className="game-tabs">
+        {!scorerOpen && displayBoard && !linkedMatch ? <button type="button" className="sd-button gold" onClick={resumeGame}>{t.continueMatch}</button> : null}
         <button type="button" className={`sd-button ${activePanel === 'setup' ? 'gold' : ''}`} onClick={() => setActivePanel('setup')}><Settings size={17} /> {t.setup}</button>
         <button type="button" className="sd-button" onClick={() => { window.location.href = '/'; }}>{t.openTournament}</button>
         <button type="button" className="sd-button" onClick={() => { window.location.href = '/championship'; }}>{t.openChampionship}</button>
       </section>
+
+      {screenConfig.enabled ? <div className="sd-card game-screen-control">
+        <label><input type="checkbox" checked={screenWanted} onChange={async event => { const wanted = event.target.checked; if (!wanted) await screen.release(); localStorage.setItem(`showdart-screen-enabled-${session.user.id}`, String(wanted)); setScreenWanted(wanted); }} /> {lang === 'da' ? 'Vis spil og resultat på baneskærmen' : 'Show game and result on the lane screen'}</label>
+        {screenWanted ? <span role="status">{screen.error || (screen.status === 'live' ? (lang === 'da' ? 'Skærmen er tilsluttet' : 'Screen connected') : screen.status === 'connecting' ? (lang === 'da' ? 'Tilslutter skærmen…' : 'Connecting screen…') : (lang === 'da' ? 'Vælg bane og start et spil' : 'Choose a lane and start a game'))}</span> : null}
+        {screenWanted && screen.error ? <button className="sd-button" type="button" onClick={screen.retry}>{t.retry}</button> : null}
+      </div> : null}
 
       <section className="game-layout">
         <SetupPanel
@@ -606,7 +677,8 @@ export default function GamePage() {
           setAiAverageMarks={setAiAverageMarks}
           onStart={beginGame}
           selectedLane={selectedLane}
-          onLaneChange={setSelectedLane}
+          onLaneChange={async lane => { await screen.release(); setSelectedLane(lane); }}
+          screenLanes={screenConfig.lanes}
           laneData={laneData}
           laneLoading={laneLoading}
           laneError={laneError}
@@ -663,6 +735,7 @@ export default function GamePage() {
       {scorerOpen ? (
         <div className="mickey-modal-backdrop">
           <div className="mickey-modal" role="dialog" aria-modal="true" aria-label={t.boardTitle}>
+            {screenWanted && screen.error ? <div className="game-screen-warning" role="status">{screen.error} <button type="button" onClick={screen.retry}>{t.retry}</button></div> : null}
             {linkedMatch?.isFinal ? (
               <FinalMickeyBoard t={t} state={finalState} linkedMatch={linkedMatch} submission={submission} onMark={markFinal} onUndo={undo} onRequestApproval={requestResultApproval} onClose={closeScorer} />
             ) : (
@@ -700,7 +773,7 @@ export default function GamePage() {
   );
 }
 
-function SetupPanel({ t, playerOneName, playerTwoName, opponentMode, aiAverageMarks, setPlayerOneName, setPlayerTwoName, setOpponentMode, setAiAverageMarks, onStart, selectedLane, onLaneChange, laneData, laneLoading, laneError, onRefresh, onLinkedStart, onResume, linkedMatch, gameStatus }) {
+function SetupPanel({ t, playerOneName, playerTwoName, opponentMode, aiAverageMarks, setPlayerOneName, setPlayerTwoName, setOpponentMode, setAiAverageMarks, onStart, selectedLane, onLaneChange, laneData, laneLoading, laneError, onRefresh, onLinkedStart, onResume, linkedMatch, gameStatus, screenLanes = [] }) {
   const statusMessages = {
     no_competition: t.noCompetition,
     round_not_published: t.roundNotPublished,
@@ -719,7 +792,7 @@ function SetupPanel({ t, playerOneName, playerTwoName, opponentMode, aiAverageMa
           <span>{t.laneSetup}</span>
           <select className="sd-select" aria-label={t.chooseLane} value={selectedLane || ''} onChange={event => onLaneChange(event.target.value ? Number(event.target.value) : null)}>
             <option value="">{t.chooseLane}</option>
-            {Array.from({ length: laneData?.laneCount || 0 }, (_, index) => index + 1).map(lane => <option key={lane} value={lane}>{t.lane} {lane}</option>)}
+            {[...new Set([...Array.from({ length: laneData?.laneCount || 0 }, (_, index) => index + 1), ...screenLanes])].sort((a, b) => a - b).map(lane => <option key={lane} value={lane}>{t.lane} {lane}</option>)}
           </select>
         </label>
         <button type="button" className="game-refresh-button" title={t.refresh} aria-label={t.refresh} disabled={laneLoading} onClick={onRefresh}><RefreshCw size={18} className={laneLoading ? 'is-spinning' : ''} /></button>

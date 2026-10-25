@@ -1013,3 +1013,8 @@
     grid-column: auto;
   }
 }
+.game-screen-control { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; padding: 1rem; margin-bottom: 1rem; }
+.game-screen-control label { display: flex; align-items: center; gap: .6rem; }
+.game-screen-control [role="status"] { font-size: .875rem; }
+.game-screen-warning { background: #352e17; color: #ffe59b; padding: .5rem 1rem; text-align: center; }
+.game-screen-warning button { margin-left: .75rem; text-decoration: underline; }

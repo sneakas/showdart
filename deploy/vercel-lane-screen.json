@@ -1,0 +1,3 @@
+{
+  "crons": [{ "path": "/api/lane-display/retry", "schedule": "* * * * *" }]
+}

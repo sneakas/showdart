@@ -86,8 +86,15 @@ export default function ChampionshipScreenPage() {
   }, [load]);
 
   useEffect(() => {
-    const interval = window.setInterval(() => load({ silent: true }), 8000);
-    return () => window.clearInterval(interval);
+    let recoveryTimer;
+    const scheduleRecovery = () => {
+      recoveryTimer = window.setTimeout(() => { load({ silent: true }); scheduleRecovery(); }, 120_000 + Math.round(Math.random() * 60_000));
+    };
+    scheduleRecovery();
+    const resume = () => { if (document.visibilityState === 'visible') load({ silent: true }); };
+    window.addEventListener('online', resume);
+    document.addEventListener('visibilitychange', resume);
+    return () => { window.clearTimeout(recoveryTimer); window.removeEventListener('online', resume); document.removeEventListener('visibilitychange', resume); };
   }, [load]);
 
   useEffect(() => {
@@ -100,7 +107,7 @@ export default function ChampionshipScreenPage() {
         setConnection('live');
       });
     channel.subscribe(status => {
-      if (status === 'SUBSCRIBED') setConnection('live');
+      if (status === 'SUBSCRIBED') { setConnection('live'); load({ silent: true }); }
       if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') setConnection('polling');
     });
     return () => { supabase.removeChannel(channel); };

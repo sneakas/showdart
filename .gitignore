@@ -23,6 +23,9 @@ Thumbs.db
 # editor
 .vscode/
 .idea/
+.lane-bridge/
+supabase/.temp/
+output/lane-screen/
 
 # local cache / temp
 *.tmp

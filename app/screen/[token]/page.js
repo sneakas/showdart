@@ -739,10 +739,15 @@ export default function ScreenPage() {
 
   useEffect(() => {
     if (!token || typeof window === 'undefined') return undefined;
-    const intervalId = window.setInterval(() => {
-      loadScreen({ silent: true });
-    }, 8000);
-    return () => window.clearInterval(intervalId);
+    let recoveryTimer;
+    const scheduleRecovery = () => {
+      recoveryTimer = window.setTimeout(() => { loadScreen({ silent: true }); scheduleRecovery(); }, 120_000 + Math.round(Math.random() * 60_000));
+    };
+    scheduleRecovery();
+    const resume = () => { if (document.visibilityState === 'visible') loadScreen({ silent: true }); };
+    window.addEventListener('online', resume);
+    document.addEventListener('visibilitychange', resume);
+    return () => { window.clearTimeout(recoveryTimer); window.removeEventListener('online', resume); document.removeEventListener('visibilitychange', resume); };
   }, [loadScreen, token]);
 
   useEffect(() => {
@@ -762,6 +767,7 @@ export default function ScreenPage() {
     channel.subscribe(status => {
       if (status === 'SUBSCRIBED') {
         setConnectionState('live');
+        loadScreen({ silent: true });
         return;
       }
       if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
@@ -777,7 +783,7 @@ export default function ScreenPage() {
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
     const intervalId = window.setInterval(() => {
-      if (lastFetchMs && Date.now() - lastFetchMs > 22000) {
+      if (lastFetchMs && Date.now() - lastFetchMs > 210000) {
         setConnectionState('stale');
       }
     }, 3000);
