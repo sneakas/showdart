@@ -2,6 +2,8 @@
 
 import { ArrowDown, ArrowUp, CalendarDays, Check, Eye, EyeOff, ExternalLink, Gamepad2, GitBranch, History, Medal, MoreVertical, Plus, QrCode, RefreshCw, RotateCcw, ShieldCheck, Trophy, Upload, UsersRound } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { RegistrationPanel } from '../registration/RegistrationPanel';
+import { registrationCopy } from '../../lib/playerRegistration.js';
 import {
   addFixedTeam,
   addPlayer,
@@ -475,8 +477,10 @@ export function ShowdartDashboard({
   const [announcementDrafts, setAnnouncementDrafts] = useState({ screen1: '', screen2: '' });
   const [heroHidden, setHeroHidden] = useState(false);
   const [tvControlHidden, setTvControlHidden] = useState(false);
+  const [tabletRegistrationActive, setTabletRegistrationActive] = useState(false);
   const importInputRef = useRef(null);
   const previousAnnouncementsRef = useRef({ screen1: '', screen2: '' });
+  const pendingSaves = useRef(new Set());
 
   const token = session?.access_token;
 
@@ -539,23 +543,35 @@ export function ShowdartDashboard({
     action?.();
   }
 
-  const persist = useCallback(async nextState => {
-    if (!token) return;
-    const response = await fetch('/api/tournament-state', {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`
-      },
-      body: JSON.stringify({ id: 'showdart-default', state: nextState })
-    });
-    if (!response.ok) throw new Error('Kunne ikke gemme turneringen. Prøv igen.');
-    onStateSync?.({
-      tournamentId: 'showdart-default',
-      state: nextState,
-      updatedAt: new Date().toISOString()
-    });
+  const persist = useCallback(nextState => {
+    if (!token) return Promise.resolve();
+    const save = (async () => {
+      const response = await fetch('/api/tournament-state', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ id: 'showdart-default', state: nextState })
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || 'Kunne ikke gemme turneringen. Prøv igen.');
+      onStateSync?.({ tournamentId: 'showdart-default', state: nextState, updatedAt: payload.updatedAt });
+    })();
+    pendingSaves.current.add(save);
+    const forget = () => pendingSaves.current.delete(save);
+    save.then(forget, forget);
+    return save;
   }, [onStateSync, token]);
+
+  const waitForTournamentSave = useCallback(() => Promise.allSettled(pendingSaves.current), []);
+
+  const applyRegistrationTransfer = useCallback((transferred, updatedAt) => {
+    const next = normalizeTournamentState(transferred);
+    setState(next);
+    setForm({ tournamentName: next.tournamentName, teammateMode: next.teammateMode, maxLosses: next.maxLosses, laneCount: next.laneCount });
+    onStateSync?.({ tournamentId: 'showdart-default', state: next, updatedAt });
+  }, [onStateSync]);
 
   const commit = useCallback(updater => {
     setState(previous => {
@@ -645,6 +661,10 @@ export function ShowdartDashboard({
   }
 
   function handleStart() {
+    if (tabletRegistrationActive) {
+      showDialog((registrationCopy[lang] || registrationCopy.da).blocked);
+      return;
+    }
     const minimumEntries = form.teammateMode === 'fixed' ? 2 : 4;
     const entryCount = form.teammateMode === 'fixed' ? state.fixedTeams.length : state.players.length;
     if (entryCount < minimumEntries) {
@@ -890,7 +910,7 @@ export function ShowdartDashboard({
       setFinalRankingIds([]);
       setHistoryVisible(false);
       setTreeVisible(false);
-      commit(resetTournament());
+      commit(previous => ({ ...resetTournament(), registrationImportId: previous.registrationImportId }));
     });
   }
 
@@ -1111,7 +1131,7 @@ export function ShowdartDashboard({
             <div className="sd-form-grid">
               <Field label={t.tournamentName}><input className="sd-input" value={form.tournamentName} onChange={event => handleSetupChange({ tournamentName: event.target.value })} /></Field>
               <Field label={t.format}>
-                <select className="sd-select" value={form.teammateMode} disabled={state.started} onChange={event => handleTournamentFormatChange(event.target.value)}>
+                <select className="sd-select" value={form.teammateMode} disabled={state.started || tabletRegistrationActive} onChange={event => handleTournamentFormatChange(event.target.value)}>
                   <option value="changing">{t.changing}</option>
                   <option value="fixed">{t.fixed}</option>
                 </select>
@@ -1129,6 +1149,12 @@ export function ShowdartDashboard({
               {!state.started ? <button type="button" className="sd-button gold full" onClick={handleStart}>{t.start}</button> : null}
             </div>
           </Panel>
+          {loaded && token && !state.started && (registrationMode !== 'fixed' || tabletRegistrationActive) ? (
+            <Panel title={(registrationCopy[lang] || registrationCopy.da).title}>
+              <RegistrationPanel token={token} lang={lang} onActiveChange={setTabletRegistrationActive}
+                beforeUpdate={waitForTournamentSave} onTransfer={applyRegistrationTransfer} onConfirm={showConfirm} />
+            </Panel>
+          ) : null}
           <Panel title={t.quick}>
             <div className="sd-stack">
               <form onSubmit={handleAddEntry} className="sd-stack">
@@ -1148,7 +1174,7 @@ export function ShowdartDashboard({
               <button type="button" className="sd-button full" onClick={toggleTvControlVisibility}>{tvControlHidden ? <Eye size={17} /> : <EyeOff size={17} />} {tvControlHidden ? t.showTvControl : t.hideTvControl}</button>
               <button type="button" className="sd-button full" onClick={() => setTreeVisible(value => !value)}><GitBranch size={17} /> {treeVisible ? t.hideStandingsTree : t.standingsTree}</button>
               <button type="button" className="sd-button full" disabled={!state.roundHistory?.length} onClick={() => setHistoryVisible(value => !value)}><History size={17} /> {historyVisible ? t.hideHistory : t.history}</button>
-              <button type="button" className="sd-button full" onClick={handleResetTournament}><RotateCcw size={17} /> {t.reset}</button>
+              <button type="button" className="sd-button full" onClick={handleResetTournament} disabled={tabletRegistrationActive && !state.started}><RotateCcw size={17} /> {t.reset}</button>
             </div>
           </Panel>
         </div>

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { requireUser } from '../../../lib/server/supabaseServer';
-import { COMPETITION_KEYS } from '../../../lib/laneMatch';
+import { COMPETITION_KEYS, TOURNAMENT_KEY } from '../../../lib/laneMatch';
 import { readCompetitionStates, saveStateWithAnnouncements, deliverLaneAnnouncements } from '../../../lib/server/laneAnnouncements';
 
 export const maxDuration = 60;
@@ -63,6 +63,12 @@ export async function PUT(request) {
     if (COMPETITION_KEYS.includes(tournamentKey)) {
       for (let attempt = 0; attempt < 3; attempt += 1) {
         const rows = await readCompetitionStates(auth.serviceClient, auth.user.id);
+        if (tournamentKey === TOURNAMENT_KEY) {
+          const latestImport = rows.find(row => row.tournament_key === TOURNAMENT_KEY)?.state_json?.registrationImportId;
+          if (latestImport && latestImport !== state.registrationImportId) {
+            return NextResponse.json({ error: 'Der er overført nye spillere. Genindlæs turneringen, og prøv igen.' }, { status: 409 });
+          }
+        }
         const saved = await saveStateWithAnnouncements(auth.serviceClient, auth.user.id, tournamentKey, state, rows);
         if (!saved?.ok) continue;
         let screenDelivery = 'queued';
@@ -93,6 +99,9 @@ export async function PUT(request) {
 
     return NextResponse.json({ ok: true, tournamentId: tournamentKey, updatedAt: now }, { status: 200 });
   } catch (error) {
+    if (error?.code === '23514' && error.message === 'ShowDart registration is open') {
+      return NextResponse.json({ error: 'Luk tilmeldingen og overfør spillerne først.' }, { status: 409 });
+    }
     return NextResponse.json(
       { error: 'Failed to save tournament state', detail: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }

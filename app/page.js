@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getSupabaseBrowserClient } from '../lib/supabaseBrowser';
 import { ShowdartDashboard } from '../components/dashboard/ShowdartDashboard';
 import './dashboard.css';
@@ -121,7 +121,7 @@ export default function Page() {
     }
   }, []);
 
-  async function sendSpectatorPayload(payload) {
+  const sendSpectatorPayload = useCallback(async payload => {
     const channel = screenChannelRef.current;
     if (!channel || !screenChannelReadyRef.current) {
       pendingScreenPayloadRef.current = payload;
@@ -137,7 +137,7 @@ export default function Page() {
     } catch (_error) {
       pendingScreenPayloadRef.current = payload;
     }
-  }
+  }, []);
 
   function changeLanguage(nextLang) {
     setLang(nextLang);

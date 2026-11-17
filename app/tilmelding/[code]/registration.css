@@ -1,0 +1,76 @@
+.reg-tablet {
+  min-height: 100dvh;
+  box-sizing: border-box;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: clamp(1rem, 4vw, 2rem);
+  padding: max(1rem, env(safe-area-inset-top)) 1rem max(1rem, env(safe-area-inset-bottom));
+  color: #fff9eb;
+  background: radial-gradient(ellipse at top, #173428, #070f0c 74%);
+  font-family: system-ui, sans-serif;
+}
+
+.reg-toolbar { justify-self: end; text-align: end; }
+.reg-toolbar p { max-width: 27rem; margin: .5rem 0 0; color: #d6e2d7; }
+
+.reg-card,
+.reg-dialog {
+  width: min(100%, 39rem);
+  box-sizing: border-box;
+  padding: clamp(1.15rem, 5vw, 3rem);
+  border: 1px solid #456557;
+  border-radius: 1.35rem;
+  background: #11251c;
+  color: inherit;
+}
+
+.reg-dialog { width: min(calc(100% - 2rem), 39rem); color: #fff9eb; }
+.reg-dialog::backdrop { background: rgb(2 9 6 / 78%); }
+.reg-brand { color: #f2cf55; font-size: 1.12rem; font-weight: 750; }
+.reg-card h1 { font-size: clamp(2.1rem, 7vw, 3.8rem); letter-spacing: -.04em; line-height: 1; margin: .25rem 0 2rem; }
+.reg-dialog h2 { margin: 0; font-size: clamp(1.45rem, 5vw, 2.1rem); }
+
+.reg-card form,
+.reg-dialog form,
+.reg-status,
+.reg-success { display: grid; gap: .85rem; }
+
+.reg-card label { font-size: 1.25rem; font-weight: 650; }
+
+.reg-card input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #759383;
+  border-radius: .75rem;
+  padding: .8rem 1rem;
+  background: #07130e;
+  color: inherit;
+  font: inherit;
+  font-size: 1.55rem;
+}
+
+.reg-tablet button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .55rem;
+  border: 1px solid transparent;
+  border-radius: .75rem;
+  background: #f2cf55;
+  color: #152016;
+  min-height: 3rem;
+  padding: .7rem 1rem;
+  font: inherit;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.reg-tablet button:disabled { opacity: .6; cursor: default; }
+.reg-tablet .reg-secondary { border-color: #759383; background: #183226; color: #fff9eb; }
+.reg-tablet :focus-visible { outline: 3px solid #f6d86c; outline-offset: 3px; }
+.reg-actions { display: flex; flex-wrap: wrap; gap: .65rem; }
+.reg-actions button { flex: 1 1 auto; }
+.reg-error { color: #ffbdab; margin: 0; font-weight: 650; }
+.reg-confirm-name { color: #f2cf55; margin: .25rem 0 .8rem; overflow-wrap: anywhere; font-size: clamp(1.75rem, 6vw, 3rem); font-weight: 760; }
+.reg-success p { display: flex; align-items: center; gap: .65rem; color: #a3e9ba; font-size: 1.5rem; font-weight: 700; }

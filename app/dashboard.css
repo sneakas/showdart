@@ -1447,3 +1447,29 @@
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+.sd-registration-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sd-registration-message { margin: 0; }
+.sd-registration-message[role="alert"] { color: #ffbdab; }
+
+.sd-registration-list {
+  display: grid;
+  gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.sd-registration-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  overflow-wrap: anywhere;
+}
