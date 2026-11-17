@@ -1,4 +1,4 @@
--- Run on an isolated database after laneDisplay.schema.sql and the registration migration.
+-- Run on an isolated database after laneDisplay.schema.sql and both registration migrations.
 begin;
 
 do $$
@@ -10,7 +10,7 @@ declare
   third_entry constant uuid := '018e9b30-0000-7000-8000-000000000005';
   link uuid;
   registration jsonb;
-  roster jsonb := '{"competitionInstanceId":"test","players":[{"id":1,"name":"Maja Øster"}]}'::jsonb;
+  roster jsonb := '{"competitionInstanceId":"test","tournamentName":"Klubturnering","players":[{"id":1,"name":"Maja Øster"}]}'::jsonb;
   next_roster jsonb;
   roster_time timestamptz := clock_timestamp();
 begin
@@ -21,6 +21,10 @@ begin
   registration := public.showdart_registration_snapshot(organizer);
   link := (registration->>'id')::uuid;
   assert public.showdart_register_player(link,null,null)->>'code' = 'ok';
+  assert public.showdart_registration_status(link) = '{"code":"ok","tournamentName":"Klubturnering"}'::jsonb;
+  roster := roster || '{"tournamentName":"Efterårspokalen"}';
+  update public.tournament_states set state_json = roster where user_id = organizer;
+  assert public.showdart_registration_status(link) = '{"code":"ok","tournamentName":"Efterårspokalen"}'::jsonb;
   begin
     update public.tournament_states set state_json = roster || '{"started":true}' where user_id = organizer;
     raise exception 'An open registration must prevent a concurrent tournament start';
@@ -54,6 +58,7 @@ begin
     roster_time,next_roster)->>'code' = 'ok';
   assert public.showdart_manage_registration(organizer,'transfer',link,null,null,0,null,null)->'state' = next_roster;
   assert public.showdart_register_player(link,null,null)->>'code' = 'closed';
+  assert public.showdart_registration_status(link) = '{"code":"closed"}'::jsonb;
   assert public.showdart_register_player(link,third_entry,'Emil')->>'code' = 'closed';
   assert public.showdart_registration_snapshot(organizer)->'entries' = '[]'::jsonb;
 
@@ -65,10 +70,14 @@ begin
   assert public.showdart_manage_registration(organizer,'open',null,null,null,null,null,null)->>'code' = 'ok';
   assert (public.showdart_registration_snapshot(organizer)->>'id')::uuid <> link;
   assert public.showdart_register_player(link,null,null)->>'code' = 'missing';
+  assert public.showdart_registration_status(link) = '{"code":"missing"}'::jsonb;
+  assert public.showdart_registration_status((public.showdart_registration_snapshot(organizer)->>'id')::uuid)
+    = '{"code":"ok","tournamentName":null}'::jsonb;
 
   assert not has_table_privilege('anon','public.showdart_registration_entries','SELECT');
   assert not has_table_privilege('authenticated','public.showdart_registration_entries','INSERT');
   assert not has_function_privilege('anon','public.showdart_register_player(uuid,uuid,text)','EXECUTE');
+  assert not has_function_privilege('anon','public.showdart_registration_status(uuid)','EXECUTE');
   assert not has_function_privilege('authenticated','public.showdart_registration_snapshot(uuid)','EXECUTE');
   assert has_function_privilege('service_role','public.showdart_register_player(uuid,uuid,text)','EXECUTE');
 end;

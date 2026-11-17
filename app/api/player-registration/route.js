@@ -7,9 +7,12 @@ async function register(id, requestId = null, name = null) {
   if (!isRegistrationId(id)) return registrationResponse({ code: 'missing' });
   if (getConfigError()) return registrationResponse({ code: 'failed' });
   try {
-    const { data, error } = await getServiceClient().rpc('showdart_register_player', {
-      target_session: id, request_id: requestId, player_name: name
-    });
+    const serviceClient = getServiceClient();
+    const { data, error } = requestId
+      ? await serviceClient.rpc('showdart_register_player', {
+          target_session: id, request_id: requestId, player_name: name
+        })
+      : await serviceClient.rpc('showdart_registration_status', { target_session: id });
     if (error) throw error;
     return registrationResponse(data);
   } catch (error) {

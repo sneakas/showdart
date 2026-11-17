@@ -27,7 +27,7 @@
 
 .reg-dialog { width: min(calc(100% - 2rem), 39rem); color: #fff9eb; }
 .reg-dialog::backdrop { background: rgb(2 9 6 / 78%); }
-.reg-brand { color: #f2cf55; font-size: 1.12rem; font-weight: 750; }
+.reg-brand { color: #f2cf55; font-size: 1.12rem; font-weight: 750; overflow-wrap: anywhere; }
 .reg-card h1 { font-size: clamp(2.1rem, 7vw, 3.8rem); letter-spacing: -.04em; line-height: 1; margin: .25rem 0 2rem; }
 .reg-dialog h2 { margin: 0; font-size: clamp(1.45rem, 5vw, 2.1rem); }
 

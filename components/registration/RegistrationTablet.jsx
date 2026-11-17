@@ -8,6 +8,7 @@ const t = registrationCopy.da;
 
 export function RegistrationTablet({ code }) {
   const [status, setStatus] = useState('loading');
+  const [tournamentName, setTournamentName] = useState('');
   const [input, setInput] = useState('');
   const [draft, setDraft] = useState(null);
   const [error, setError] = useState('');
@@ -23,6 +24,8 @@ export function RegistrationTablet({ code }) {
     try {
       const response = await fetch(`/api/player-registration?id=${code}`, { cache: 'no-store', signal });
       const result = await response.json();
+      if (signal?.aborted) return;
+      setTournamentName(typeof result.tournamentName === 'string' ? result.tournamentName.trim() : '');
       setStatus(result.code === 'ok' ? 'open' : result.code);
     } catch {
       if (!signal?.aborted) setStatus('failed');
@@ -132,7 +135,7 @@ export function RegistrationTablet({ code }) {
         {fullscreenHelp ? <p role="status">{t.fullscreenHelp}</p> : null}
       </div>
       <section className="reg-card" aria-labelledby="registration-title">
-        <p className="reg-brand">Showdart</p>
+        <p className="reg-brand">{tournamentName || 'Showdart'}</p>
         <h1 id="registration-title">{t.title}</h1>
         {status === 'open' ? (
           <form onSubmit={review}>
