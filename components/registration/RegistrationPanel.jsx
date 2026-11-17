@@ -84,7 +84,7 @@ export function RegistrationPanel({ token, lang, onActiveChange, beforeUpdate, o
   }
 
   return (
-    <div className="sd-stack">
+    <div className="sd-stack sd-registration">
       {error ? <p className="sd-registration-message" role="alert">{error}</p> : null}
       {notice ? <p className="sd-registration-message sd-green-text" role="status">{notice}</p> : null}
       {openRegistration ? (

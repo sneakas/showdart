@@ -1448,13 +1448,37 @@
   }
 }
 
-.sd-registration-actions {
-  display: flex;
-  flex-wrap: wrap;
+.sd-registration {
+  grid-template-columns: minmax(0, 1fr);
   gap: 8px;
 }
 
-.sd-registration-message { margin: 0; }
+.sd-registration .sd-button {
+  min-width: 0;
+  max-width: 100%;
+  min-height: 34px;
+  padding: 5px 9px;
+  font-family: inherit;
+  font-size: .8125rem;
+  font-weight: 750;
+  line-height: 1.25;
+  letter-spacing: normal;
+  text-align: center;
+  text-decoration: none;
+  text-transform: none;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.sd-registration-actions {
+  display: flex;
+  flex-wrap: wrap;
+  min-width: 0;
+  max-width: 100%;
+  gap: 6px;
+}
+
+.sd-registration-message { margin: 0; font-size: .875rem; overflow-wrap: anywhere; }
 .sd-registration-message[role="alert"] { color: #ffbdab; }
 
 .sd-registration-list {
