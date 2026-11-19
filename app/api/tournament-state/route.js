@@ -64,7 +64,12 @@ export async function PUT(request) {
       for (let attempt = 0; attempt < 3; attempt += 1) {
         const rows = await readCompetitionStates(auth.serviceClient, auth.user.id);
         if (tournamentKey === TOURNAMENT_KEY) {
-          const latestImport = rows.find(row => row.tournament_key === TOURNAMENT_KEY)?.state_json?.registrationImportId;
+          const latestState = rows.find(row => row.tournament_key === TOURNAMENT_KEY)?.state_json;
+          if (latestState?.started && state.competitionInstanceId === latestState.competitionInstanceId
+            && (latestState.beginnerMode === true) !== (state.beginnerMode === true)) {
+            return NextResponse.json({ error: 'Spilvarianten kan først ændres, når du opretter en ny turnering.' }, { status: 409 });
+          }
+          const latestImport = latestState?.registrationImportId;
           if (latestImport && latestImport !== state.registrationImportId) {
             return NextResponse.json({ error: 'Der er overført nye spillere. Genindlæs turneringen, og prøv igen.' }, { status: 409 });
           }

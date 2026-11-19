@@ -1453,6 +1453,16 @@
   gap: 8px;
 }
 
+.sd-beginner-mode {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: .875rem;
+  line-height: 1.35;
+}
+
+.sd-beginner-mode input { flex: 0 0 auto; accent-color: var(--sd-gold); }
+
 .sd-registration .sd-button {
   min-width: 0;
   max-width: 100%;

@@ -44,6 +44,8 @@ const TV_CONTROL_VISIBILITY_STORAGE_KEY = 'showdart-hide-tv-control';
 
 const texts = {
   da: {
+    beginnerMode: 'Begyndertilstand · kun 20–15',
+    standardMode: 'Standard',
     tournament: 'Turnering',
     championship: 'Mesterskab',
     game: 'Spil',
@@ -240,6 +242,8 @@ const texts = {
     lastUpdate: 'Sidste opdatering'
   },
   en: {
+    beginnerMode: 'Beginner mode · 20–15 only',
+    standardMode: 'Standard',
     tournament: 'Tournament',
     championship: 'Championship',
     game: 'Game',
@@ -461,6 +465,7 @@ export function ShowdartDashboard({
   const [notice, setNotice] = useState('');
   const [form, setForm] = useState({
     tournamentName: '',
+    beginnerMode: false,
     teammateMode: 'changing',
     maxLosses: 2,
     laneCount: 4
@@ -490,6 +495,7 @@ export function ShowdartDashboard({
     setState(next);
     setForm({
       tournamentName: next.tournamentName || '',
+      beginnerMode: next.beginnerMode,
       teammateMode: next.teammateMode,
       maxLosses: next.maxLosses,
       laneCount: next.laneCount
@@ -569,7 +575,7 @@ export function ShowdartDashboard({
   const applyRegistrationTransfer = useCallback((transferred, updatedAt) => {
     const next = normalizeTournamentState(transferred);
     setState(next);
-    setForm({ tournamentName: next.tournamentName, teammateMode: next.teammateMode, maxLosses: next.maxLosses, laneCount: next.laneCount });
+    setForm({ tournamentName: next.tournamentName, beginnerMode: next.beginnerMode, teammateMode: next.teammateMode, maxLosses: next.maxLosses, laneCount: next.laneCount });
     onStateSync?.({ tournamentId: 'showdart-default', state: next, updatedAt });
   }, [onStateSync]);
 
@@ -595,6 +601,7 @@ export function ShowdartDashboard({
         setState(next);
         setForm({
           tournamentName: next.tournamentName || '',
+          beginnerMode: next.beginnerMode,
           teammateMode: next.teammateMode,
           maxLosses: next.maxLosses,
           laneCount: next.laneCount
@@ -673,6 +680,7 @@ export function ShowdartDashboard({
     }
     const nextConfig = {
       tournamentName: form.tournamentName || 'Klubturnering 2025',
+      beginnerMode: form.beginnerMode === true,
       teammateMode: form.teammateMode,
       maxLosses: form.maxLosses,
       laneCount: form.laneCount
@@ -686,6 +694,7 @@ export function ShowdartDashboard({
         `${t.confirmStartName}: ${nextConfig.tournamentName}`,
         `${entryLabel}: ${entryCount}`,
         `${t.confirmStartFormat}: ${modeLabel}`,
+        nextConfig.beginnerMode ? t.beginnerMode : t.standardMode,
         `${t.confirmStartLosses}: ${nextConfig.maxLosses}`,
         `${t.confirmStartLanes}: ${nextConfig.laneCount}`
       ].join('\n'),
@@ -907,6 +916,7 @@ export function ShowdartDashboard({
 
   function handleResetTournament() {
     showConfirm(t.confirmReset, () => {
+      setForm({ tournamentName: '', beginnerMode: false, teammateMode: 'changing', maxLosses: 2, laneCount: 4 });
       setFinalRankingIds([]);
       setHistoryVisible(false);
       setTreeVisible(false);
@@ -1145,6 +1155,11 @@ export function ShowdartDashboard({
                 </div>
               </Field>
               <Field label={t.lanesCount}><input className="sd-input" type="number" min="1" max="32" value={form.laneCount} disabled={state.started} onChange={event => handleSetupChange({ laneCount: Number(event.target.value) })} /></Field>
+              <label className="sd-beginner-mode">
+                <input type="checkbox" checked={form.beginnerMode} disabled={state.started}
+                  onChange={event => handleSetupChange({ beginnerMode: event.target.checked })} />
+                <span>{t.beginnerMode}</span>
+              </label>
               <Field label={t.status}><span className="sd-green-text">{state.started ? t.started : t.waiting}</span></Field>
               {!state.started ? <button type="button" className="sd-button gold full" onClick={handleStart}>{t.start}</button> : null}
             </div>

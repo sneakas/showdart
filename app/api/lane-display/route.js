@@ -32,7 +32,10 @@ export async function POST(request) {
         const snapshot = buildLaneMatchSnapshot({ [input.competitionKey]: data?.state_json }, input.lane);
         if (snapshot.match?.id !== input.matchId) return NextResponse.json({ error: 'Kampen er ikke længere klar på denne bane.' }, { status: 409 });
         if (snapshot.competition.instanceId !== (input.competitionInstanceId || 'legacy')) return NextResponse.json({ error: 'Turneringen er startet forfra. Vælg den aktuelle kamp igen.' }, { status: 409 });
-        binding = { competitionKey: input.competitionKey, instanceId: snapshot.competition.instanceId, matchId: input.matchId };
+        if ((input.board?.beginnerMode === true) !== snapshot.match.beginnerMode) {
+          return NextResponse.json({ error: 'Spilvarianten er ændret. Genindlæs siden, og start kampen igen.' }, { status: 409 });
+        }
+        binding = { competitionKey: input.competitionKey, instanceId: snapshot.competition.instanceId, matchId: input.matchId, beginnerMode: snapshot.match.beginnerMode };
       }
       const sessionId = typeof input.sessionId === 'string' && /^[0-9a-f-]{36}$/i.test(input.sessionId) ? input.sessionId : randomUUID();
       const board = parseLaneDisplayBoard(input.board);
@@ -41,6 +44,10 @@ export async function POST(request) {
     }
     if (!['update', 'heartbeat', 'release'].includes(input.action)) throw new Error('Ugyldig skærmhandling.');
     const grant = readLaneDisplayGrant(input.token, config);
+    if (input.action === 'update' && grant.binding
+      && (input.board?.beginnerMode === true) !== (grant.binding.beginnerMode === true)) {
+      return NextResponse.json({ error: 'Spilvarianten passer ikke til kampen.' }, { status: 409 });
+    }
     if (input.action === 'heartbeat' && grant.binding) {
       // One small source-DB lookup per minute, never one per scoring click.
       const { data, error } = await getServiceClient().from('tournament_states').select('instanceId:state_json->>competitionInstanceId')

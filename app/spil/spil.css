@@ -574,7 +574,7 @@
 .mickey-grid {
   display: grid;
   grid-template-columns: 96px repeat(2, minmax(0, 1fr));
-  grid-template-rows: 62px repeat(9, 58px);
+  grid-template-rows: 62px repeat(var(--mickey-target-count, 9), 58px);
   overflow: hidden;
   border: 1px solid rgba(99, 128, 109, .62);
   border-radius: 10px;
@@ -651,7 +651,7 @@
   flex: 1;
   min-height: 0;
   grid-template-columns: 64px repeat(var(--final-player-count), minmax(0, 1fr));
-  grid-template-rows: 58px repeat(9, minmax(0, 1fr));
+  grid-template-rows: 58px repeat(var(--mickey-target-count, 9), minmax(0, 1fr));
 }
 
 .mickey-final-grid .mickey-target {
@@ -839,7 +839,7 @@
 
   .mickey-grid {
     grid-template-columns: 72px repeat(2, minmax(0, 1fr));
-    grid-template-rows: 56px repeat(9, 52px);
+    grid-template-rows: 56px repeat(var(--mickey-target-count, 9), 52px);
   }
 
   .mickey-target {
@@ -937,12 +937,12 @@
     min-height: 0;
     width: 100%;
     grid-template-columns: 76px repeat(2, minmax(0, 1fr));
-    grid-template-rows: minmax(34px, .9fr) repeat(9, minmax(0, 1fr));
+    grid-template-rows: minmax(34px, .9fr) repeat(var(--mickey-target-count, 9), minmax(0, 1fr));
   }
 
   .mickey-modal .mickey-final-grid {
     grid-template-columns: 58px repeat(var(--final-player-count), minmax(0, 1fr));
-    grid-template-rows: minmax(48px, .9fr) repeat(9, minmax(0, 1fr));
+    grid-template-rows: minmax(48px, .9fr) repeat(var(--mickey-target-count, 9), minmax(0, 1fr));
   }
 
   .mickey-modal .final-board-head {

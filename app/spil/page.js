@@ -7,7 +7,8 @@ import { buildLaneDisplayBoard } from '../../lib/laneDisplay';
 import { useLaneDisplay } from '../../lib/useLaneDisplay';
 import {
   MICKEY_RULES,
-  MICKEY_TARGETS,
+  BEGINNER_MICKEY_RULES,
+  getMickeyTargets,
   buildMickeyTournamentResult,
   createMickeyState,
   getMickeyMpr,
@@ -39,6 +40,7 @@ const FINAL_STORAGE_PREFIX = 'showdart-mickey-final-state';
 
 const texts = {
   da: {
+    beginnerMode: 'Begyndertilstand · kun 20–15',
     loading: 'Indlæser spil...',
     login: 'Log ind på forsiden for at fortsætte',
     tournament: 'Turnering',
@@ -99,6 +101,7 @@ const texts = {
     orderPlaces: ['første', 'anden', 'tredje', 'fjerde'], finalPlacements: 'Finaleplaceringer', placeShort: 'plads', finalConfirmHint: 'Kontrollér alle placeringer, før resultatet sendes til turneringen.'
   },
   en: {
+    beginnerMode: 'Beginner mode · 20–15 only',
     loading: 'Loading game...',
     login: 'Log in on the front page to continue',
     tournament: 'Tournament',
@@ -400,6 +403,7 @@ export default function GamePage() {
       side1Label: laneData.match.side1Label,
       side2Label: laneData.match.side2Label,
       isFinal: !!laneData.match.isFinal,
+      beginnerMode: laneData.match.beginnerMode === true,
       participants: Array.isArray(laneData.match.participants) ? laneData.match.participants : []
     };
     if (linked.isFinal && linked.participants.length >= 2) {
@@ -417,7 +421,7 @@ export default function GamePage() {
       return;
     }
     const nextLinkedMatch = { ...finalOrderPrompt.linked, throwOrderPlayerIds: orderedPlayerIds };
-    setFinalState(startFinalMickeyGame({ participants: nextLinkedMatch.participants, throwOrderPlayerIds: orderedPlayerIds }));
+    setFinalState(startFinalMickeyGame({ participants: nextLinkedMatch.participants, throwOrderPlayerIds: orderedPlayerIds, beginnerMode: nextLinkedMatch.beginnerMode }));
     setLinkedMatch(nextLinkedMatch);
     setSubmission({ status: 'idle', message: '' });
     setApprovalDismissed(false);
@@ -439,6 +443,7 @@ export default function GamePage() {
       playerTwoName: starterOrder.playerTwoName,
       opponentMode: startPrompt.opponentMode,
       aiAverageMarks,
+      beginnerMode: nextLinkedMatch?.beginnerMode === true,
       startingPlayerIndex: startPrompt.opponentMode === 'human' ? 0 : startingPlayerIndex
     }));
     setPlayerOneName(starterOrder.playerOneName);
@@ -637,7 +642,7 @@ export default function GamePage() {
         <div className="sd-card game-hero-card">
           <p className="sd-small-label">Mickey</p>
           <h1 className="sd-title">{t.title}</h1>
-          <p>{t.subtitle}</p>
+          <p>{(linkedMatch?.beginnerMode || laneData?.match?.beginnerMode) ? t.beginnerMode : t.subtitle}</p>
           <div className="game-status-row">
             <span>{statusLabel}</span>
             <span>{linkedMatch?.isFinal ? finalState.players.map(player => player.name).join(' / ') : `${state.players[0].name} / ${state.players[1].name}`}</span>
@@ -689,7 +694,7 @@ export default function GamePage() {
           gameStatus={currentStatus}
         />
         <aside className="game-side">
-          <RulesPanel t={t} />
+          <RulesPanel t={t} beginnerMode={linkedMatch?.beginnerMode || laneData?.match?.beginnerMode} />
           <ResultPanel t={t} state={state} resultPayload={resultPayload} submission={submission} linkedMatch={linkedMatch} />
         </aside>
       </section>
@@ -833,11 +838,13 @@ function SetupPanel({ t, playerOneName, playerTwoName, opponentMode, aiAverageMa
 
 function FinalMickeyBoard({ t, state, linkedMatch, submission, onMark, onUndo, onRequestApproval, onClose }) {
   const canPlay = state.status === 'playing';
+  const targets = getMickeyTargets(state.beginnerMode);
   return (
     <section className="sd-card game-panel game-board-panel final-board-panel">
       <div className="game-panel-head final-board-head">
         <div>
           <h2 className="sd-panel-title">{t.individualFinal}</h2>
+          {state.beginnerMode ? <p>{t.beginnerMode}</p> : null}
           <p>{t.lane} {linkedMatch.lane} · {linkedMatch.roundLabel}</p>
           <p className="game-starter"><strong>{t.starts}: {state.players[0]?.name}</strong>{state.message ? ` · ${state.message}` : ''}</p>
           {submission.message ? <p className={`game-submission is-${submission.status}`}>{submission.message}</p> : null}
@@ -848,7 +855,7 @@ function FinalMickeyBoard({ t, state, linkedMatch, submission, onMark, onUndo, o
           <button type="button" className="sd-button" onClick={onClose}><X size={16} /> {t.closeApp}</button>
         </div>
       </div>
-      <div className="mickey-grid mickey-final-grid" style={{ '--final-player-count': state.players.length }}>
+      <div className="mickey-grid mickey-final-grid" style={{ '--final-player-count': state.players.length, '--mickey-target-count': targets.length }}>
         <div className="mickey-cell mickey-corner" />
         {state.players.map(player => (
           <div key={player.id} className={`mickey-cell mickey-player final-player ${player.place ? 'has-place' : ''}`}>
@@ -856,7 +863,7 @@ function FinalMickeyBoard({ t, state, linkedMatch, submission, onMark, onUndo, o
             <strong>{player.name}</strong>
           </div>
         ))}
-        {MICKEY_TARGETS.map((target, targetIndex) => (
+        {targets.map((target, targetIndex) => (
           <div key={target.key} className="mickey-row">
             <div className="mickey-cell mickey-target">{getMickeyTargetLabel(targetIndex)}</div>
             {state.players.map((player, playerIndex) => {
@@ -884,12 +891,14 @@ function FinalMickeyBoard({ t, state, linkedMatch, submission, onMark, onUndo, o
 
 function MickeyBoard({ t, state, linkedMatch, submission, onMark, onUndo, onAiTurn, onRequestApproval, onRestart, onClose }) {
   const canPlay = state.status === 'playing';
+  const targets = getMickeyTargets(state.beginnerMode);
   const starterName = state.players[state.startingPlayerIndex]?.name;
   return (
     <section className="sd-card game-panel game-board-panel">
       <div className="game-panel-head">
         <div>
           <h2 className="sd-panel-title">{t.boardTitle}</h2>
+          {state.beginnerMode ? <p>{t.beginnerMode}</p> : null}
           <p>{linkedMatch ? `${t.linkedMatch} · ${t.lane} ${linkedMatch.lane} · ${linkedMatch.roundLabel}` : (state.opponentMode === 'ai' ? t.aiMode : t.humanMode)}</p>
           <p className="game-starter"><strong>{t.starts}: {starterName}</strong>{state.message ? ` · ${state.message}` : ''}</p>
           {submission.message ? <p className={`game-submission is-${submission.status}`}>{submission.status === 'success' ? <CheckCircle2 size={16} /> : null}{submission.message}</p> : null}
@@ -902,14 +911,14 @@ function MickeyBoard({ t, state, linkedMatch, submission, onMark, onUndo, onAiTu
           <button type="button" className="sd-button" onClick={onClose}><X size={16} /> {t.closeApp}</button>
         </div>
       </div>
-      <div className="mickey-grid" style={{ '--mickey-rows': MICKEY_TARGETS.length + 1 }}>
+      <div className="mickey-grid" style={{ '--mickey-target-count': targets.length }}>
         <div className="mickey-cell mickey-corner" />
         {state.players.map((player, playerIndex) => (
           <div key={playerIndex} className={`mickey-cell mickey-player ${state.winnerIndex === playerIndex ? 'is-winner' : ''}`}>
             <strong>{player.name}</strong>
           </div>
         ))}
-        {MICKEY_TARGETS.map((target, targetIndex) => (
+        {targets.map((target, targetIndex) => (
           <div key={target.key} className="mickey-row">
             <div className="mickey-cell mickey-target">{getMickeyTargetLabel(targetIndex)}</div>
             {[0, 1].map(playerIndex => {
@@ -945,12 +954,12 @@ function MickeyMark({ marks }) {
   );
 }
 
-function RulesPanel({ t }) {
+function RulesPanel({ t, beginnerMode }) {
   return (
     <section className="sd-card game-panel game-rules">
       <h2 className="sd-panel-title">{t.ruleTitle}</h2>
       <ol>
-        {MICKEY_RULES.map(rule => <li key={rule}>{rule}</li>)}
+        {(beginnerMode ? BEGINNER_MICKEY_RULES : MICKEY_RULES).map(rule => <li key={rule}>{rule}</li>)}
       </ol>
     </section>
   );
@@ -974,7 +983,7 @@ function ResultPanel({ t, state, resultPayload, submission, linkedMatch }) {
             {state.players.map((player, index) => (
               <div key={index}>
                 <span>{player.name}</span>
-                <strong>{player.marks.filter(mark => mark >= 3).length}/{MICKEY_TARGETS.length}</strong>
+                <strong>{getMickeyTargets(state.beginnerMode).filter((_, index) => player.marks[index] >= 3).length}/{getMickeyTargets(state.beginnerMode).length}</strong>
                 <small>{player.rawMarks} {t.marks} · {player.dartsThrown} {t.darts} · {getMickeyMpr(player)} {t.mpr}</small>
               </div>
             ))}
@@ -983,7 +992,7 @@ function ResultPanel({ t, state, resultPayload, submission, linkedMatch }) {
           <pre>{JSON.stringify(resultPayload, null, 2)}</pre>
         </>
       ) : (
-        <p>{isMickeyPlayerFinished(state.players[0]) || isMickeyPlayerFinished(state.players[1]) ? t.sendLater : t.noResult}</p>
+        <p>{isMickeyPlayerFinished(state.players[0], state.beginnerMode) || isMickeyPlayerFinished(state.players[1], state.beginnerMode) ? t.sendLater : t.noResult}</p>
       )}
     </section>
   );
