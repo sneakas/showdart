@@ -80,11 +80,12 @@ test('published match, lane announcement and approved result carry the same begi
   const state = publishRound(generateMatches(tournament(true)));
   const snapshot = buildLaneMatchSnapshot({ [TOURNAMENT_KEY]: state }, 1);
   assert.equal(snapshot.match.beginnerMode, true);
-  assert.match(buildLaneAnnouncements({ [TOURNAMENT_KEY]: state }, [1])[0].board.showdartPairing.roundLabel, /Begyndertilstand/);
+  assert.equal(buildLaneAnnouncements({ [TOURNAMENT_KEY]: state }, [1])[0].board.showdartPairing.roundLabel, 'Runde 1');
   const game = closeTargets(startMickeyGame({ beginnerMode: snapshot.match.beginnerMode }), markMickeyTarget, 0);
   const result = buildMickeyTournamentResult(game);
   const board = buildLaneDisplayBoard({ state: game });
   assert.equal(parseLaneDisplayBoard(board).beginnerMode, true);
+  assert.equal(board.matchLabel, 'Mickey');
   assert.equal(approveLaneDisplayBoard(board, result, false).beginnerMode, true);
   assert.throws(() => parseLaneDisplayBoard({ ...board, beginnerMode: 'true' }));
   const saved = applyLaneMatchResult({ competitionKey: TOURNAMENT_KEY, state, matchId: snapshot.match.id, lane: 1, winnerIndex: 0, gameResult: result });
